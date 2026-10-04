@@ -45,6 +45,39 @@ class PortableReportTests(unittest.TestCase):
         )
         return metrics
 
+    def test_prepared_input_renders_calculator_fields_and_preserves_existing_edits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            metrics = self.generate_metrics(root)
+            draft = root / "draft.json"
+            command = [sys.executable, str(self.tax / "scripts/generate_report_html.py"), str(draft), "--metrics-json", str(metrics)]
+            prepared = subprocess.run([*command, "--prepare-input"], capture_output=True, text=True)
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            original = draft.read_bytes()
+            data = json.loads(original)
+            self.assertIn("{{financial.", data["financial_overview"]["rows"][0]["values"][0])
+            self.assertEqual(data["policies"], [])
+            self.assertEqual(data["calculations"], [])
+            self.assertEqual(data["risk_level"], "待判断")
+            repeat = subprocess.run([*command, "--prepare-input"], capture_output=True, text=True)
+            self.assertNotEqual(repeat.returncode, 0)
+            self.assertEqual(draft.read_bytes(), original)
+            output = root / "report.html"
+            result = subprocess.run([sys.executable, str(self.tax / "scripts/generate_report_html.py"), str(draft), str(output), "--metrics-json", str(metrics)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rendered = output.read_text(encoding="utf-8")
+            self.assertNotIn("enterprise-financial-facts/v1", rendered)
+            self.assertIn("判断边界：", rendered)
+            self.assertNotIn("证据闸门：", rendered)
+            self.assertTrue(all("年" in row["source"] for row in json.loads(metrics.read_text())["report_rows"]))
+            self.assertEqual(rendered.count('<section class="page'), 17)
+            self.assertNotIn("{{financial.", rendered)
+            values = json.loads(metrics.read_text(encoding="utf-8"))["display_values"]
+            latest = sorted(values)[-1]
+            self.assertIn(values[latest]["facts"]["other_receivables"], rendered)
+            self.assertIn("经营现金流与净利润之比", rendered)
+            self.assertNotIn("余额集中于少数对象", rendered)
+
     def test_generator_outputs_exactly_seventeen_page_sections(self):
         with tempfile.TemporaryDirectory() as directory:
             directory_path = Path(directory)
@@ -69,6 +102,60 @@ class PortableReportTests(unittest.TestCase):
                 output.read_text(encoding="utf-8").count('<section class="page'),
                 17,
             )
+            html = output.read_text(encoding="utf-8")
+            self.assertEqual(html.count('class="gongchuang-page-watermark"'), 17)
+            self.assertEqual(html.count('class="gongchuang-document-header"'), 17)
+            self.assertEqual(html.count('class="gongchuang-cover-signature"'), 1)
+            self.assertIn('<meta name="author"', html)
+            self.assertIn('.cover h2{color:#fff8e8}', html)
+            self.assertIn('.roadmap-table th:first-child,.roadmap-table td:first-child{white-space:nowrap;width:24mm}', html)
+
+    def test_overview_preserves_existing_year_suffixes(self):
+        spec = importlib.util.spec_from_file_location("tax_report", self.tax / "scripts/generate_report_html.py")
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        data = json.loads((self.tax / "references/report-data.example.json").read_text(encoding="utf-8"))
+        data["financial_overview"]["years"] = ["2023", "2024年", "2025年度"]
+        html = generator.render_overview(data)
+        for label in ("2023年：", "2024年：", "2025年度："):
+            self.assertIn(label, html)
+        self.assertNotIn("年年", html)
+        self.assertNotIn("年度年", html)
+
+    def test_financial_references_resolve_by_field_without_modifying_editor_input(self):
+        spec = importlib.util.spec_from_file_location("tax_report", self.tax / "scripts/generate_report_html.py")
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        original = {"risks": [{"fact": "其他应收款{{financial.2025.facts.other_receivables}}，占资产{{financial.2025.metrics.other_ar_to_assets}}。"}]}
+        metrics = {"display_values": {"2025": {
+            "facts": {"other_receivables": "25.00万元"},
+            "metrics": {"other_ar_to_assets": "1.47%"},
+        }}}
+        resolved = generator.resolve_financial_references(original, metrics)
+        self.assertEqual(resolved["risks"][0]["fact"], "其他应收款25.00万元，占资产1.47%。")
+        self.assertIn("{{financial.", original["risks"][0]["fact"])
+        with self.assertRaisesRegex(ValueError, "unknown financial reference"):
+            generator.resolve_financial_references("{{financial.2024.facts.other_receivables}}", metrics)
+
+    def test_generator_cli_fills_financial_references_before_validation_and_render(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics_path = self.generate_metrics(directory_path)
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+            year = sorted(metrics["display_values"])[-1]
+            data = json.loads((self.tax / "references/report-data.example.json").read_text(encoding="utf-8"))
+            data["risks"][0]["fact"] = "其他应收款{{financial." + year + ".facts.other_receivables}}。"
+            source = directory_path / "report-data.json"
+            source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            output = directory_path / "report.html"
+            subprocess.run([
+                sys.executable, str(self.tax / "scripts/generate_report_html.py"),
+                str(source), str(output), "--metrics-json", str(metrics_path),
+            ], check=True, capture_output=True, text=True)
+            html = output.read_text(encoding="utf-8")
+            self.assertIn("其他应收款" + metrics["display_values"][year]["facts"]["other_receivables"] + "。", html)
+            self.assertNotIn("{{financial.", html)
+            self.assertIn("{{financial.", source.read_text(encoding="utf-8"))
 
     def test_generator_and_delivery_contract_use_the_same_visible_structure(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -113,6 +200,7 @@ class PortableReportTests(unittest.TestCase):
         self.assertEqual(generator.validate_metrics(metrics, data["company"]), rows[:9])
         html = generator.render(data, metrics, "")
         self.assertEqual(html.count('<section class="page'), 18)
+        self.assertEqual(html.count('class="gongchuang-page-watermark"'), 18)
         for row in rows:
             self.assertEqual(html.count(f'<td>{row["indicator"]}</td>'), 1)
             self.assertIn(f'<td>{row["source"]}</td>', html)

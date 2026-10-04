@@ -1141,8 +1141,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         同行对比与同行项目对比表：选择官方公示名单中的可比企业，按技术和市场比较维度
         给出可比性评分；同时列明口径差异、不可比较项和数据缺口。
         风险与下一步行动已进入90天整改表，可申报项目矩阵和五年规划表均已生成。
-        来源清单和证据台账已经绑定；professional_report交付Word
-        已通过金色居中水印审计通过。
+        来源清单和证据台账列明实际来源。
         最没有把握：同行未公开指标。
         最大遗漏：企业研发台账尚未取得。
         最有价值的创新改进：增加政策变化影响模拟器。
@@ -1170,11 +1169,11 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         scenarios = {
             "enterprise-panorama-analysis": (
                 "请生成专业版企业全景分析报告。",
-                ("同行项目对比表", "交付PDF", "水印审计"),
+                ("同行项目对比表", "可申报项目表", "五年规划表"),
             ),
             "manufacturing-tax-risk-analysis": (
                 "请生成金税四期分析报告。",
-                ("财务总览", "四项交付产物", "居中金色水印"),
+                ("财务总览", "风险地图", "计算过程与来源"),
             ),
             "sme-score-preassessment": (
                 "请生成专精特新前期预评估报告。",
@@ -1182,7 +1181,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             ),
             "sme-development-projects": (
                 "请生成专精特新后期体检报告。",
-                ("四项独立判断表", "validate_sme_assessment.py", "报告水印"),
+                ("四项独立判断表", "来源清单", "修改影响与待确认事项"),
             ),
         }
 

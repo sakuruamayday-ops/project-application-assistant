@@ -242,6 +242,43 @@ def test_fill_rd_core_innovation_uses_exact_field_and_seven_line_format(tmp_path
     assert stage_result["RD01"]["line_count"] == 4
 
 
+def test_measured_indicators_keep_their_status_and_source(tmp_path: Path) -> None:
+    data = realistic_spec()
+    item = data["items"][0]
+    for technology in item["core_technologies"]:
+        technology.update(indicator_kind="measured", indicator_source="样机内部测试，同规格工况")
+    text, _ = FILL_MODULE.format_item(item, FOUR_LEVEL_FIELD, 400)
+    assert text.count("实测技术指标为") == 2
+    assert "拟定" not in text
+    assert text.count("依据：样机内部测试，同规格工况") == 2
+    source, spec, output = (tmp_path / name for name in ("source.docx", "spec.json", "output.docx"))
+    document = Document(TEMPLATE)
+    set_first_rd_field(document)
+    document.save(source)
+    spec.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    process = subprocess.run([sys.executable, str(FILL_SCRIPT), str(source), str(spec), str(output)], capture_output=True, text=True)
+    assert process.returncode == 0, process.stderr
+    _, issues = AUDIT_MODULE.audit_rd_core_innovation(Document(output))
+    assert issues == []
+
+
+def test_mixed_indicators_only_calibrate_proposed_values() -> None:
+    item = realistic_spec()["items"][0]
+    item["core_technologies"][0].update(indicator_kind="measured", indicator_source="内部测试记录")
+    text, _ = FILL_MODULE.format_item(item, FOUR_LEVEL_FIELD, 400)
+    assert text.count("实测技术指标为") == 1
+    assert text.count("拟定技术指标为") == 1
+    assert FILL_MODULE.VALIDATION_SENTENCE in text
+
+
+@pytest.mark.parametrize("fields", [{"indicator_kind": "measured"}, {"indicator_kind": "unknown"}])
+def test_invalid_indicator_status_or_missing_measured_source_rejected(fields: dict) -> None:
+    technology = realistic_spec()["items"][0]["core_technologies"][0]
+    technology.update(fields)
+    with pytest.raises(ValueError):
+        FILL_MODULE.format_technology(1, technology, "RD01")
+
+
 def test_fill_basic_fields_handles_three_merged_rd_tables_without_touching_later_tables(tmp_path: Path) -> None:
     source, output, spec_path = (tmp_path / name for name in ("source.docx", "filled.docx", "spec.json"))
     document = Document(TEMPLATE)

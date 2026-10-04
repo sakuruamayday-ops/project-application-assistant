@@ -2,11 +2,14 @@
 
 ## 使用方法
 
-直接按本文字段表构建指标输入与 `report-data.json`，不要在首次运行前读取或复制同目录的示例文件。先用确定性计算器生成共享事实与报告指标，再校验并生成报告；只有生成器真实返回字段结构错误且错误信息不足时，才定向查看相关示例片段：
+按本文字段表整理指标输入，不要在首次运行前读取或复制同目录的示例文件。先用确定性计算器生成共享事实与报告指标，再用 `--prepare-input` 创建本轮新 `report-data.json`。它按真实年度预置财务表格和数值引用；模型补充分析、来源及动作后再生成报告，不从空 JSON 手抄数值。已有输入直接局部修改，不重新初始化；只有生成器真实返回字段结构错误且错误信息不足时，才定向查看相关示例片段：
 
 ```bash
 python3 scripts/calculate_metrics.py metrics-input.json enterprise-financial-facts.v1.json \
   --metrics-output manufacturing-tax-risk-metrics.v1.json
+python3 scripts/generate_report_html.py report-data.json --prepare-input \
+  --metrics-json manufacturing-tax-risk-metrics.v1.json
+# 补充本轮分析文字与实际来源，保留财务字段引用后，再执行下方生成命令。
 python3 scripts/generate_report_html.py report-data.json --validate-only \
   --metrics-json manufacturing-tax-risk-metrics.v1.json
 python3 scripts/generate_report_html.py report-data.json report.html \
@@ -39,7 +42,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | policies | array | 本轮已核验的现行官方政策；每项含非空 name、issuer、date、官方直达 url。无法取得官方原文时必须为空数组，生成器自动输出明确标注的草稿 |
 | final_judgment | object/string | 最终判断 |
 | monthly_indicators | array | name、rule、owner、frequency |
-| limitations | array | 资料限制和免责声明 |
+| limitations | array | 资料缺口、政策核验范围与鉴证责任边界；不放水印、文件格式、产物数量及工具执行说明 |
 
 所有面向正文的列表项都必须使用纯字符串。`missing_documents`、各专题的 `actions`、`roadmap[*].actions`、`p0_documents` 和 `limitations` 不接受 `{ "text": "..." }`、`{ "owner": "..." }` 等对象形式。生成器会在渲染前拒绝类型不符的数据，避免把 Python/JSON 对象字面量写进正式报告。
 
@@ -74,6 +77,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 KPI、结论和专题正文中的数字只允许直接取自原始年度数据，或取自确定性指标文件已经输出的展示值。不得自行计算三年复合增长率、累计净利润、均值、合计值或其他计算器尚未覆盖的派生数值；例如不得把三年收入改写为 CAGR，也不得把各年净利润相加后写成累计净利润。确有业务需要时，先扩展确定性计算器及测试，再用于报告。
 
 ## 确定性指标文件
+
+年度键使用四位年份，例如 `2025`。营业收入和应收账款同比只与上一自然年度比较；缺少上一年度时输出无法计算及缺失年度，不用更早年度替代，不按零补齐。其他年度及可计算指标继续输出。
 
 `--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 

@@ -254,9 +254,9 @@ def canonicalize(raw, source, authorization_scope):
     record["detail_url"] = normalize_url(record["detail_url"])
     record["official_url"] = normalize_url(record["official_url"])
     record["verification_status"] = record["verification_status"] or "未核验"
-    # 索引有效性与申报截止不同，只有显式 inactive/active 或 active 字段改变可查询状态。
+    # 明确失效与申报截止不同；截止通知仍可作为有效历史政策检索。
     active = raw.get("active", record["application_status"])
-    record["active"] = 0 if str(active).strip().lower() in {"inactive", "false", "0"} else 1
+    record["active"] = 0 if str(active).strip().lower() in {"inactive", "false", "0", "失效", "已失效", "废止", "已废止"} else 1
     return record
 
 

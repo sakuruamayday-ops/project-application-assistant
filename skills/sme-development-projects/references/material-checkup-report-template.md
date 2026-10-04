@@ -4,6 +4,8 @@
 
 ## 行动型报告
 
+生成器与交付检查使用同一章节顺序：第五章“财务情况简析”在“5.1 补强任务表”之前。已有数据对照表标题固定为“只对照企业已有数据的指标”，表头为“关键指标、企业现有数据、判断、谈单时怎么说”。
+
 专精培育项目推荐围绕主导产品及专精申报的佐证作用展开。已形成具体主导产品建议时，直接匹配工业新产品和适合的三首方向，写明推荐项目、产品对象、优先次序、对专精的支撑及下一步，不再用“产品确定后再筛选”等泛化占位替代。工业新产品支撑先进性，适用首台套支撑核心部件或装备技术及应用，适用首版次支撑独立软件创新；不得把模组固件或软著数量直接视为独立软件，也不得向非材料产品套首批次新材料。推荐不等于已经符合全部申报条件或保证认定，不把其他项目全部写成直接加分资格。
 
 研发机构推荐沿用已确认的内部筛选方法：基准年度报表固定资产期末金额乘50%，作为研发设备测算上限，与适用项目设备档位比较，覆盖时推荐匹配层级；人员、场地、设备清单未列不作为拒绝培育推荐的前置条件。此比例不是政策条件，不得混用资产总额或回填实际设备原值，不得调高比例凑档。缺固定资产时不伪造档位匹配结果，可先给研发机构建设方向。公式、内部筛选说明以及“资料不足，先盘点再决定是否推荐”的通用过程话不进入客户报告；成品保留具体建设或申报推荐及其对专精创新能力的支撑。
@@ -18,7 +20,7 @@
 
 先写决策、当前主要差距与下一步，再用企业已有数据对照适用条件。不把缺失数据排成多页空表；缺什么、影响哪项判断、如何补齐合并说明。当前明确失败与尚未核验分开，后者不得预设申报前必然补齐。不同报告之间只复用结构，不能复制企业数据、专利布局数量、地域项目或不同资质层级的门槛。
 
-生成模块：激活 project-feasibility，沿用 `project-feasibility.generate-report`，事实 JSON 指定 `report_layout: "sme-action"`、`report_date` 和 `report_sections`。内容块键依次为 conclusion、policy、known、roadmap、current_tasks、next_tasks、conditional、acceptance、soft、product、product_boundary、peers、ip、ip_topics、ip_time、finance、metrics、finance_conclusion、finance_missing、tasks。每块包含文本数组 paragraphs、表格行数组 rows、可选文本数组 notes。章节标题与表头由 sme_action_report.py 的 SECTIONS 定义，不在业务输入中随意重写。finance_conclusion 为文字块，无表格。适用项目 id 为 specialized-sme 或 little-giant，报告类型沿用实际 preassessment 或 feasibility。
+生成模块：激活 project-feasibility，沿用 `project-feasibility.generate-report`，事实 JSON 指定 `report_layout: "sme-action"`、`report_date` 和 `report_sections`。内容块键依次为 conclusion、policy、known、roadmap、current_tasks、next_tasks、acceptance、soft、product、product_boundary、peers、ip、ip_topics、ip_time、finance、metrics、finance_conclusion、finance_missing、tasks。每块包含文本数组 paragraphs、表格行数组 rows、可选文本数组 notes；准确列数和列序见 [报告内容输入](../../project-feasibility/references/sme-action-workflow.md#报告内容输入)。章节标题与表头由 sme_action_report.py 的 SECTIONS 定义，不在业务输入中随意重写。finance_conclusion 为文字块，无表格。适用项目 id 为 specialized-sme 或 little-giant，报告类型沿用实际 preassessment 或 feasibility。
 
 保留原始金额、期间和单位，财务比率复算；上一年度已具备不等于未来年度已满足。主营业务收入不等于主导产品收入。授权数量不等于符合Ⅰ类知识产权的全部条件。主导产品必须基于企业资料、官网产品与技术资料主动给出首选名称、理由、备选及收入边界，不以缺少销售拆分为由省略建议。建议名称与已核实销售占比区分；确无业务依据时先检索，仍不足再指出具体缺口，不凭企业名称编造。专利建议方向不冒充已有专利或已实现功能。PCT、CE等按产品及市场适用性安排，不写成所有企业必做或固定加分。
 

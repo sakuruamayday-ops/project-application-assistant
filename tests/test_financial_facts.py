@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CALCULATOR = (
@@ -23,6 +25,21 @@ def load_calculator():
 def complete_year():
     module = load_calculator()
     return {name: 100.0 for name in module.REQUIRED}
+
+
+@pytest.mark.parametrize("unit,amount", [("yuan", 250000), ("wanyuan", 25)])
+def test_display_values_keep_financial_field_and_unit_together(unit, amount):
+    module = load_calculator()
+    facts = complete_year()
+    facts["other_receivables"] = amount
+    facts["inventory"] = None
+    result = module.build_display_values({
+        "basis": {"unit": unit},
+        "periods": {"2025": {"facts": facts, "metrics": module.calc(facts)}},
+    })
+    assert result["2025"]["facts"]["other_receivables"] == "25.00万元"
+    assert result["2025"]["facts"]["inventory"] == "待补充"
+    assert result["2025"]["metrics"]["inventory_days"] == "无法计算"
 
 
 def test_calculator_emits_reusable_financial_facts(tmp_path):
@@ -140,6 +157,36 @@ def test_calculator_emits_case_28_material_cross_period_findings(tmp_path):
     assert report["2025年研发费用率"] == "15.00%"
     assert report["2025年资产负债表恒等式差额"] == "3,000,000.00元（300.00万元）"
     assert "缺少营业成本、期初存货，无法计算" in report["2025年存货周转天数"]
+
+
+@pytest.mark.parametrize("years", [
+    {"2023": 500, "2025": 1000},
+    {"2025": 1000, "2023": 500, "2026": 1200},
+])
+def test_growth_requires_previous_calendar_year(tmp_path, years):
+    source = tmp_path / "input.json"
+    facts_output = tmp_path / "facts.json"
+    metrics_output = tmp_path / "metrics.json"
+    source.write_text(json.dumps({
+        "company": "合成年度测试企业",
+        "years": {year: {**complete_year(), "revenue": amount, "receivables": amount}
+                  for year, amount in years.items()},
+    }), encoding="utf-8")
+    subprocess.run([
+        sys.executable, str(CALCULATOR), str(source), str(facts_output),
+        "--metrics-output", str(metrics_output),
+    ], check=True, capture_output=True, text=True)
+    metrics = json.loads(metrics_output.read_text(encoding="utf-8"))
+    for key in ("revenue_growth", "receivables_growth"):
+        assert metrics["indicators"][key]["values"]["2025"] is None
+        if "2026" in years:
+            assert metrics["indicators"][key]["values"]["2026"] == 0.2
+    rows = {row["indicator"]: row for row in metrics["report_rows"]}
+    for label in ("营业收入", "应收账款"):
+        assert rows[f"2025年{label}同比增长率"]["result"] == "缺少2024年度数据，无法计算同比增长率"
+    assert rows["2025年营业收入同比增长率"]["formula"] == "（本年营业收入－上年营业收入）÷上年营业收入"
+    facts = json.loads(facts_output.read_text(encoding="utf-8"))
+    assert set(facts["periods"]) == set(years)
 
 
 def test_cross_skill_financial_reuse_is_declared():

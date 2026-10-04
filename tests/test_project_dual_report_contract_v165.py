@@ -1,4 +1,5 @@
 import json
+import runpy
 from pathlib import Path
 
 
@@ -141,6 +142,39 @@ def test_delivery_contract_registers_both_report_categories() -> None:
         ]
 
 
+def test_action_report_declares_host_required_delivery_fields() -> None:
+    payload = json.loads(read(SKILLS / "delivery-contracts.json"))
+    profile = payload["delivery_profiles"]["sme-action-report"]
+    assert profile["requires_peer_comparison"] is True
+    assert profile["required_artifacts"] == [{
+        "role": "assessment_report",
+        "formats": ["docx", "pdf"],
+        "requires_sha256": True,
+        "validation_gate": "document-render-and-structure-gate",
+    }]
+    assert profile["branding_contracts"] == [{
+        "mode": "required", "variant": "default", "artifact_roles": ["assessment_report"],
+    }]
+
+
+def test_action_report_checks_follow_renderer_order_and_table_titles() -> None:
+    profile = json.loads(read(SKILLS / "delivery-contracts.json"))["delivery_profiles"]["sme-action-report"]
+    renderer = runpy.run_path(str(SKILLS / "project-feasibility/scripts/sme_action_report.py"))
+    sections = {key: (title, columns) for key, title, columns in renderer["SECTIONS"]}
+    headings = []
+    for title, keys in renderer["GROUPS"]:
+        headings.append(title)
+        headings.extend(sections[key][0] for key in keys if sections[key][0])
+    headings.append("数据来源")
+    text = "\n".join(headings)
+    positions = [text.index(marker) for marker in profile["required_sections"]]
+    assert positions == sorted(positions)
+    for table in profile["required_tables"]:
+        matches = [columns for title, columns in sections.values() if table["id"] in title]
+        assert len(matches) == 1
+        assert list(matches[0]) == table["required_columns"]
+
+
 def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     text = read(CONTRACT)
     assert "企业分析报告 A、B、C 版" in text
@@ -161,3 +195,16 @@ def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_word() ->
     assert "不再提供标准销售版" not in text
     contract = json.loads(read(SKILLS / "delivery-contracts.json"))
     assert manifest["release"]["version"] == contract["rule_version"]
+
+
+def test_customer_body_does_not_require_internal_delivery_assertions() -> None:
+    contract = json.loads(read(SKILLS / "delivery-contracts.json"))
+    for skill in ("enterprise-panorama-analysis", "manufacturing-tax-risk-analysis", "sme-development-projects"):
+        groups = contract["skills"][skill]["required_marker_groups"]
+        markers = [marker for group in groups for marker in group]
+        assert not any("审计通过" in marker or ".py通过" in marker or "交付产物" in marker for marker in markers)
+        assert "交付Word" not in markers
+        assert "交付PDF" not in markers
+    profiles = contract["delivery_profiles"]
+    assert profiles["enterprise-panorama-standard"]["branding_contracts"]
+    assert profiles["enterprise-panorama-standard"]["required_artifacts"]

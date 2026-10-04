@@ -63,6 +63,19 @@ def test_hightech_workbook_prints_each_table_without_empty_horizontal_pages() ->
         assert sheet.print_title_rows == '$4:$4', sheet.title
 
 
+def test_hightech_missing_financial_or_staff_inputs_do_not_become_zero_or_failure() -> None:
+    workbook = load_workbook(ROOT / 'skills/high-tech-enterprise-preassessment/assets/高企预评估双年度采集表.xlsx')
+    sheet = workbook['财务与成长性']
+    for column, result in [('B', 'D'), ('E', 'G')]:
+        for row in range(18, 22):
+            formula = sheet[f'{column}{row}'].value
+            assert 'COUNT(' in formula
+            assert '"待核"' in formula
+            assert 'IFERROR' not in formula
+            assert f'ISNUMBER({column}{row})' in sheet[f'{result}{row}'].value
+            assert '"待核"' in sheet[f'{result}{row}'].value
+
+
 def test_hightech_blank_ip_rows_do_not_duplicate_empty_paragraphs_and_can_expand() -> None:
     document = Document(ROOT / 'skills/high-tech-enterprise-application-drafting/assets/高新技术企业认定申请书空白模板.docx')
     tables = [table for table in document.tables if [cell.text.replace('\n', '') for cell in table.rows[0].cells] ==

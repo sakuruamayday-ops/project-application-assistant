@@ -157,13 +157,19 @@ def format_technology(index: int, value: dict, rd_id: str) -> str:
     description = require_string(value, "description", f"{rd_id}.core_technologies[{index - 1}]")
     if not name.endswith("技术"):
         raise ValueError(f"{rd_id}第{index}条核心技术名称必须以“技术”结尾")
+    indicator_kind = value.get("indicator_kind", "proposed")
+    if indicator_kind not in ("proposed", "measured"):
+        raise ValueError(f"{rd_id}第{index}条indicator_kind仅支持proposed或measured")
     # 显式缺值写成待核定草稿，不能为满足数值检查而编造指标；正式核稿仍会报告缺口。
     if "indicators" in value and value["indicators"] is None:
         return f"{index}、{name}：{ensure_sentence(description)}{PENDING_INDICATOR}"
     indicators = require_string(value, "indicators", f"{rd_id}.core_technologies[{index - 1}]")
     if not re.search(r"\d", indicators) or not UNIT_OR_BOUNDARY.search(indicators):
         raise ValueError(f"{rd_id}第{index}条核心技术指标必须包含数值以及单位或阈值边界")
-    indicators = re.sub(r"^拟定技术指标(?:为|：|:)?", "", indicators).strip()
+    indicators = re.sub(r"^(?:拟定|实测)技术指标(?:为|：|:)?", "", indicators).strip()
+    if indicator_kind == "measured":
+        source = require_string(value, "indicator_source", f"{rd_id}.core_technologies[{index - 1}]")
+        return f"{index}、{name}：{ensure_sentence(description)}实测技术指标为{ensure_sentence(indicators)}依据：{ensure_sentence(source)}"
     return f"{index}、{name}：{ensure_sentence(description)}拟定技术指标为{ensure_sentence(indicators)}"
 
 
@@ -177,6 +183,7 @@ def format_item(item: dict, field: str, max_body_chars: int) -> tuple[str, int]:
         raise ValueError(f"{rd_id}.innovations必须且只能有2条")
     if not all(isinstance(value, str) and value.strip() for value in innovations):
         raise ValueError(f"{rd_id}.innovations必须为2条非空字符串")
+    has_proposed = any(value.get("indicators") is not None and value.get("indicator_kind", "proposed") == "proposed" for value in technologies)
     lines = [
         f"所属技术领域：{field}。",
         "核心技术：",
@@ -184,7 +191,7 @@ def format_item(item: dict, field: str, max_body_chars: int) -> tuple[str, int]:
         format_technology(2, technologies[1], rd_id),
         "创新点：",
         f"1、{ensure_sentence(innovations[0])}",
-        f"2、{ensure_sentence(innovations[1])}{VALIDATION_SENTENCE}",
+        f"2、{ensure_sentence(innovations[1])}{VALIDATION_SENTENCE if has_proposed else ''}",
     ]
     body_length = len("".join(lines[index] for index in (2, 3, 5, 6)))
     if body_length > max_body_chars:

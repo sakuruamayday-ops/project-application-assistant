@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import runpy
 from pathlib import Path
 
 from docx import Document
@@ -25,6 +26,24 @@ NUMBERED_HEADING = re.compile(
 )
 LIST_ITEM = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)、]\s*)(.+)$")
 INLINE_MARKDOWN = MarkdownIt("commonmark")
+STRONG_LABEL = re.compile(r"\*\*([^*\n`\\]+[：:])\*\*")
+
+
+def strong_label(state, silent: bool) -> bool:
+    """Accept colon-ended labels without a space before the following CJK text."""
+    match = STRONG_LABEL.match(state.src, state.pos, state.posMax)
+    if match is None:
+        return False
+    if not silent:
+        state.push("strong_open", "strong", 1).markup = "**"
+        state.push("text", "", 0).content = match.group(1)
+        state.push("strong_close", "strong", -1).markup = "**"
+    state.pos = match.end()
+    return True
+
+
+# Use the parser's rule chain so code spans and escapes keep their native behavior.
+INLINE_MARKDOWN.inline.ruler.before("emphasis", "strong_label", strong_label)
 
 
 def set_run_font(run, *, size: float, bold: bool = False) -> None:
@@ -67,6 +86,8 @@ def add_inline(paragraph, text: str, *, size: float, bold: bool = False) -> None
 
 def configure_document(document: Document) -> None:
     section = document.sections[0]
+    section.page_width = Cm(21)
+    section.page_height = Cm(29.7)
     # 兜底生成器面对的通常是三页以内的清单或短报告。这里固定为紧凑但仍
     # 可读的 A4 版式，避免正文内容合格却因默认 Word 留白和段距多出一页。
     section.top_margin = Cm(2.0)
@@ -116,6 +137,16 @@ def add_table(document: Document, lines: list[str]) -> None:
         separator.paragraph_format.keep_with_next = True
     table = document.add_table(rows=len(rows), cols=width)
     table.style = "Table Grid"
+    table.autofit = False
+    section = document.sections[-1]
+    available_width = section.page_width - section.left_margin - section.right_margin
+    ordinal = width > 1 and rows[0][0] in {"序号", "编号"}
+    first_width = Cm(1.0) if ordinal else available_width / width
+    remaining_width = (available_width - first_width) / (width - 1) if width > 1 else first_width
+    for column_index, column in enumerate(table.columns):
+        column.width = int(first_width if column_index == 0 else remaining_width)
+        for cell in column.cells:
+            cell.width = column.width
     for row_index, row in enumerate(rows):
         properties = table.rows[row_index]._tr.get_or_add_trPr()
         properties.append(OxmlElement("w:cantSplit"))
@@ -142,7 +173,8 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
 
     numbered = NUMBERED_HEADING.match(line)
     ordered_list = re.match(r"^\s*(\d+[.)、])\s+(.+)$", line)
-    if first_content or (numbered and not ordered_list):
+    decimal_clause = re.match(r"^\s*\d+(?:\.\d+)+\s+", line)
+    if first_content or (numbered and not ordered_list and not decimal_clause):
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if first_content else WD_ALIGN_PARAGRAPH.LEFT
         paragraph.paragraph_format.space_before = Pt(6)
@@ -152,7 +184,7 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
         add_inline(paragraph, line.strip(), size=16 if first_content else 12.5, bold=True)
         return
 
-    listed = LIST_ITEM.match(line)
+    listed = None if decimal_clause else LIST_ITEM.match(line)
     paragraph = document.add_paragraph()
     paragraph.paragraph_format.line_spacing = 1.25
     paragraph.paragraph_format.space_after = Pt(3)
@@ -170,7 +202,11 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
 def build_document(content: str, output: Path) -> dict[str, object]:
     output = output.resolve()
     if output.exists():
-        raise FileExistsError(f"输出文件已存在，拒绝覆盖：{output}")
+        raise FileExistsError(
+            f"输出文件已存在，拒绝覆盖：{output}。原文件未修改。"
+            "请保留原文件，为修订稿指定尚不存在的新路径；"
+            "只有生成成功后才能校验新文件，不得用旧文件代替本次修订稿。"
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
 
     document = Document()
@@ -199,6 +235,8 @@ def build_document(content: str, output: Path) -> dict[str, object]:
         first_content = False
         index += 1
 
+    font_helper = Path(__file__).resolve().parents[2] / "project-feasibility/scripts/fill_report_template.py"
+    runpy.run_path(str(font_helper))["_apply_portable_cjk_font"](document)
     document.save(output)
     # 保存后立即用同一原生解析器重开，避免返回一个损坏或空壳 OOXML 文件。
     reopened = Document(output)
@@ -221,8 +259,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("content")
     parser.add_argument("output", type=Path)
+    parser.add_argument("--input-file", action="store_true", help="Read content from a UTF-8 Markdown or text file")
     args = parser.parse_args()
-    print(json.dumps(build_document(args.content, args.output), ensure_ascii=False))
+    content = args.content
+    if args.input_file:
+        source = Path(content)
+        if source.stat().st_size > 1024 * 1024:
+            raise ValueError("Word 正文文件超过 1 MiB，请按独立交付文件拆分")
+        content = source.read_text(encoding="utf-8-sig")
+    print(json.dumps(build_document(content, args.output), ensure_ascii=False))
     return 0
 
 

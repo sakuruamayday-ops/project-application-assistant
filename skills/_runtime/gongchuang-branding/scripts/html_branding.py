@@ -9,12 +9,39 @@ import html as html_module
 import re
 from pathlib import Path
 
-from brand_config import load_config, public_identity
+from brand_config import choose_style, load_config, public_identity
 
 
 STYLE_ID = "gongchuang-public-brand-style"
 HEADER_CLASS = "gongchuang-document-header"
 COVER_CLASS = "gongchuang-cover-signature"
+
+
+def fixed_page_branding(*, variant: str | None = None, cover: bool = False,
+                        vertical_offset_mm: float = 0) -> str:
+    """Brand one explicit page before PDF printing and source-preview capture."""
+    config = load_config()
+    identity = public_identity()
+    style = choose_style(1.0, target="pdf", variant=variant)
+    asset_data = base64.b64encode(Path(style["asset_path"]).read_bytes()).decode("ascii")
+    width = style["scale"] * float(config["policy"]["size_multiplier"]) * 100
+    color = html_module.escape(str(config["policy"]["header_color"]))
+    size = float(config["policy"]["header_font_size_pt"])
+    header = html_module.escape(identity["document_header"])
+    signature = html_module.escape(identity["cover_signature"])
+    result = (
+        f'<img class="gongchuang-page-watermark" alt="" src="data:image/png;base64,{asset_data}" '
+        f'style="position:absolute;left:50%;top:calc(50% + {vertical_offset_mm:g}mm);width:{width:g}%;height:auto;'
+        'transform:translate(-50%,-50%);pointer-events:none;z-index:100" />'
+        f'<div class="{HEADER_CLASS}" style="position:absolute;top:10mm;right:10mm;'
+        f'color:{color};font-size:{size:g}pt;z-index:101">{header}</div>'
+    )
+    if cover:
+        result += (
+            f'<div class="{COVER_CLASS}" style="position:absolute;bottom:8mm;right:10mm;'
+            f'color:{color};font-size:10pt;z-index:101">{signature}</div>'
+        )
+    return result
 
 
 def brand_html_text(source: str, *, has_cover: bool | None = None) -> str:

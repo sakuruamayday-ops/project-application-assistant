@@ -38,7 +38,13 @@ SECTIONS = (
     ("finance_missing", "申报前必须补的财务数据", ("数据", "当前状态", "用途", "补强时间")),
     ("tasks", "5.1 补强任务表", ("补强动作", "补强价值", "建议节点")),
 )
-SCORE_TEXT = re.compile(r"评分|得分|分数|平台分|质量分|(?:50|60)\s*分")
+SCORE_TEXT = re.compile(
+    r"评分|得分|分数|平台分|质量分|\d+(?:\.\d+)?\s*分(?!钟|贝|米|秒|之)"
+    r"|综合评价\s*[:：]\s*\d+(?:\.\d+)?\s*[/／]\s*\d+"
+)
+PROVINCIAL_PREREQUISITE = re.compile(
+    r"前置(?:称号|资格|身份)|科技和创新型中小企业|创新型中小企业|省级科技型中小企业"
+)
 
 
 def screen_research_equipment(fixed_assets_yuan, tiers):
@@ -85,10 +91,46 @@ def prepare_sections(fixture):
 
 
 def public_text(value, project_id=None):
-    # Scores remain in internal policy evidence, not in customer-facing reports.
-    return "".join(part for part in re.split(r"(?<=[。；\n])", value)
-                   if not SCORE_TEXT.search(part)
-                   and not (project_id == "specialized-sme" and re.search(r"前置称号|前置资格", part))).strip()
+    # Filter score clauses, not the facts or qualitative benefits beside them.
+    value = value.replace("评分项", "评价指标")
+    result = []
+    for sentence in re.split(r"(?<=[。；\n])", value):
+        clauses = re.findall(r"([^，,]+)([，,]?)", sentence)
+        retained = []
+        for clause, separator in clauses:
+            if SCORE_TEXT.search(clause):
+                continue
+            if SCORE_TEXT.search(sentence) and re.fullmatch(
+                r"\s*(?:获取不到|无法获取|系统自动评定)[。；\n]?", clause
+            ):
+                continue
+            if project_id == "specialized-sme" and PROVINCIAL_PREREQUISITE.search(clause):
+                continue
+            retained.append(clause + separator)
+        text = "".join(retained)
+        if len(retained) != len(clauses):
+            text = text.rstrip("，,")
+            if text and sentence.endswith(("。", "；", "\n")) and not text.endswith(("。", "；", "\n")):
+                text += sentence[-1]
+        result.append(text)
+    return "".join(result).strip()
+
+
+def public_rows(rows, project_id=None):
+    output = []
+    for row in rows:
+        label = row[0].strip()
+        if label == "资格与专注" or SCORE_TEXT.search(label):
+            continue
+        if label == "发展质量" and any(SCORE_TEXT.search(cell) for cell in row[1:]):
+            continue
+        if project_id == "specialized-sme" and PROVINCIAL_PREREQUISITE.search(label):
+            continue
+        cleaned = [public_text(cell, project_id) for cell in row]
+        if not all(cleaned):
+            raise ValueError(f"{label}去除评分后缺少正文，请补充具体内容")
+        output.append(cleaned)
+    return output
 
 
 def validate_sections(fixture):
@@ -117,6 +159,11 @@ def validate_sections(fixture):
             raise ValueError(f"{key}.rows 必须为 {len(headers)} 列非空文本")
         if key == "tasks" and not rows:
             raise ValueError("请填写 5.1 补强任务表")
+        if key in {"product", "peers", "tasks"}:
+            visible_rows = public_rows(rows, fixture["project_id"])
+            visible_paragraphs = [public_text(p, fixture["project_id"]) for p in paragraphs]
+            if not visible_rows and (key == "tasks" or not any(visible_paragraphs)):
+                raise ValueError(f"{key} 缺少具体内容，请填写建议、对照或资料缺口说明")
         if not isinstance(section.get("notes", []), list) or any(
             not isinstance(p, str) or not p.strip() for p in section.get("notes", [])
         ):
@@ -125,10 +172,7 @@ def validate_sections(fixture):
 
 
 def _table(document, headers, rows, project_id=None):
-    rows = [row for row in rows if not any(SCORE_TEXT.search(cell) for cell in row)]
-    rows = [row for row in rows if row[0].strip() != "资格与专注"
-            and not (project_id == "specialized-sme"
-                     and re.search(r"前置称号|前置资格", row[0]))]
+    rows = public_rows(rows, project_id)
     if project_id == "little-giant":
         rows = [([row[0], "已获认定的省级专精特新中小企业", *row[2:]]
                  if len(row) == 2 and row[0] in {"前置资格", "前置称号"}

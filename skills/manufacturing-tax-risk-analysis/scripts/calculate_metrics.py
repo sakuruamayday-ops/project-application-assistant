@@ -148,6 +148,38 @@ def unavailable_reason(metric, facts):
     return f"缺少{'、'.join(missing)}，无法计算" if missing else "输入不足，无法计算"
 
 
+def build_display_values(financial_facts):
+    """Format named financial fields once for literal report-template substitution."""
+    unit = str(financial_facts["basis"]["unit"]).lower()
+
+    def amount(value):
+        if value is None:
+            return "待补充"
+        if unit in {"yuan", "元", "cny"}:
+            return f"{value / 10000:,.2f}万元"
+        if unit in {"wanyuan", "万元"}:
+            return f"{value:,.2f}万元"
+        return format_amount(value, unit)
+
+    result = {}
+    for year, period in financial_facts["periods"].items():
+        metrics = {}
+        for name, value in period["metrics"].items():
+            if value is None:
+                metrics[name] = "无法计算"
+            elif name in PERCENTAGE_METRICS:
+                metrics[name] = format_ratio(value)
+            elif name in {"free_cash_flow", "working_capital"}:
+                metrics[name] = amount(value)
+            else:
+                metrics[name] = f"{value:.2f}" + ("天" if name in {"ar_days", "inventory_days"} else "")
+        result[year] = {
+            "facts": {name: amount(period["facts"].get(name)) for name in sorted(REQUIRED)},
+            "metrics": metrics,
+        }
+    return result
+
+
 def build_metrics_summary(financial_facts):
     """Build report-ready deterministic rows so the model cannot omit material math."""
     periods = financial_facts["periods"]
@@ -185,7 +217,9 @@ def build_metrics_summary(financial_facts):
         gap = subtract(subtract(facts.get("assets"), facts.get("liabilities")), facts.get("equity"))
         indicators["balance_equation_gap"]["values"][year] = gap
         if index:
-            previous = periods[years[index - 1]]["facts"]
+            previous_year = str(int(year) - 1)
+            previous_period = periods.get(previous_year)
+            previous = previous_period["facts"] if previous_period is not None else {}
             indicators["revenue_growth"]["values"][year] = div(
                 subtract(facts.get("revenue"), previous.get("revenue")),
                 previous.get("revenue"),
@@ -194,6 +228,13 @@ def build_metrics_summary(financial_facts):
                 subtract(facts.get("receivables"), previous.get("receivables")),
                 previous.get("receivables"),
             )
+            if previous_period is None:
+                for key in ("revenue_growth", "receivables_growth"):
+                    unavailable.append({
+                        "indicator": indicators[key]["label"],
+                        "year": year,
+                        "reason": f"缺少{previous_year}年度数据，无法计算同比增长率",
+                    })
         if metrics.get("inventory_days") is None:
             unavailable.append(
                 {
@@ -215,8 +256,10 @@ def build_metrics_summary(financial_facts):
                 {
                     "indicator": f"{year}年{indicator['label']}",
                     "formula": indicator["formula"],
-                    "result": format_ratio(value),
-                    "source": "enterprise-financial-facts/v1确定性复算",
+                    "result": next((item["reason"] for item in unavailable
+                                    if item["year"] == year and item["indicator"] == indicator["label"]),
+                                   format_ratio(value)),
+                    "source": f"{year}年及上年财务数据复算",
                 }
             )
     if years:
@@ -227,7 +270,7 @@ def build_metrics_summary(financial_facts):
                 "indicator": f"{latest}年研发费用率",
                 "formula": indicators["research_to_revenue"]["formula"],
                 "result": format_ratio(research),
-                "source": "enterprise-financial-facts/v1确定性复算",
+                "source": f"{latest}年研发费用与营业收入复算",
             }
         )
     for year in recent_growth_years:
@@ -238,18 +281,19 @@ def build_metrics_summary(financial_facts):
                     "indicator": f"{year}年资产负债表恒等式差额",
                     "formula": indicators["balance_equation_gap"]["formula"],
                     "result": format_amount(gap, unit),
-                    "source": "enterprise-financial-facts/v1确定性复算",
+                    "source": f"{year}年资产、负债与所有者权益复算",
                 }
             )
     if years:
-        latest_unavailable = [item for item in unavailable if item["year"] == years[-1]]
+        latest_unavailable = [item for item in unavailable
+                              if item["year"] == years[-1] and item["indicator"] == "存货周转天数"]
         for item in latest_unavailable[:1]:
             report_rows.append(
                 {
                     "indicator": f"{item['year']}年{item['indicator']}",
                     "formula": "平均存货÷营业成本×365",
                     "result": item["reason"],
-                    "source": "enterprise-financial-facts/v1缺失字段检查",
+                    "source": f"{item['year']}年及上年存货资料范围",
                 }
             )
 
@@ -262,6 +306,7 @@ def build_metrics_summary(financial_facts):
             "end": f"{years[-1]}年度",
         },
         "indicators": indicators,
+        "display_values": build_display_values(financial_facts),
         "uncomputable_indicators": unavailable,
         "report_rows": report_rows,
         "producer": "manufacturing-tax-risk-analysis",

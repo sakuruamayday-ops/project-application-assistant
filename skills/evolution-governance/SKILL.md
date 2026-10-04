@@ -49,6 +49,8 @@ description: 管理技能候选变更的风险、审批、验证、发布与回�
 
 运行 `python3 scripts/validate_evolution_batch.py <evolution-batch.json>`。结果非 `pass` 时禁止签名和发布。
 
+记录脚本结果时使用子进程实际返回的退出码、标准输出和标准错误。示例：`{"validation_status":"fail","validator_exit_code":2,"wrapper_exit_code":0}` 表示包装程序正常结束，但校验未通过；不能将包装程序的 0 写成校验脚本退出码。未取得脚本退出码时保持未知，不能根据日志格式猜测。状态表固定分为已有、明确缺失、未提供或未核验三类，后两类不得合并。
+
 ## 发布、继承与回滚
 
 发布采用“官方核心＋个人覆盖层＋跨设备同步”。检测到用户直接修改 `SKILL.md`、`scripts/`、`references/` 或 `assets/` 时，备份旧目录并生成继承报告，不自动合并回官方核心。

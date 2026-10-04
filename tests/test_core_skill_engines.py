@@ -211,6 +211,138 @@ def test_hightech_growth_uses_all_three_years_and_scores_18_to_20():
     assert result["totals"]["target"] == 20
 
 
+@pytest.mark.parametrize("third,expected", [
+    ("110", [3, 4]), ("109.999999999999999999", [1, 2]),
+    ("130", [5, 6]), ("129.999999999999999999", [3, 4]),
+    ("150", [7, 8]), ("149.999999999999999999", [5, 6]),
+    ("170", [9, 10]), ("169.999999999999999999", [7, 8]),
+])
+def test_hightech_growth_compares_exact_decimal_thresholds(tmp_path, third, expected):
+    path = tmp_path / "growth.json"
+    path.write_text(
+        '{"scenarios":[{"revenue":[100,100,' + third + '],'
+        '"net_assets":[100,100,' + third + '],'
+        '"scores":{"ip":20.5,"conversion":20,"organization":15}}]}',
+        encoding="utf-8",
+    )
+    result = subprocess.run([
+        sys.executable, str(ROOT / "skills/high-tech-enterprise-preassessment/scripts/compare_scenarios.py"),
+        str(path),
+    ], check=True, capture_output=True, text=True)
+    scenario = json.loads(result.stdout)["scenarios"][0]
+    for field in ("revenue", "net_assets"):
+        assert scenario["growth"][field]["score_range"] == expected
+
+
+@pytest.mark.parametrize("score,expected", [(70.9, "不建议"), (71, "临界"), (74.9, "临界"), (75, "原则上")])
+def test_hightech_recommendation_receipt_matches_actual_internal_thresholds(score, expected):
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    result = module.analyze_scenario({
+        "revenue": [100, 100, 100], "net_assets": [100, 100, 100],
+        "scores": {"ip": 30, "conversion": 30, "organization": score - 60},
+    })
+    assert result["readiness"].startswith(expected)
+    thresholds = result["internal_recommendation_thresholds"]
+    assert thresholds["borderline_integer_score_range"] == [71, 74]
+    assert thresholds["borderline_max_exclusive"] == thresholds["buffer_min_inclusive"] == 75
+    assert "不是官方认定门槛" in thresholds["basis"]
+
+
+def test_hightech_fifteen_percent_does_not_drop_a_band():
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    result = module.analyze_scenario({
+        "revenue": [100, 115, 132.25], "net_assets": [100, 120, 144],
+        "scores": {"ip": 20, "conversion": 20, "organization": 15},
+    })
+    assert result["growth"]["revenue"]["rate"] == 0.15
+    assert result["growth"]["revenue"]["score_range"] == [5, 6]
+
+
+def test_hightech_component_scores_sum_instead_of_reusing_stale_subtotals():
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    result = module.analyze_scenario({
+        "revenue": [1200, 1500, 1800], "net_assets": [600, 690, 793.5],
+        "scores": {
+            "ip": {"target": 28, "components": [
+                {"target": 8, "conservative": 5, "stress": 4},
+                {"target": 8, "conservative": 8, "stress": 7},
+                {"target": 8, "conservative": 7, "stress": 6},
+                {"target": 6, "conservative": 4, "stress": 3},
+            ]},
+            "conversion": {"target": 12, "conservative": 7, "stress": 5},
+            "organization": {"components": [
+                {"target": 6, "conservative": 3, "stress": 2},
+                {"target": 4, "conservative": 2, "stress": 1},
+                {"target": 4, "conservative": 3, "stress": 2},
+                {"target": 3, "conservative": 3, "stress": 2},
+            ]},
+        },
+    })
+    assert result["nonfinancial_scores"]["ip"] == {"target": 30, "conservative": 24, "stress": 20}
+    assert result["nonfinancial_scores"]["organization"] == {"target": 17, "conservative": 11, "stress": 7}
+    assert result["totals"] == {"target": 71, "conservative": 52, "stress": 42}
+
+
+@pytest.mark.parametrize("components", [[], [{"target": 2, "conservative": 3, "stress": 1}],
+    [{"target": 31, "conservative": 20, "stress": 10}],
+    [{"target": "NaN", "conservative": 2, "stress": 1}],
+    [{"target": "unknown", "conservative": 2, "stress": 1}],
+])
+def test_hightech_component_scores_reject_invalid_real_input(components):
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    with pytest.raises(ValueError):
+        module.normalize_scores({"ip": {"components": components}, "conversion": 7, "organization": 9})
+
+
+def test_hightech_component_decimal_sum_is_exact():
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    result = module.normalize_scores({"ip": {"components": [
+        {"target": "0.1", "conservative": "0.1", "stress": 0},
+        {"target": "0.2", "conservative": "0.2", "stress": 0},
+    ]}, "conversion": 7, "organization": 9})
+    assert result["ip"]["target"] == 0.3
+
+
+@pytest.mark.parametrize("payload", [{}, {"scenarios": [{}]}, {
+    "scenarios": [{"revenue": [1, 2, 3], "net_assets": [1, 2, 3], "scores": {}}],
+}])
+def test_hightech_invalid_input_returns_complete_repair_example(tmp_path, payload):
+    source = tmp_path / "input.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    result = subprocess.run([
+        sys.executable, str(SKILLS / "high-tech-enterprise-preassessment/scripts/compare_scenarios.py"),
+        str(source),
+    ], capture_output=True, text=True)
+    assert result.returncode == 2
+    assert result.stdout == ""
+    error = json.loads(result.stderr)
+    example = error["input_example"]["scenarios"][0]
+    assert set(example) == {"name", "revenue", "net_assets", "scores"}
+    assert set(example["scores"]) == {"ip", "conversion", "organization"}
+    module = load_script("high-tech-enterprise-preassessment/scripts/compare_scenarios.py")
+    assert module.analyze_scenario(example)["growth"]["revenue"]["percentage"] == "10.00%"
+
+
+def test_hightech_signed_operation_returns_single_json_and_display_percentages(tmp_path):
+    registry = json.loads((SKILLS / "client-runtime-operations.json").read_text(encoding="utf-8"))
+    operation = next(row for row in registry["operations"]
+                     if row["id"] == "high-tech-enterprise-preassessment.calculate-scenarios")
+    source = tmp_path / "scenarios.json"
+    source.write_text(json.dumps({"scenarios": [{
+        "name": "2026申报", "revenue": [1200, 1500, 1800],
+        "net_assets": [600, 690, 793.5],
+        "scores": {"ip": 22, "conversion": 7, "organization": 9},
+    }]}), encoding="utf-8")
+    result = subprocess.run([sys.executable, str(SKILLS / operation["script"]), str(source)],
+                            check=True, capture_output=True, text=True)
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == operation["stdout_json_schema_version"]
+    scenario = payload["scenarios"][0]
+    assert scenario["growth"]["revenue"]["percentage"] == "22.50%"
+    assert scenario["growth"]["net_assets"]["percentage"] == "15.00%"
+    assert scenario["totals"]["conservative"] == 48
+
+
 def test_financial_validator_requires_formula_and_sources(tmp_path):
     payload = {
         "identity": {"company_name": "测试有限公司"},

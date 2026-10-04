@@ -1,7 +1,55 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.7.1",
+  "skill_bundle_version": "1.7.2",
   "operations": [
+    {
+      "id": "high-tech-enterprise-application-drafting.fill-application-fields",
+      "skill": "high-tech-enterprise-application-drafting",
+      "description": "按原母版物理单元格回填登记、封面、年度财务、RD支出、PS、人员、IP与创新能力；不使用网格列坐标，不覆盖原文件。",
+      "script": "high-tech-enterprise-application-drafting/scripts/fill_application_fields.py",
+      "files": [
+        "high-tech-enterprise-application-drafting/scripts/fill_rd_core_innovation.py",
+        "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
+        "project-feasibility/assets/fonts/OFL-NotoSansSC.txt"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "hightech-application-fields/v1",
+      "parameters": {
+        "input": {"type": "workspace-input-file", "required": true, "extensions": [".docx"], "max_bytes": 33554432},
+        "spec": {"type": "workspace-input-file", "required": true, "extensions": [".json"], "max_bytes": 16777216},
+        "output": {"type": "workspace-output-file", "required": true, "extensions": [".docx"]}
+      },
+      "argv": [{"parameter": "input"}, {"parameter": "spec"}, {"parameter": "output"}]
+    },
+    {
+      "id": "high-tech-enterprise-preassessment.calculate-scenarios",
+      "skill": "high-tech-enterprise-preassessment",
+      "description": "计算高企双年度成长性分档及三档总分，返回确定性计算回执。",
+      "script": "high-tech-enterprise-preassessment/scripts/compare_scenarios.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "high-tech-scenario-calculation-operation/v1",
+      "parameters": {
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 16777216
+        }
+      },
+      "argv": [{"parameter": "input"}]
+    },
     {
       "id": "manufacturing-tax-risk-analysis.calculate-metrics",
       "skill": "manufacturing-tax-risk-analysis",
@@ -135,7 +183,11 @@
       "skill": "evidence-ledger",
       "description": "将已定稿正文一次写成新的原生 DOCX，保留标题、表格及行内格式。普通导出无需专业预校验；专业任务使用已通过 chat 预校验的正文，主技能有专用模板时优先使用其模板。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
-      "files": [],
+      "files": [
+        "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
+        "project-feasibility/assets/fonts/OFL-NotoSansSC.txt"
+      ],
       "sandbox_mode": "workspace-write",
       "network": "none",
       "timeout_ms": 60000,
@@ -170,6 +222,29 @@
           "parameter": "output"
         }
       ]
+    },
+    {
+      "id": "evidence-ledger.create-docx-from-file",
+      "skill": "evidence-ledger",
+      "description": "从工作区 UTF-8 Markdown 或文本正文生成原生 DOCX，适用于超过短文本接口8192字符的完整报告。input为不超过1MiB的正文文件，output为新的docx路径；专业成品仍须校验。",
+      "script": "evidence-ledger/scripts/create_docx_from_text.py",
+      "files": [
+        "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
+        "project-feasibility/assets/fonts/OFL-NotoSansSC.txt"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "gongchuang-docx-generation-operation/v1",
+      "parameters": {
+        "input": {"type": "workspace-input-file", "required": true, "extensions": [".md", ".txt"], "max_bytes": 1048576},
+        "output": {"type": "workspace-output-file", "required": true, "extensions": [".docx"]}
+      },
+      "argv": [{"literal": "--input-file"}, {"parameter": "input"}, {"parameter": "output"}]
     },
     {
       "id": "evidence-ledger.apply-office-branding",

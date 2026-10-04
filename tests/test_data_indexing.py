@@ -91,6 +91,25 @@ class DataIndexingTests(unittest.TestCase):
             self.assertEqual(versions[1]["active"], 1)
             self.assertEqual(versions[3]["active"], 0)
 
+    def test_chinese_inactive_status_preserves_history_and_excludes_default_search(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db, input_path = root / "index.sqlite3", root / "records.json"
+            command = [sys.executable, str(ENGINE), "--db", str(db), "ingest", "--input", str(input_path), "--source", "synthetic"]
+            records = [{"id": str(i), "title": "设备政策", "status": status}
+                       for i, status in enumerate(["失效", "已失效", "废止", "已废止", "申报已截止", "有效"])]
+            input_path.write_text(json.dumps(records), encoding="utf-8")
+            self.assertEqual(self.run_json(command)["inserted"], 6)
+            self.assertEqual({row["source_record_id"] for row in self.query(db)}, {"4", "5"})
+            self.assertEqual(len(self.query(db, "--include-inactive")), 6)
+            records[5]["status"] = "失效"
+            input_path.write_text(json.dumps([records[5]]), encoding="utf-8")
+            self.assertEqual(self.run_json(command)["updated"], 1)
+            self.assertEqual(self.run_json(command)["unchanged"], 1)
+            self.assertEqual({row["source_record_id"] for row in self.query(db)}, {"4"})
+            with closing(sqlite3.connect(db)) as connection:
+                self.assertEqual(connection.execute("SELECT COUNT(*) FROM record_versions").fetchone()[0], 7)
+
     def test_distinct_source_ids_and_collection_sources_are_not_merged(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

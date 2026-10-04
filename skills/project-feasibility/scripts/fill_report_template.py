@@ -14,6 +14,7 @@ import json
 import re
 from copy import deepcopy
 from datetime import date
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Iterable
 from uuid import uuid4
@@ -605,6 +606,86 @@ def _fill_table_by_header(table, fixture: dict[str, Any], feasibility: bool) -> 
         _fill_strengthening_table(table, fixture)
 
 
+def _fill_table_content(document: Document, fixture: dict[str, Any]) -> None:
+    """Fill existing master tables by exact column labels, preserving their layout."""
+    entries = fixture.get("table_content", [])
+    if not isinstance(entries, list):
+        raise ValueError("table_content 必须为表格数组")
+    used: set[tuple[str, ...]] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("table_content 每项必须包含 columns 与 rows")
+        columns, rows = entry.get("columns"), entry.get("rows")
+        if (not isinstance(columns, list) or not columns
+                or not all(isinstance(value, str) and value.strip() for value in columns)):
+            raise ValueError("table_content.columns 必须为非空表头数组")
+        key = tuple(value.strip() for value in columns)
+        if key in used:
+            raise ValueError("重复回填同一表头:" + " | ".join(key))
+        used.add(key)
+        matches = [table for table in document.tables if table.rows
+                   and tuple(cell.text.strip() for cell in table.rows[0].cells) == key]
+        if len(matches) != 1:
+            raise ValueError("表头必须唯一匹配母版:" + " | ".join(key))
+        if (not isinstance(rows, list) or not rows
+                or any(not isinstance(row, list) or len(row) != len(columns)
+                       or any(not isinstance(value, (str, int, float)) or isinstance(value, bool)
+                              for value in row) for row in rows)):
+            raise ValueError("table_content.rows 必须非空且每行列数与表头一致")
+        table = matches[0]
+        template_row = deepcopy(table.rows[-1]._tr)
+        while len(table.rows) > 1:
+            table._tbl.remove(table.rows[-1]._tr)
+        for values in rows:
+            table._tbl.append(deepcopy(template_row))
+            for cell, value in zip(table.rows[-1].cells, values, strict=True):
+                _set_cell_text(cell, str(value))
+        _lock_table_pagination(table)
+
+
+def _fill_hightech_associations(document: Document, fixture: dict[str, Any]) -> None:
+    rows = fixture.get("core_associations")
+    if rows is None:
+        return
+    if fixture["project_id"] != "high-tech-enterprise":
+        raise ValueError("core_associations 仅用于高企四关联矩阵")
+    columns = ["研发项目", "核心技术", "知识产权及状态", "成果转化", "高新产品及收入", "对应依据与缺口"]
+    if (not isinstance(rows, list) or not rows
+            or any(not isinstance(row, list) or len(row) != len(columns)
+                   or not all(isinstance(value, str) and value.strip() for value in row) for row in rows)):
+        raise ValueError("core_associations 每行须按四关联矩阵提供六列非空文本")
+    headings = [p for p in document.paragraphs
+                if p.text.strip() in {"三、项目专属核心对象", "四、项目专属核心对象"}]
+    if len(headings) != 1:
+        raise ValueError("高企母版缺少项目专属核心对象章节")
+    heading = headings[0]
+    table = document.add_table(rows=1, cols=len(columns))
+    table.style = "Table Grid"
+    for cell, value in zip(table.rows[0].cells, columns, strict=True):
+        _set_cell_text(cell, value)
+    for values in rows:
+        for cell, value in zip(table.add_row().cells, values, strict=True):
+            _set_cell_text(cell, value)
+    heading._p.addnext(table._tbl)
+    _lock_table_pagination(table)
+
+
+def _remove_authoring_guidance(document: Document) -> None:
+    # These master-only instructions are not customer-facing report findings.
+    headings = {"2.1 政策原文摘录规则", "4.2 得分解释", "6.2 任务排序"}
+    removing = False
+    for paragraph in list(document.paragraphs):
+        if paragraph.style.name.startswith("Heading"):
+            removing = paragraph.text.strip() in headings
+        if removing:
+            paragraph._p.getparent().remove(paragraph._p)
+    for table in list(document.tables):
+        if len(table.rows) == 1 and len(table.rows[0].cells) == 1:
+            label = table.cell(0, 0).text.split("\n", 1)[0].strip()
+            if label in {"使用说明", "判定规则", "项目路由", "专项要求"}:
+                table._tbl.getparent().remove(table._tbl)
+
+
 def _generic_fill(document: Document, fixture: dict[str, Any], placeholders: re.Pattern[str]) -> None:
     source_name = fixture["_validated_sources"][0]["name"]
     for paragraph in _iter_paragraphs(document):
@@ -767,6 +848,9 @@ def complete_report(
             _lock_table_pagination(table)
         _fill_project_specific_paragraphs(document, validated)
         _generic_fill(document, validated, placeholders)
+        _fill_table_content(document, validated)
+        _fill_hightech_associations(document, validated)
+        _remove_authoring_guidance(document)
     _append_source_ledger(document, validated)
     if layout == "sme-action":
         for paragraph in document.paragraphs:
@@ -791,9 +875,10 @@ def complete_report(
     _set_public_document_metadata(document, validated, report_type)
     if layout == "sme-action":
         document.core_properties.title = f"{validated['enterprise']}_专精特新申报体检与培育建议报告"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    document.save(output_path)
-    rendered = Document(output_path)
+    serialized = BytesIO()
+    document.save(serialized)
+    serialized.seek(0)
+    rendered = Document(serialized)
     text = document_text(rendered)
     errors: list[str] = []
     if placeholders.search(text):
@@ -812,6 +897,11 @@ def complete_report(
         errors.append("成稿缺资料来源台账")
     if PUBLIC_DIGEST.search(text):
         errors.append("对外成稿不得展示内部文件校验值")
+    if errors:
+        raise ValueError("成稿校验失败:" + "；".join(errors))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("wb" if output_path == template_path else "xb") as output:
+        output.write(serialized.getvalue())
     result = {
         "schema": "gongchuang-completed-project-report/v1",
         "status": "pass" if not errors else "fail",
@@ -840,8 +930,6 @@ def complete_report(
     }
     receipt = output_path.with_suffix(".completion.json")
     receipt.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if errors:
-        raise ValueError("成稿校验失败:" + "；".join(errors))
     return {**result, "receipt_path": str(receipt)}
 
 

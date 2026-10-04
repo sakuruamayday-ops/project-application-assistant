@@ -12,7 +12,7 @@ from docx.text.paragraph import Paragraph
 
 
 RD_PATTERN = re.compile(r"研发活动编号[:：]?\s*(RD\d{2})", re.IGNORECASE)
-RD_TECH_PATTERN = re.compile(r"^[12]、.+技术：.+拟定技术指标为.+\d")
+RD_TECH_PATTERN = re.compile(r"^[12]、.+技术：.+(?:拟定|实测)技术指标为.+\d")
 UNIT_OR_BOUNDARY = re.compile(
     r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
     r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
@@ -249,7 +249,7 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
             item_issues.append("第5行必须为创新点：")
         for index in (2, 3):
             if len(lines) <= index or not RD_TECH_PATTERN.search(lines[index]):
-                item_issues.append(f"第{index + 1}行须为具名核心技术并含拟定技术指标与数值")
+                item_issues.append(f"第{index + 1}行须为具名核心技术并含拟定或实测技术指标与数值")
             elif not UNIT_OR_BOUNDARY.search(lines[index]):
                 item_issues.append(f"第{index + 1}行技术指标缺少单位或阈值边界")
         for index, number in ((5, "1、"), (6, "2、")):

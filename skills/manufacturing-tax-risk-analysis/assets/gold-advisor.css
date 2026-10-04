@@ -34,6 +34,7 @@ h3{padding-left:3mm;border-left:1.2mm solid var(--gold);color:#3a2c1b}
 .cover:before{content:"";position:absolute;inset:7mm;border:1px solid rgba(232,201,130,.42)}
 .cover:after{content:"";position:absolute;left:7mm;top:7mm;bottom:7mm;width:2mm;background:linear-gradient(#8b5b1e,#e8c982 48%,#8b5b1e)}
 .cover h1{color:#fff8e8;font-size:27pt;line-height:1.25;margin-top:24mm}
+.cover h2{color:#fff8e8}
 .cover .rule{width:38mm;height:1.6mm;background:linear-gradient(90deg,#8b5b1e,#f0d68f,#8b5b1e);margin:10mm 0}
 .cover .meta{position:absolute;left:16mm;right:16mm;bottom:16mm;display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(228,196,119,.42);background:rgba(15,13,10,.22);color:#f3e7ca}
 .cover .meta>div{padding:3.7mm 4mm;border-bottom:1px solid rgba(228,196,119,.2)}
@@ -42,7 +43,7 @@ h3{padding-left:3mm;border-left:1.2mm solid var(--gold);color:#3a2c1b}
 .card:before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:1.3mm;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light),rgba(232,201,130,.18))}
 .card.warn{background:linear-gradient(145deg,#fff9ed,#f5dfbb)}
 .card.risk{background:linear-gradient(145deg,#fff9f5,#f3e0d8);border-color:#d7aaa0}
-.kpi .num{color:var(--gold-dark);font-size:20pt;font-weight:780}
+.kpi .num{color:var(--gold-dark);font-size:14pt;font-weight:780}
 .callout{border:1px solid var(--line);border-left:4px solid var(--gold);padding:3.2mm 4mm;background:linear-gradient(90deg,#f7ead5,#fcf8f0 75%);margin:4mm 0}
 .callout.risk{border-left-color:var(--red);background:linear-gradient(90deg,#f5e4de,#fcf7f3)}
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:8.4pt;line-height:1.45;break-inside:avoid;border:1px solid var(--line);border-top:1.2mm solid var(--gold-dark)}
@@ -50,6 +51,8 @@ thead{display:table-header-group}
 th{background:linear-gradient(180deg,#30291f,#211d17);color:#f9ecd0;text-align:left;padding:2.3mm 2.4mm}
 td{border-bottom:1px solid #eadfce;border-right:1px solid #efe5d6;padding:2mm 2.4mm;vertical-align:top}
 tr:nth-child(even) td{background:#f8f1e5}
+.roadmap-table th:first-child,.roadmap-table td:first-child{white-space:nowrap;width:24mm}
+.risk-table th:last-child,.risk-table td:last-child{white-space:nowrap;width:16mm}
 .bar{background:#eee6d9;border:1px solid #ded0bc}
 .bar span{background:linear-gradient(90deg,var(--gold-dark),var(--gold),#edcf88)}
 .final-page .hero-card{padding:3mm 4mm;margin:2mm 0 3mm}

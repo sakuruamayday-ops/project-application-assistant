@@ -14,7 +14,7 @@
 | `publish_date` | 发布日期 |
 | `issuer` | 发布或发文机构 |
 | `application_status` | 保留来源状态，接受 `status`，包括申报中、已截止、active、inactive 等 |
-| `active` | 索引可用状态；显式 inactive、false、0 为失效，保留记录和版本，通过 `--include-inactive` 查询；申报已截止本身不使政策失效 |
+| `active` | 索引可用状态；显式 inactive、false、0、失效、已失效、废止、已废止为失效，保留记录和版本，通过 `--include-inactive` 查询；申报已截止本身不使政策失效。显式 active 字段优先于来源状态 |
 | `application_period` | 页面显示的申报时间 |
 | `detail_url` | 第三方详情页 |
 | `official_url` | 政府官方原文链接 |

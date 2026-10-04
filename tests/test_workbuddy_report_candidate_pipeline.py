@@ -137,6 +137,90 @@ def case_fixture(source: Path, project_id: str = "first-equipment") -> dict:
     }
 
 
+@pytest.mark.parametrize("report_type,heading", [
+    ("preassessment", "三、项目专属核心对象"),
+    ("feasibility", "四、项目专属核心对象"),
+])
+def test_hightech_association_matrix_uses_each_real_master(tmp_path, report_type, heading):
+    fixture = case_fixture(client_source(tmp_path / "client.docx"), "high-tech-enterprise")
+    fixture["core_associations"] = [["RD01", "已提供技术", "有效授权", "年度汇总，未提供项目分配",
+                                     "PS01", "企业资料"]]
+    selected = SELECTOR.resolve_template("high-tech-enterprise", report_type, registry_path=REGISTRY)
+    output = tmp_path / "filled.docx"
+    FILLER.complete_report(template_path=Path(selected["template_path"]), output_path=output,
+                           fixture=fixture, report_type=report_type, release_tag="V1.7.2", public_root=ROOT)
+    document = Document(output)
+    matrix = next(t for t in document.tables if t.cell(0, 0).text == "研发项目")
+    assert "".join(matrix._tbl.getprevious().itertext()).count(heading) >= 1
+    assert [cell.text for cell in matrix.rows[1].cells] == fixture["core_associations"][0]
+
+
+def test_hightech_master_tables_are_filled_without_losing_rows_or_guidance_cleanup(tmp_path):
+    source = client_source(tmp_path / "client.docx")
+    fixture = case_fixture(source, "high-tech-enterprise")
+    columns = ["序号", "评分维度", "满分", "预计", "评分规则", "证据", "补强"]
+    values = [[str(i), title, maximum, "待核验", "当期规则", "企业资料", "具体补强"]
+              for i, title, maximum in [(1, "知识产权", "30"), (2, "成果转化", "30"),
+                                         (3, "组织管理", "20"), (4, "成长性", "20")]]
+    fixture["table_content"] = [{"columns": columns, "rows": values}]
+    fixture["core_associations"] = [[f"RD0{i}", "已提供技术", "审中，不计授权", "样机记录",
+                                      "PS01，同一产品不重复累计收入", "企业资料"] for i in range(1, 4)]
+    selection = SELECTOR.resolve_template("high-tech-enterprise", "feasibility", registry_path=REGISTRY)
+    output = tmp_path / "filled.docx"
+    FILLER.complete_report(template_path=Path(selection["template_path"]), output_path=output,
+                           fixture=fixture, report_type="feasibility", release_tag="V1.7.2", public_root=ROOT)
+    document = Document(output)
+    score = next(t for t in document.tables if [c.text for c in t.rows[0].cells] == columns)
+    assert [[c.text for c in row.cells] for row in score.rows[1:]] == values
+    matrix = next(t for t in document.tables if t.cell(0, 0).text == "研发项目")
+    assert [row.cells[0].text for row in matrix.rows[1:]] == ["RD01", "RD02", "RD03"]
+    assert matrix._tbl.getprevious().tag.endswith("}p")
+    text = FILLER.document_text(document)
+    assert "政策原文摘录规则" not in text
+    assert "逐条复制现行通知" not in text
+    assert "本稿已按真实客户资料回填" not in text
+    assert "报告边界" in text
+
+
+@pytest.mark.parametrize("entry", [
+    {"columns": ["不存在的表头"], "rows": [["数据"]]},
+    {"columns": ["项目", "申报年度", "申报截止日期", "当前状态", "下一步"], "rows": [["列数错误"]]},
+])
+def test_table_content_rejects_unmatched_headers_and_bad_width(entry):
+    document = Document()
+    table = document.add_table(rows=2, cols=5)
+    for cell, value in zip(table.rows[0].cells, ["项目", "申报年度", "申报截止日期", "当前状态", "下一步"]):
+        cell.text = value
+    with pytest.raises(ValueError):
+        FILLER._fill_table_content(document, {"table_content": [entry]})
+
+
+def test_failed_report_check_does_not_occupy_output_or_publish_receipt(tmp_path, monkeypatch):
+    source = client_source(tmp_path / "client.docx")
+    selection = SELECTOR.resolve_template("first-equipment", "preassessment", registry_path=REGISTRY)
+    output = tmp_path / "retry.docx"
+    append_sources = FILLER._append_source_ledger
+
+    def append_invalid_text(document, fixture):
+        append_sources(document, fixture)
+        document.add_paragraph("候选验收稿")
+
+    arguments = dict(template_path=Path(selection["template_path"]), output_path=output,
+                     fixture=case_fixture(source), report_type="preassessment",
+                     release_tag="V1.6.5.2", public_root=ROOT)
+    monkeypatch.setattr(FILLER, "_append_source_ledger", append_invalid_text)
+    with pytest.raises(ValueError, match="成稿校验失败"):
+        FILLER.complete_report(**arguments)
+    assert not output.exists()
+    assert not output.with_suffix(".completion.json").exists()
+    monkeypatch.setattr(FILLER, "_append_source_ledger", append_sources)
+    assert FILLER.complete_report(**arguments)["status"] == "pass"
+    original = output.read_bytes()
+    with pytest.raises(FileExistsError):
+        FILLER.complete_report(**arguments)
+    assert output.read_bytes() == original
+
+
 @pytest.mark.parametrize("report_type", ["preassessment", "feasibility"])
 def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Path, report_type: str):
     source = client_source(tmp_path / "client.docx")

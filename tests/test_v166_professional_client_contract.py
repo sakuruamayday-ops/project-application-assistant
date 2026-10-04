@@ -62,6 +62,24 @@ def test_hightech_drafting_has_a_machine_readable_consistency_gate() -> None:
     ) in relations
 
 
+def test_hightech_workbook_profile_matches_shipped_template() -> None:
+    from openpyxl import load_workbook
+
+    profile = load("delivery-contracts.json")["delivery_profiles"]["high-tech-preassessment-workbook"]
+    workbook = load_workbook(
+        SKILLS / "high-tech-enterprise-preassessment/assets/高企预评估双年度采集表.xlsx",
+        read_only=True,
+    )
+    try:
+        assert profile["required_sections"] == workbook.sheetnames
+    finally:
+        workbook.close()
+    assert profile["skill_id"] == "high-tech-enterprise-preassessment"
+    assert profile["required_artifacts"][0]["formats"] == ["xlsx"]
+    assert profile["requires_evidence_ledger"]
+    assert profile["requires_policy_selection_trace"]
+
+
 def test_sme_chat_and_artifact_contracts_share_the_same_action_heading() -> None:
     contract = load("delivery-contracts.json")
     skill = contract["skills"]["sme-development-projects"]

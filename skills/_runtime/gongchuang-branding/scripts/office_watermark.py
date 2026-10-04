@@ -14,7 +14,9 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.shared import Pt, RGBColor
+from docx.text.paragraph import Paragraph
 from openpyxl import load_workbook
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.utils import get_column_letter
@@ -37,7 +39,14 @@ LEGACY_XLSX_MARKERS = (
 )
 
 
-def _ensure_docx_brand_text(header) -> None:
+def _empty_header_paragraph(paragraph) -> bool:
+    return not paragraph._element.xpath(
+        './/w:t | .//w:drawing | .//w:pict | .//w:fldChar | .//w:instrText'
+        ' | .//w:br | .//w:tab | .//w:bookmarkStart'
+    )
+
+
+def _ensure_docx_brand_text(header):
     identity = public_identity()
     expected = identity["document_header"]
     for paragraph in list(header.paragraphs):
@@ -48,13 +57,22 @@ def _ensure_docx_brand_text(header) -> None:
         if text in {"焦" + "糖", "Jiao" + "tang"}:
             paragraph._element.getparent().remove(paragraph._element)
     else:
-        target = header.add_paragraph()
+        target = next((p for p in header.paragraphs if _empty_header_paragraph(p)), None)
+        if target is None:
+            target = header.add_paragraph()
         target.add_run(expected)
     target.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    target.paragraph_format.space_before = Pt(0)
+    target.paragraph_format.space_after = Pt(0)
+    font_table = header.part.package.main_document_part.part_related_by(RELATIONSHIP_TYPE.FONT_TABLE)
+    embedded_cjk = b'Noto Sans SC' in font_table.blob and b'embedRegular' in font_table.blob
+    font_name = "Noto Sans SC" if embedded_cjk else "Microsoft YaHei"
     for run in target.runs:
-        run.font.name = "Microsoft YaHei"
+        run.font.name = font_name
+        run._element.get_or_add_rPr().get_or_add_rFonts().set(qn("w:eastAsia"), font_name)
         run.font.size = Pt(float(load_config()["policy"]["header_font_size_pt"]))
         run.font.color.rgb = RGBColor(0x8A, 0x6A, 0x2F)
+    return target
 
 
 def _inline_to_centered_anchor(inline, *, name: str = WATERMARK_NAME):
@@ -149,14 +167,18 @@ def apply_docx_watermark(path: str | Path) -> Path:
                 for drawing in header._element.xpath(
                     f'.//w:drawing[.//wp:docPr[@name="{legacy_name}"]]'
                 ):
+                    paragraph = drawing.getparent().getparent()
                     drawing.getparent().remove(drawing)
-            paragraph = header.add_paragraph()
+                    # Remove only an empty paragraph left by our previous mark.
+                    if paragraph.tag == qn("w:p") and _empty_header_paragraph(Paragraph(paragraph, header)):
+                        paragraph.getparent().remove(paragraph)
+            # Floating art shares the brand line so branding cannot grow the header.
+            paragraph = _ensure_docx_brand_text(header)
             run = paragraph.add_run()
             inline_shape = run.add_picture(asset, width=fixed_width)
             inline = inline_shape._inline
             drawing = inline.getparent()
             drawing.replace(inline, _inline_to_centered_anchor(inline))
-            _ensure_docx_brand_text(header)
 
     document.save(path)
     from delivery_gate import validate_artifact

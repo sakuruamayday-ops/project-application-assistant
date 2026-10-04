@@ -100,6 +100,88 @@ def test_missing_product_has_explanation_not_empty_template_rows():
     assert "未提供产品清单，先核实际销售对象。" in [p.text for p in build(data).paragraphs]
 
 
+@pytest.mark.parametrize("section", ["product", "peers"])
+def test_empty_business_section_is_not_a_complete_report(section):
+    data = fixture()
+    data["report_sections"][section] = {"paragraphs": [], "rows": []}
+    with pytest.raises(ValueError, match=section):
+        build(data)
+
+
+@pytest.mark.parametrize("source,expected", [
+    ("拥有三项技术优势，评分为70分。", "拥有三项技术优势。"),
+    ("评分为70分，拥有三项技术优势。", "拥有三项技术优势。"),
+    ("综合评价：70 / 100。拥有三项技术优势。", "拥有三项技术优势。"),
+    ("对应评分项，可形成加分优势。", "对应评价指标，可形成加分优势。"),
+    ("处理时间50分钟，合格样本70 / 100。", "处理时间50分钟，合格样本70 / 100。"),
+    ("收入10,000万元，研发人员60名。", "收入10,000万元，研发人员60名。"),
+])
+def test_score_filter_preserves_non_score_facts(source, expected):
+    assert module.public_text(source) == expected
+
+
+@pytest.mark.parametrize("label", ["前置身份", "科技和创新型中小企业", "取得科技和创新型中小企业称号", "创新型中小企业（省级科技型中小企业）"])
+def test_provincial_prerequisite_aliases_are_hidden_without_changing_input(label):
+    data = fixture()
+    data["report_sections"]["tasks"]["rows"].append([label, "确认称号有效状态", "申报前"])
+    data["report_sections"]["conclusion"]["paragraphs"] = [
+        f"研发费用126万元，{label}尚待确认。主导产品收入1260万元。"
+    ]
+    before = copy.deepcopy(data)
+    doc = build(data)
+    text = "\n".join([p.text for p in doc.paragraphs] + [c.text for t in doc.tables for r in t.rows for c in r.cells])
+    assert label not in text
+    assert "研发费用126万元。主导产品收入1260万元。" in text
+    assert data == before
+
+
+def test_little_giant_provincial_title_remains_visible_in_combined_report():
+    text = "小巨人要求已获得省级专精特新中小企业称号，企业尚未取得。"
+    assert module.public_text(text, "specialized-sme") == text
+    assert module.public_text(text, "little-giant") == text
+
+
+@pytest.mark.parametrize("section", ["tasks", "soft"])
+def test_qualitative_scoring_task_is_not_removed(section):
+    data = fixture()
+    row = ["PCT国际布局", "对应评分项，可形成加分优势。", "申报前"]
+    if section == "soft":
+        row = ["PCT国际布局", "当前状态待核", row[1], "申报前"]
+    data["report_sections"][section]["rows"] = [row]
+    before = copy.deepcopy(data)
+    doc = build(data)
+    contents = "\n".join(c.text for t in doc.tables for r in t.rows for c in r.cells)
+    assert "PCT国际布局" in contents
+    assert "对应评价指标，可形成加分优势。" in contents
+    assert data == before
+
+
+@pytest.mark.parametrize("section", ["product", "peers"])
+def test_filtered_only_section_is_not_complete(section):
+    data = fixture()
+    data["report_sections"][section] = {"paragraphs": ["综合评价：70 / 100。"], "rows": []}
+    with pytest.raises(ValueError, match=section):
+        build(data)
+
+
+@pytest.mark.parametrize("project", ["specialized-sme", "little-giant"])
+def test_exported_docx_retains_facts_and_task_after_reopening(tmp_path, project):
+    from docx import Document
+
+    data = fixture()
+    data["project_id"] = project
+    data["report_sections"]["conclusion"]["paragraphs"] = ["拥有三项技术优势，评分为70分。"]
+    data["report_sections"]["tasks"]["rows"] = [["PCT国际布局", "对应评分项，可形成加分优势。", "申报前"]]
+    path = tmp_path / f"{project}.docx"
+    build(data).save(path)
+    reopened = Document(path)
+    assert "拥有三项技术优势。" in [p.text for p in reopened.paragraphs]
+    assert [c.text for c in tasks(reopened).rows[1].cells] == [
+        "PCT国际布局", "对应评价指标，可形成加分优势。", "申报前",
+    ]
+    assert "70分" not in "\n".join(p.text for p in reopened.paragraphs)
+
+
 @pytest.mark.parametrize("mutation", ["wrong-project", "missing-section", "wrong-columns", "empty-tasks"])
 def test_invalid_input_has_direct_error(mutation):
     data = fixture()

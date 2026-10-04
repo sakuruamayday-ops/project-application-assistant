@@ -60,6 +60,8 @@ description: 基于制造企业近三年审计报告、财务报表及税务资�
 该操作回执已包含宿主可直接绑定的全部确定性展示值；专业校验时用一条
 `calculated` 证据引用此操作，不得重新扫描 HTML、逐页枚举数字或手抄计算数组。
 
+随后用本技能 `scripts/generate_report_html.py report-data.json --metrics-json metrics.json --prepare-input` 准备本轮新报告输入，路径替换为当前工作区实际路径。程序按真实年度生成财务表格和具名数值引用；读取后仅补分析文字、来源与行动，不从空 JSON 重新抄写全部财务数值。已有输入直接局部修改，不重复初始化。准备出的内容是分析草稿，尚未形成业务结论，不能直接当作完成报告。
+
 其他宿主没有上述固定操作时，使用便携命令：
 
 ```bash
@@ -94,7 +96,11 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 
 每次任务重新核验现行官方来源。优先国家税务总局政策法规库、财政部、政府门户和企业所在地税务局。参考 [政策基线](references/policy-baseline.md)，但不得假定其中状态永久有效。
 
-只有本轮已打开的官方原文能够逐字支持时，报告才列精确政策年份、文号、成文日期和直达链接，并把对应原文纳入证据。无法访问官方原文时，不在 `policies` 中填写占位项，也不得依据示例、记忆或通用首页补写精确文号和日期；直接使用空数组继续生成。生成器会把成品明确标为“政策原文未核验”的草稿，先交付可用分析，不再让联网失败阻塞或反复重跑正式报告链。
+只有本轮已打开的官方原文能够逐字支持时，报告才列精确政策年份、文号、成文日期和直达链接，并把对应原文纳入证据。无法访问官方原文时，不在 `policies` 中填写占位项，也不得依据示例、记忆或通用首页补写精确文号和日期；直接使用空数组继续生成。生成器会把成品明确标为“政策原文未核验”的草稿，先交付可用分析，不再让联网失败阻塞或反复重跑正式报告链。文件入口与最终回复均称“分析草稿”或“待完善稿”，不能因格式、数字或品牌检查通过称为“正式版”。
+
+用户只修改既有报告标题或段落时，沿用原资料状态，不因开启新轮次补写政策。`policies` 为空的报告不提交 `official-policy` 已核验证据；旧消息、示例或记忆中的政策名和网址不是本轮回执。需要绑定财务数字时执行一次已签名 `calculate-metrics` 并引用其空 `values` 的 `calculated` 证据，不添加无意义的人工复算。保持当前报告画像，不通过省略画像来消除校验提示；保留未修改正文和数值。
+
+未执行官方原文访问时，只写“政策原文尚未核验”，不能声称网络失败、无法打开或被拦截；只有实际工具返回该失败时才说明对应原因。输入为科目汇总或无页码表格时，来源定位到年度、科目和文件，不承诺存在原始报表页码。
 
 涉及具体税种、税率、优惠、计税依据或申报期限时，同时读取 [税种计算与政策时效协议](references/tax-calculation-and-freshness-protocol.md)。不得把外部通用税务技能中的历史税率、优惠期限、截止日或处罚金额复制为正式常量。
 
@@ -112,7 +118,11 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 
 关键数字必须给来源页码和计算公式。报告封面固定列示“完成人：共创知识产权”。
 
-按 [自动报告输入规范](references/report-input-schema.md) 直接准备 `report-data.json`，然后运行：
+正文只面向报告读者。摘要写企业经营判断，不写“共享财务事实”“九个固定专题”；资料来源写财务报表、科目汇总及指标复算，不写程序或工具执行状态。`limitations` 只写资料缺口、政策核验范围和鉴证责任边界，不写水印、品牌检查、文件格式、交付产物数量、JSON、OCR执行过程或生成步骤。这些执行结果仅在会话回复说明，不能作为报告免责声明。保留程序准备的业务化说明，按企业资料补充，不用交付检查清单替换。
+
+按 [自动报告输入规范](references/report-input-schema.md) 补完程序准备的 `report-data.json` 分析字段，然后运行：
+
+财务正文按[数值回填段落模板](references/financial-paragraph-templates.md)仿写。金额、比例与周转天数在 `report-data.json` 中保留具名财务引用，由生成器从计算器的 `display_values` 回填；模型只选对应字段与组织分析，不自行换算元、万元或重抄财务数字。原始企业资料及用户编辑不被回写覆盖。
 
 ```bash
 python3 scripts/generate_report_html.py report-data.json report.html \
@@ -131,15 +141,17 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 ### 7. 生成金色顾问版 PDF
 
 1. 固定使用 `assets/gold-advisor.css` 与包内生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
-2. 确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。
-3. 以内存管道生成无水印 PDF，再调用同一技能包内 `skills/_runtime/gongchuang-branding` 共享运行时进行金色品牌双遍处理：
+   生成器已从共享品牌运行时向每个固定页面写入金色水印、品牌抬头及封面署名，作者也在 HTML 元数据中声明。品牌不由模型拼写或另行决定。
+2. 在提供 `gongchuang_render_pdf` 的共创客户端内，使用该宿主渲染器一次生成最终 PDF。品牌已在真实 HTML 预校验之前写入，渲染后不得再调用 `brand_gold_pdf.py`、修改 PDF 或另出一份同正文 PDF，否则会使同源视觉预览失效。继续对同一文件完成专业、打开、正文、品牌与视觉检查。
+3. 以下内存管道仅用于没有上述宿主渲染器的兼容宿主；已有品牌会由共享运行时保留，不得重复叠加。
+   确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。以内存管道渲染并调用同一技能包内 `skills/_runtime/gongchuang-branding` 共享运行时：
 
 ```bash
 node scripts/render_pdf_stdout.js /abs/report.html \
   | python3 scripts/brand_gold_pdf.py /abs/report.pdf --audit-json /abs/brand-audit.json
 ```
 
-4. 禁止把无水印底稿写入交付目录。
+4. 禁止把无水印底稿或中间版本写入交付目录。
 
 ### 8. 交付闸门
 
