@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.7.1.md"><img src="https://img.shields.io/badge/Release-V1.7.1-C9A760?style=for-the-badge" alt="Release V1.7.1"></a>
+  <a href="docs/releases/V1.7.2.md"><img src="https://img.shields.io/badge/Release-V1.7.2-C9A760?style=for-the-badge" alt="Release V1.7.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -51,7 +51,7 @@
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-V1.7.1 更新专精行动型评估报告、具体培育项目推荐与研发设备档位计算，补强任务和两年软提升同步呈现定性加分作用；继续保留来源、品牌和签名完整性。客户端与技能包分别版本化、分别验收，正式状态以 GitHub Latest 与受控发布回执为准。
+V1.7.2 修复财务连续年度与金额口径、高企母版回填与局部修改、长篇Word生成和分页，以及专精报告技术事实与定性补强价值保留。继续保留来源、品牌和签名完整性。客户端与技能包分别版本化、分别验收，正式状态以 GitHub Latest 与受控发布回执为准，完整范围见[V1.7.2更新说明](docs/releases/V1.7.2.md)。
 
 ### 当前版本功能简介
 
