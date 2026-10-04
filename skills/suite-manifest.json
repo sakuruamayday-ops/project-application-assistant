@@ -430,6 +430,12 @@
     "jiaotang-kb"
   ],
   "ignored_reference_tokens": [
+    "apply-office-branding",
+    "calculate-metrics",
+    "calculate-scenarios",
+    "high-tech-preassessment-workbook",
+    "knowledge-base",
+    "official-policy",
     "project-handoff",
     "application-evidence",
     "policy-corpus",
