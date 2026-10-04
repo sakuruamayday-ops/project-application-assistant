@@ -227,39 +227,71 @@ def parse_table_after_heading(text, heading):
 
 
 def current_cards(sme_path, institute_path):
-    sme = sme_path.read_text(encoding="utf-8")
     institute = institute_path.read_text(encoding="utf-8")
-    sme_url = re.search(r"^source_url:\s*(.+)$", sme, re.MULTILINE).group(1).strip()
-    cards = []
-    for heading, name in [
-        ("## 二、专精特新中小企业（省级）六大指标", "专精特新中小企业"),
-        ("## 三、专精特新\"小巨人\"七项指标", "专精特新小巨人企业"),
+    # Imported workbooks remain historical; current SME rules use the shipped policy.
+    cards = sme_current_cards()
+    institute_source = re.search(r"- 来源：(https?://\S+)", institute).group(1)
+    for heading, name, status in [
+        ("## 省企业研究院条件（169号）", "浙江省企业研究院", "current"),
+        ("## 省重点企业研究院条件（169号）", "浙江省重点企业研究院", "current"),
     ]:
+        requirements = [{"condition": row[0], "requirement": row[1]} for row in parse_table_after_heading(institute, heading)]
+        for item in requirements:
+            if item["condition"] == "前置" and not item["requirement"].startswith("原则上"):
+                item["requirement"] = "原则上" + item["requirement"]
         cards.append({
             "project_name": name,
             "aliases": [],
-            "requirements": [{"condition": row[0], "requirement": row[1]} for row in parse_table_after_heading(sme, heading)],
+            "requirements": requirements,
+            "rule_status": status,
+            "version": "2025-2026",
+            "source_url": institute_source,
+            "official_verification_required": True,
+        })
+    cards.append(hangzhou_current_card())
+    return cards
+
+
+def sme_current_cards():
+    baseline = Path(__file__).resolve().parents[2] / "sme-development-projects" / "references" / "current-policy-baseline-2026.md"
+    sme = baseline.read_text(encoding="utf-8")
+    sme_url = re.search(r"^- 工信部2026年办法：(https?://\S+)", sme, re.MULTILINE).group(1)
+    cards = []
+    for heading, name, labels in [
+        ("## 专精特新中小企业新申请门槛", "专精特新中小企业", ["年限", "营收", "研发", "I类知识产权", "市场", "质量评价"]),
+        ("## 专精特新小巨人新申请门槛", "专精特新小巨人企业", ["年限", "营收", "研发", "I类知识产权", "市场", "产业链", "质量评价"]),
+    ]:
+        section = sme.split(heading, 1)[1].split("\n## ", 1)[0]
+        values = re.findall(r"^\d+\. (.+)$", section, re.MULTILINE)
+        if len(values) != len(labels):
+            raise ValueError(f"Incomplete current policy section: {heading}")
+        cards.append({
+            "project_name": name,
+            "aliases": [],
+            "requirements": [{"condition": label, "requirement": value} for label, value in zip(labels, values)],
             "rule_status": "current",
             "version": "2026",
             "source_url": sme_url,
             "official_verification_required": True,
         })
-    institute_source = re.search(r"- 来源：(https?://\S+)", institute).group(1)
-    for heading, name, status in [
-        ("## 省企业研究院条件（169号）", "浙江省企业研究院", "current"),
-        ("## 省重点企业研究院条件（169号）", "浙江省重点企业研究院", "current"),
-        ("## 市企业研究院条件（杭州征求意见稿）", "杭州市企业研究院", "draft-not-effective"),
-    ]:
-        cards.append({
-            "project_name": name,
-            "aliases": [],
-            "requirements": [{"condition": row[0], "requirement": row[1]} for row in parse_table_after_heading(institute, heading)],
-            "rule_status": status,
-            "version": "2025-2026",
-            "source_url": institute_source if status == "current" else "",
-            "official_verification_required": True,
-        })
     return cards
+
+
+def hangzhou_current_card():
+    baseline = Path(__file__).resolve().parents[2] / "technology-innovation-projects" / "references" / "current-rd-platform-baseline-2026.md"
+    text = baseline.read_text(encoding="utf-8")
+    source = re.search(r"^- 已确认采用的通知来源：(https?://\S+)", text, re.MULTILINE).group(1)
+    return {
+        "project_name": "杭州市企业研究院",
+        "aliases": [],
+        "requirements": [{"condition": row[0], "requirement": row[1]} for row in parse_table_after_heading(text, "### 2026市企业研究院条件")],
+        "rule_status": "current",
+        "version": "2026",
+        "source_url": source,
+        "verification_status": "user-supplied-reviewed",
+        "source_role": "已确认采用的通知转载，非政府网站原文核验",
+        "official_verification_required": True,
+    }
 
 
 def build_canonical_index(project_map, cards):
