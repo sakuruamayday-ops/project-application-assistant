@@ -27,6 +27,13 @@ def database():
     return db
 
 
+def test_review_uses_failed_turn_not_errors_in_earlier_context():
+    assert _errors({'failed_turn': 2, 'events': [
+        {'type': 'turn/end', 'data': {'turn': 1, 'reason': {'kind': 'error', 'message': 'old missing key'}}},
+        {'type': 'tool/result', 'data': {'turn': 2, 'message': {'isError': True, 'content': [{'text': 'current parse error'}]}}},
+    ]}) == ['current parse error']
+
+
 def add(db, report_id, status='pending', files=None, created='2026-10-07T09:00:00+00:00'):
     context = {'events': [{'type': 'tool/result', 'data': {'message': {'isError': True}, 'error': 'DOCX_PARSE_FAILED'}}], 'diagnostic_files': files or []}
     db.execute('INSERT INTO feedback_messages VALUES (?,?,?)', (report_id, status, created))

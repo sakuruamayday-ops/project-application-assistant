@@ -126,6 +126,9 @@ def _errors(value: object) -> list[str]:
             if not isinstance(event, dict) or not isinstance(event.get('data'), dict):
                 continue
             data = event['data']
+            failed_turn = value.get('failed_turn')
+            if isinstance(failed_turn, int) and data.get('turn') != failed_turn:
+                continue
             message = data.get('message', {})
             reason = data.get('reason', {})
             if data.get('isError') is True or (isinstance(message, dict) and message.get('isError') is True):
