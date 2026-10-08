@@ -1,0 +1,10 @@
+[Unit]
+Description=Expire reviewed and resolved prior-day diagnostics at 23:00 Shanghai
+
+[Timer]
+OnCalendar=*-*-* 23:00:00 Asia/Shanghai
+Persistent=true
+Unit=jiaotang-client-diagnostics@purge.service
+
+[Install]
+WantedBy=timers.target

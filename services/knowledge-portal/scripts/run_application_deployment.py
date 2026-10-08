@@ -384,6 +384,9 @@ def rollback(
 ) -> str:
     current = runtime / "current"
     current_target = current.resolve(strict=True) if current.is_symlink() else None
+    if (release / "deploy/jiaotang-client-diagnostics-review.timer").is_file() and not (previous / "deploy/jiaotang-client-diagnostics-review.timer").is_file():
+        for timer in ("jiaotang-client-diagnostics-review.timer", "jiaotang-client-diagnostics-purge.timer"):
+            run_checked(["systemctl", "disable", "--now", timer], timeout=30)
     if current_target == release:
         atomic_symlink(previous, current)
     restore_previous_build(request["previous_build"])
@@ -476,6 +479,7 @@ def execute(request_path: Path, state_path: Path) -> int:
         run_checked(
             ["systemctl", "enable", "--now", "jiaotang-kb-backup.timer"]
         )
+        run_checked(["systemctl", "enable", "--now", "jiaotang-client-diagnostics-review.timer", "jiaotang-client-diagnostics-purge.timer"])
         client_retention: dict[str, Any]
         try:
             run_checked(

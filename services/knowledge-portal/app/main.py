@@ -58,6 +58,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit
+from app.client_diagnostic_jobs import DiagnosticChunk, initialize as initialize_diagnostics, receive_chunk, file_path as diagnostic_file_path
 
 from app.assistant_runtime import (
     assistant_tool_schemas,
@@ -13486,6 +13487,7 @@ def client_error_report_submit(
     diagnostic = report.diagnostic()
     now = isoformat(utc_now())
     with closing(database()) as connection:
+        initialize_diagnostics(connection)
         connection.execute("BEGIN IMMEDIATE")
         existing = connection.execute(
             "SELECT feedback_id FROM client_error_reports WHERE user_id=? AND request_id=?",
@@ -13510,6 +13512,65 @@ def client_error_report_submit(
         )
         connection.commit()
     return {"report_id": report_id, "request_id": str(report.request_id)}
+
+
+@app.post("/v1/client-error-reports/{report_id}/files")
+def client_diagnostic_file_upload(report_id: int, chunk: DiagnosticChunk,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_api_user)],
+):
+    if str(user["client_binding_auth_method"] or "") != "client_password":
+        raise HTTPException(status_code=403, detail="请使用客户端登录后提交")
+    with closing(database()) as connection:
+        initialize_diagnostics(connection)
+        if connection.execute("SELECT 1 FROM client_error_reports WHERE feedback_id=? AND user_id=?", (report_id, int(user["id"]))).fetchone() is None:
+            raise HTTPException(status_code=404, detail="诊断报告不存在")
+        try:
+            return receive_chunk(connection, DATA_DIR / "client-diagnostic-files", report_id, chunk)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get("/admin/feedback/{feedback_id}/diagnostic-files/{file_id}")
+def admin_diagnostic_file(feedback_id: int, file_id: str,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    require_admin(user)
+    with closing(database()) as connection:
+        initialize_diagnostics(connection)
+        row = connection.execute("SELECT name,size,received FROM client_diagnostic_files WHERE report_id=? AND file_id=?", (feedback_id, file_id)).fetchone()
+    if row is None or row[1] != row[2]:
+        raise HTTPException(status_code=404, detail="诊断附件尚未就绪或已清理")
+    path = diagnostic_file_path(DATA_DIR / "client-diagnostic-files", feedback_id, file_id)
+    if path.is_symlink() or not path.is_file():
+        raise HTTPException(status_code=404, detail="诊断附件不可用")
+    return FileResponse(path, filename=row[0], media_type="application/octet-stream", headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/admin/client-diagnostic-reviews", response_class=HTMLResponse)
+def admin_diagnostic_reviews(user: Annotated[sqlite3.Row, Depends(require_web_user)]):
+    require_admin(user)
+    with closing(database()) as connection:
+        initialize_diagnostics(connection)
+        rows = connection.execute("SELECT day FROM client_diagnostic_days ORDER BY day DESC LIMIT 90").fetchall()
+        files = connection.execute("SELECT report_id,file_id,name FROM client_diagnostic_files WHERE size=received ORDER BY report_id DESC LIMIT 200").fetchall()
+        jobs = connection.execute("SELECT kind,finished_at FROM client_diagnostic_job_runs ORDER BY id DESC LIMIT 10").fetchall()
+    links = "".join(f'<li><a href="/admin/client-diagnostic-reviews/{row[0]}">{html.escape(row[0])} 修复清单</a></li>' for row in rows)
+    file_links = "".join(f'<li>报告 #{row[0]} <a href="/admin/feedback/{row[0]}/diagnostic-files/{html.escape(row[1], quote=True)}">{html.escape(row[2])}</a></li>' for row in files)
+    job_lines = "".join(f'<li>{html.escape(row[0])} · {html.escape(row[1])}</li>' for row in jobs)
+    return HTMLResponse('<!doctype html><meta charset="utf-8"><title>客户端错误复盘</title><h1>客户端错误复盘</h1><a href="/feedback">返回反馈管理</a><h2>修复清单</h2><ul>' + links + '</ul><h2>诊断附件</h2><ul>' + file_links + '</ul><h2>最近执行记录</h2><ul>' + job_lines + '</ul>', headers={"Cache-Control": "private, no-store"})
+
+
+@app.get("/admin/client-diagnostic-reviews/{day}")
+def admin_diagnostic_review(day: str, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
+    require_admin(user)
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) is None:
+        raise HTTPException(status_code=404)
+    with closing(database()) as connection:
+        initialize_diagnostics(connection)
+        row = connection.execute("SELECT document FROM client_diagnostic_days WHERE day=?", (day,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404)
+    return Response(row[0], media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="client-repair-{day}.md"', "Cache-Control": "private, no-store"})
 
 
 @app.get("/admin/feedback/{feedback_id}/diagnostic")

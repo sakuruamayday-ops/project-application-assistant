@@ -69,15 +69,16 @@ class ErrorReportBodyLimit:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["path"] != "/v1/client-error-reports":
+        if scope["type"] != "http" or not (scope["path"] == "/v1/client-error-reports" or re.fullmatch(r"/v1/client-error-reports/\d+/files", scope["path"])):
             return await self.app(scope, receive, send)
+        limit = 2_000_000 if scope["path"].endswith('/files') else 48_000_000
         body = bytearray()
         while True:
             message = await receive()
             if message["type"] == "http.disconnect":
                 return
             body.extend(message.get("body", b""))
-            if len(body) > 48_000_000:
+            if len(body) > limit:
                 from starlette.responses import JSONResponse
                 return await JSONResponse({"detail": "诊断报告过大"}, status_code=413)(scope, receive, send)
             if not message.get("more_body", False):

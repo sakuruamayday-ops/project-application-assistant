@@ -1,0 +1,18 @@
+[Unit]
+Description=Jiaotang client diagnostic %i
+After=jiaotang-kb.service
+OnFailure=jiaotang-kb-failure-report@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/jiaotang-kb-runtime/current
+EnvironmentFile=/etc/jiaotang-kb-app.env
+ExecStart=/opt/jiaotang-kb-runtime/current/.venv/bin/python -m app.client_diagnostic_jobs %i
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb
+NoNewPrivileges=true
+TimeoutStartSec=15min

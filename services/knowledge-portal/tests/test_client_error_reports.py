@@ -1,5 +1,6 @@
 from contextlib import closing
 from uuid import uuid4
+import base64
 import json
 import re
 from fastapi.testclient import TestClient
@@ -104,3 +105,25 @@ def test_full_context_survives_admin_export_with_credentials_redacted(tmp_path):
     assert context['events'][2]['data']['status'] == 'cancelled'
     assert 'context-secret' not in exported['conversation_context']
     assert client.post('/v1/client-error-reports', json={**report(), 'conversation_context': 'invalid JSON'}, headers=headers).status_code == 422
+
+
+def test_attachment_resume_admin_download_and_review_route(tmp_path):
+    module, client, headers = setup(tmp_path)
+    receipt = client.post('/v1/client-error-reports', json=report(), headers=headers).json()
+    rid, fid = receipt['report_id'], str(uuid4())
+    payload = dict(file_id=fid, name='synthetic.txt', size=6, offset=0, data=base64.b64encode(b'abc').decode())
+    endpoint = f'/v1/client-error-reports/{rid}/files'
+    assert client.post(endpoint, json=payload, headers=headers).json() == dict(next_offset=3, complete=False)
+    assert client.post(endpoint, json=payload, headers=headers).json() == dict(next_offset=3, complete=False)
+    assert client.post(endpoint, json={**payload, 'offset': 3, 'data': base64.b64encode(b'def').decode()}, headers=headers).json() == dict(next_offset=6, complete=True)
+    assert client.post(endpoint, content='x' * 2_000_001, headers=headers).status_code == 413
+    assert client.post(f'/v1/client-error-reports/{rid+100}/files', json=payload, headers=headers).status_code == 404
+    client.post('/login', data=dict(username='owner', password='synthetic-password-123'))
+    download = client.get(f'/admin/feedback/{rid}/diagnostic-files/{fid}')
+    assert download.status_code == 200 and download.content == b'abcdef'
+    assert 'synthetic.txt' in client.get('/admin/client-diagnostic-reviews').text
+    assert '错误复盘与诊断附件' in client.get('/feedback').text
+    with closing(module.database()) as db:
+        db.execute("UPDATE users SET is_admin=0 WHERE username='owner'"); db.commit()
+    assert client.get(f'/admin/feedback/{rid}/diagnostic-files/{fid}', follow_redirects=False).status_code in (403, 303)
+    assert client.get('/admin/client-diagnostic-reviews', follow_redirects=False).status_code in (403, 303)

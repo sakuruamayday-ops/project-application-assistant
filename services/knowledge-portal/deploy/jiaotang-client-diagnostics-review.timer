@@ -1,0 +1,10 @@
+[Unit]
+Description=Review client errors daily at 18:00 Shanghai
+
+[Timer]
+OnCalendar=*-*-* 18:00:00 Asia/Shanghai
+Persistent=true
+Unit=jiaotang-client-diagnostics@review.service
+
+[Install]
+WantedBy=timers.target
