@@ -171,14 +171,16 @@ def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
                       "next_action": "使用同版本、相关输入和工具参数复现，修复后验证原失败路径及相邻成功路径"}
             connection.execute("INSERT INTO client_diagnostic_reviews(report_id,reviewed_at,day,review_json) VALUES (?,?,?,?)", (report_id, stamp, day, json.dumps(review, ensure_ascii=False)))
         reviews = [json.loads(row[0]) for row in connection.execute("SELECT review_json FROM client_diagnostic_reviews WHERE day=? ORDER BY report_id", (day,))]
-        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：以下为程序提取的错误事实，根因尚须复现验证。", ""]
-        groups: dict[tuple[str, str], list[dict]] = {}
+        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：以下按记录顺序列出程序提取的错误事实；首条错误不代表最终失败原因，根因及恢复情况尚须复现验证。", ""]
+        groups: dict[tuple[str, tuple[str, ...]], list[dict]] = {}
         for review in reviews:
-            groups.setdefault((review["code"], (review["errors"] or ["未取得具体错误"])[0]), []).append(review)
-        for index, ((code, error), members) in enumerate(groups.items(), 1):
+            groups.setdefault((review["code"], tuple(review["errors"] or ["未取得具体错误"])), []).append(review)
+        for index, ((code, errors), members) in enumerate(groups.items(), 1):
             lines.extend([f"## {index}. {code}", "", "报告编号：" + "、".join(str(m["report_id"]) for m in members),
-                          "", "错误事实：", "", *["> " + line for line in error.splitlines()], "",
-                          "根因：待复现。", "", "修复与验证：使用关联诊断、附件和失败成品复现；修复后回归同类失败及成功路径。", ""])
+                          "", "错误事实：", ""])
+            for error in errors:
+                lines.extend([*["> " + line for line in error.splitlines()], ""])
+            lines.extend(["根因：待复现。", "", "修复与验证：使用关联诊断、附件和失败成品复现；修复后回归同类失败及成功路径。", ""])
         if not reviews:
             lines.append("本批没有完成复盘的新错误；未传完附件的报告继续保留。")
         connection.execute("INSERT INTO client_diagnostic_days(day,created_at,document) VALUES (?,?,?) ON CONFLICT(day) DO UPDATE SET created_at=excluded.created_at,document=excluded.document", (day, stamp, "\n".join(lines)))

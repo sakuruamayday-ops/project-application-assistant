@@ -70,6 +70,29 @@ def test_review_waits_for_files_and_never_asserts_root_cause(tmp_path):
     assert 'DOCX_PARSE_FAILED' in doc and '待复现' in doc
 
 
+def test_review_keeps_later_errors_and_distinct_failure_sequences():
+    db = database()
+    for report_id, later_error in [(1, 'PDF_SOURCE_MISMATCH'), (2, 'TOOL_NOT_FOUND')]:
+        add(db, report_id)
+        diagnostic = json.loads(db.execute(
+            'SELECT diagnostic_json FROM client_error_reports WHERE feedback_id=?', (report_id,)
+        ).fetchone()[0])
+        context = json.loads(diagnostic['conversation_context'])
+        context['events'].append({'type': 'tool/result', 'data': {
+            'message': {'isError': True, 'content': [{'text': later_error}]}
+        }})
+        diagnostic['conversation_context'] = json.dumps(context)
+        db.execute('UPDATE client_error_reports SET diagnostic_json=? WHERE feedback_id=?',
+                   (json.dumps(diagnostic), report_id))
+    db.commit()
+    result = review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert result['groups'] == 2
+    assert 'PDF_SOURCE_MISMATCH' in document
+    assert 'TOOL_NOT_FOUND' in document
+    assert '首条错误不代表最终失败原因' in document
+
+
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):
     db = database()
     add(db, 1, 'resolved')
