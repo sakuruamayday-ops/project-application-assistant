@@ -11,9 +11,8 @@ from app.recognized_enterprise_discovery import (
 
 
 def test_provincial_sme_full_name_routes_to_authoritative_table():
-    assert resolve_projects(["省级专精特新中小企业"]) == [
-        ("provincial_specialized_sme", "", "省级专精特新中小企业")
-    ]
+    for name in ("省级专精特新中小企业", "浙江省专精特新中小企业"):
+        assert resolve_projects([name]) == [("provincial_specialized_sme", "", name)]
 
 
 def test_three_first_subject_discovery_separates_product_and_recognition_evidence():

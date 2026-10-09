@@ -25,6 +25,7 @@ AUTHORITATIVE_LIST_TYPE_ALIASES = {
     "provincial_specialized_sme": "provincial_specialized_sme",
     "省级专精特新": "provincial_specialized_sme",
     "省级专精特新中小企业": "provincial_specialized_sme",
+    "浙江省专精特新中小企业": "provincial_specialized_sme",
     "省专": "provincial_specialized_sme",
     "专精特新中小企业": "provincial_specialized_sme",
     "three_first": "three_first",

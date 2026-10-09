@@ -30,8 +30,9 @@ def test_national_small_giant_common_aliases_are_supported(alias: str):
     assert normalize_authoritative_list_type(alias) == "national_small_giant"
 
 
-def test_provincial_sme_full_name_is_supported():
-    assert normalize_authoritative_list_type("省级专精特新中小企业") == "provincial_specialized_sme"
+@pytest.mark.parametrize("name", ["省级专精特新中小企业", "浙江省专精特新中小企业"])
+def test_provincial_sme_full_name_is_supported(name: str):
+    assert normalize_authoritative_list_type(name) == "provincial_specialized_sme"
 
 
 @pytest.mark.parametrize("unsupported", ["all", "国家高新技术企业"])
