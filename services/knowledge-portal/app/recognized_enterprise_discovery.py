@@ -24,6 +24,7 @@ PROJECT_ALIASES = {
     "national_small_giant": ("national_small_giant", ""),
     "专精特新中小企业": ("provincial_specialized_sme", ""),
     "省级专精特新": ("provincial_specialized_sme", ""),
+    "省级专精特新中小企业": ("provincial_specialized_sme", ""),
     "省专": ("provincial_specialized_sme", ""),
     "provincial_specialized_sme": ("provincial_specialized_sme", ""),
     "首台套": ("three_first", "浙江省制造业首台（套）装备"),

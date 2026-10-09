@@ -6,7 +6,14 @@ from app.recognized_enterprise_discovery import (
     build_recognition_query_plan,
     discover_recognized_enterprises,
     recognition_search,
+    resolve_projects,
 )
+
+
+def test_provincial_sme_full_name_routes_to_authoritative_table():
+    assert resolve_projects(["省级专精特新中小企业"]) == [
+        ("provincial_specialized_sme", "", "省级专精特新中小企业")
+    ]
 
 
 def test_three_first_subject_discovery_separates_product_and_recognition_evidence():

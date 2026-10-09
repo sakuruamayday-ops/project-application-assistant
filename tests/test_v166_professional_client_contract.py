@@ -10,6 +10,16 @@ def load(name: str) -> dict:
     return json.loads((SKILLS / name).read_text(encoding="utf-8"))
 
 
+def test_panorama_analysis_and_report_phrases_keep_primary_ownership() -> None:
+    contract = load("delivery-contracts.json")
+    markers = contract["skills"]["enterprise-panorama-analysis"]["applies_when_prompt_contains"]
+    assert {"全景分析", "全景报告"} <= set(markers)
+    assert "enterprise-panorama-analysis" in contract["route_resolution_skills"]
+    assert not {"全景分析", "全景报告"} & set(contract["peer_task_markers"])
+    skill = (SKILLS / "enterprise-panorama-analysis" / "SKILL.md").read_text(encoding="utf-8")
+    assert "不得以同行对比报告替代全景报告" in skill
+
+
 def test_client_professional_routes_cover_identity_hightech_and_humanizer() -> None:
     contract = load("delivery-contracts.json")
     suite = load("suite-manifest.json")

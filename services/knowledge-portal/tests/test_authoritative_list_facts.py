@@ -30,6 +30,17 @@ def test_national_small_giant_common_aliases_are_supported(alias: str):
     assert normalize_authoritative_list_type(alias) == "national_small_giant"
 
 
+def test_provincial_sme_full_name_is_supported():
+    assert normalize_authoritative_list_type("省级专精特新中小企业") == "provincial_specialized_sme"
+
+
+@pytest.mark.parametrize("unsupported", ["all", "国家高新技术企业"])
+def test_unsupported_list_type_explains_supported_route(unsupported: str):
+    with pytest.raises(ValueError, match="public_list_search") as error:
+        normalize_authoritative_list_type(unsupported)
+    assert "此错误不代表企业未获认定" in str(error.value)
+
+
 def test_national_small_giant_rejects_silently_ignored_product_filter():
     connection = memory_database()
     connection.executescript(

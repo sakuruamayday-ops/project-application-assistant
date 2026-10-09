@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.7.2",
+  "rule_version": "1.7.3",
   "skill_roles": {
     "agriculture-and-rural-projects": {
       "role": "primary_business",
@@ -1570,6 +1570,8 @@
     "enterprise-panorama-analysis": {
       "applies_when_prompt_contains": [
         "企业全景",
+        "全景分析",
+        "全景报告",
         "合作前尽调",
         "全景调研",
         "企业全景A版",

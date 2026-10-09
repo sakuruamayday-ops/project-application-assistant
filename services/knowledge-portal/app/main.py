@@ -21742,7 +21742,12 @@ def authoritative_list_search(
     offset: int = 0,
     limit: int = 50,
 ) -> dict[str, object]:
-    """查询小巨人、省级专精特新和三首权威事实；list_type兼容英文枚举与中文项目名，全量名单必须翻页至has_more=false。"""
+    """查询小巨人、省级专精特新和三首权威事实。
+
+    list_type仅支持national_small_giant、provincial_specialized_sme、three_first及其中文名称。
+    不支持all或高新技术企业。查询企业全部项目使用public_list_search，不传project_name；
+    高新等其他项目使用public_list_search并传project_name。全量名单必须翻页至has_more=false。
+    """
     return search_authoritative_list_facts(
         list_type=list_type,
         enterprise_name=enterprise_name,

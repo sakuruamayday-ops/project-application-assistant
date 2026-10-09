@@ -24,6 +24,7 @@ AUTHORITATIVE_LIST_TYPE_ALIASES = {
     "小巨人": "national_small_giant",
     "provincial_specialized_sme": "provincial_specialized_sme",
     "省级专精特新": "provincial_specialized_sme",
+    "省级专精特新中小企业": "provincial_specialized_sme",
     "省专": "provincial_specialized_sme",
     "专精特新中小企业": "provincial_specialized_sme",
     "three_first": "three_first",
@@ -56,7 +57,13 @@ def normalize_authoritative_list_type(list_type: str) -> str:
         return normalized
     if compact in AUTHORITATIVE_LIST_TABLES:
         return compact
-    raise ValueError(f"不支持的权威名单类型：{list_type}")
+    raise ValueError(
+        f"不支持的权威名单类型：{list_type}。"
+        "仅支持 national_small_giant、provincial_specialized_sme、three_first。"
+        "查询企业全部项目请使用 public_list_search(enterprise_name=企业名称)，不传项目筛选；"
+        "查询高新技术企业等其他项目请使用 public_list_search 并传 project_name。"
+        "此错误不代表企业未获认定。"
+    )
 
 
 def infer_authoritative_list_type(project_name: str) -> str | None:
