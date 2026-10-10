@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.7.3",
+  "skill_bundle_version": "1.7.4",
   "operations": [
     {
       "id": "high-tech-enterprise-application-drafting.fill-application-fields",
