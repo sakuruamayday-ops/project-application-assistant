@@ -121,13 +121,14 @@ def test_dry_run_keeps_release_artifacts_and_reports_completed_staging(tmp_path:
 
     assert report["current"] == "0.2.8"
     assert report["previous"] == "0.2.7"
-    assert report["candidate_count"] == 5
+    assert report["retained_versions"] == ["0.2.8"]
+    assert report["candidate_count"] == 6
     assert report["trashed_count"] == 0
     assert all(path.is_file() for path in files.values())
     assert all(path.is_dir() for path in staging.values())
 
 
-def test_apply_keeps_current_and_previous_artifacts_but_cleans_known_staging(
+def test_apply_keeps_only_current_artifacts_and_preserves_release_records(
     tmp_path: Path,
 ):
     database, release_root, files, staging = make_layout(tmp_path)
@@ -140,11 +141,11 @@ def test_apply_keeps_current_and_previous_artifacts_but_cleans_known_staging(
         trash_root=trash,
     )
 
-    assert report["trashed_count"] == 5
+    assert report["trashed_count"] == 6
     assert report["delete_mode"] == "recoverable_system_trash"
     assert not files["0.2.3"].exists()
     assert not files["old_windows"].exists()
-    assert files["0.2.7"].is_file()
+    assert not files["0.2.7"].exists()
     assert files["0.2.8"].is_file()
     assert not staging["old"].exists()
     assert not staging["previous"].exists()
@@ -154,6 +155,21 @@ def test_apply_keeps_current_and_previous_artifacts_but_cleans_known_staging(
     assert (release_root / "v0.2/windows/latest.yml").is_file()
     assert report["cleanup_pending"]["authorization_required"] is True
     assert report["cleanup_pending"]["permanent_delete_applied"] is False
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("SELECT count(*) FROM client_releases").fetchone()[0] == 3
+        assert connection.execute("SELECT count(*) FROM client_release_artifacts").fetchone()[0] == 3
+    assert all(Path(item["trash_path"]).exists() for item in report["trashed"])
+
+
+def test_already_trashed_previous_artifact_does_not_block_current_retention(tmp_path: Path):
+    database, release_root, files, _ = make_layout(tmp_path)
+    files["0.2.7"].rename(tmp_path / "recoverable-previous.dmg")
+
+    report = MODULE.prune_client_release_artifacts(database, release_root, apply=False)
+
+    assert report["retained_versions"] == ["0.2.8"]
+    assert report["previous"] == "0.2.7"
+    assert files["0.2.8"].is_file()
 
 
 def test_refuses_manifest_version_drift(tmp_path: Path):

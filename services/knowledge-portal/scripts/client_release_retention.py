@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep desktop artifacts for the current and previous production releases."""
+"""Keep only the current public desktop artifacts; preserve release records."""
 
 from __future__ import annotations
 
@@ -240,8 +240,8 @@ def plan_client_release_retention(
         raise RuntimeError("客户端发布根目录不得为系统根目录")
     retained, retired_versions = read_release_state(database)
     current_version = str(retained[0]["version"])
-    retained_versions = {str(row["version"]) for row in retained}
-    validate_retained_artifacts(retained, release_root)
+    retained_versions = {current_version}
+    validate_retained_artifacts(retained[:1], release_root)
     validate_fixed_manifests(release_root, current_version)
 
     candidates: list[dict[str, Any]] = []
@@ -378,7 +378,7 @@ def atomic_write_report(path: Path, report: dict[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="保留当前与上一版桌面客户端制品，其余移入服务器回收区"
+        description="仅保留当前桌面客户端下载制品，旧版移入服务器回收区，发布记录保持不变"
     )
     parser.add_argument("--database", type=Path, default=default_database())
     parser.add_argument("--release-root", type=Path, default=default_release_root())

@@ -1,5 +1,5 @@
 [Unit]
-Description=Retain current and previous Jiaotang desktop client artifacts
+Description=Retain current public Jiaotang desktop client artifacts
 After=jiaotang-kb.service
 OnFailure=jiaotang-kb-failure-report@%n.service
 
