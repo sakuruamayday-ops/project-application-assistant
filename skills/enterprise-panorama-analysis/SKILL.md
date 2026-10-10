@@ -1,6 +1,6 @@
 ---
 name: enterprise-panorama-analysis
-description: 企业合作前公开信息全景调研与 A、B、C 报告模式交付。用于企业尽调、工商股权、关联企业、战略经营、同行竞争、风控、知识产权、历史项目、可申报项目、五年规划和股权财税机会识别；生成前必须选择 A 标准销售版、B 深度顾问版或 C 两种模式。每种已选报告默认交付可编辑 Word，用户明确要求 PDF 时才生成对应 PDF。
+description: 企业合作前公开信息全景调研与 A、B、C 报告模式交付。用于企业尽调、工商股权、关联企业、战略经营、同行竞争、风控、知识产权、历史项目、可申报项目、五年规划和股权财税机会识别；生成前必须选择 A 标准销售版、B 深度顾问版或 C 两种模式。每种已选报告默认只交付 PDF，明确要求可编辑稿时才追加 Word。
 ---
 
 # 企业全景双模式调研
@@ -30,8 +30,9 @@ description: 企业合作前公开信息全景调研与 A、B、C 报告模式�
 - 选择A时只生成模式A；选择B时只生成模式B；选择C时共用同一事实底稿生成两种内容模式。
 - 两种模式必须使用同一份事实底稿、同一调研时点和同一来源清单，不得重复采集后形成相互冲突的数据。
 - A 标准销售版永久免主水印与角标水印，这是主人确认的固定品牌例外，不需要每次重新询问；B 深度顾问版继续执行完整品牌水印与交付检查。
-- A 版 Word 仍调用 `gongchuang_branding_gate` 核对报告人和免水印状态，不调用 `apply-office-branding`。免水印不是免品牌检查；C 模式两份文件分别绑定 A、B 对应画像，不把 A 版例外用于 B 版。
-- 每种已选报告默认只交付一份可编辑 Word，不同时生成 PDF 或 HTML。用户明确要求 PDF 时才生成对应 PDF；HTML 渲染中间源不得作为交付文件发布。
+- A 版仍核对报告人和免水印状态，不调用 `apply-office-branding`。免水印不是免品牌检查；C 模式两份文件分别绑定 A、B 对应画像，不把 A 版例外用于 B 版。
+- 每种已选报告默认只交付一份 PDF，不额外交付 Word 或 HTML。只有用户明确要求可编辑稿时才追加对应 Word；HTML 渲染中间源不得作为交付文件发布。
+- 共创客户端提供 `gongchuang_deliver_pdf` 时，先对静态 HTML 成稿进行 chat 专业预校验，保留同一任务、事实与画像；通过后只调用一次该工具。客户端依次完成 PDF 导出、专业校验、可打开性、正文、品牌、逐页视觉检查和文件卡交付，模型不重复执行这些步骤，不运行外部渲染脚本。任何阶段失败只处理返回的具体问题，不要求用户重启，不把未交付文件说成已完成。
 
 | 模式 | 用途 | 规范 |
 |---|---|---|
@@ -82,8 +83,8 @@ description: 企业合作前公开信息全景调研与 A、B、C 报告模式�
 1. 读取模式A规范、`assets/sales-style.css` 和随包母版样张 `assets/sales-master-reference.pdf`；母版只用于视觉参数与第一至第六章、原第八至第九章的结构参照，第七章必须按现行规范替换为“经营基础与资料核验”，不得沿用样张中的财务估算标题或内容。
 2. 页面内显著写明 `报告人：共创知识产权`。
 3. 使用白底蓝灰正文风格，不加任何主水印或角标水印。这是永久固定例外，不因其他品牌默认规则而失效。
-4. 默认使用宿主文档能力生成可编辑 Word，并检查决策层级、证据可追溯性、分页、内容保真和可打开性。
-5. 用户明确要求 PDF 时才使用 `scripts/render_sales_pdf.py` 生成 PDF；脚本同时写入作者元数据并检查报告人字段。
+4. 按模式A规范和白底蓝灰样式形成静态 HTML，保留报告人、决策层级和来源清单。在共创客户端预校验时设置 `deliveryProfileId="enterprise-panorama-standard"`，随后用同一画像调用 `gongchuang_deliver_pdf` 交付免水印 PDF。
+5. 没有上述客户端工具的兼容宿主使用 `scripts/render_sales_pdf.py` 生成 PDF；脚本同时写入作者元数据并检查报告人字段，生成后仍须完成宿主实际内容及版式检查。用户明确需要可编辑稿时才从同一份定稿内容追加 Word。
 
 ```bash
 python3 scripts/render_sales_pdf.py --html <HTML路径> --out <PDF路径> --title "<企业全称>企业全景调研报告"
@@ -94,8 +95,8 @@ python3 scripts/render_sales_pdf.py --html <HTML路径> --out <PDF路径> --titl
 1. 读取模式B规范、[report-spec.md](references/report-spec.md) 和 `assets/report-style.css`，并用宿主文档能力校验视觉层级、分页和内容保真。
 2. 项目政策及历史案例通过包内 `local-knowledge-retrieval` 调用团队云端知识服务，再回到原文或政府官方来源核验；报告只呈现核验后的事实、判断和动作。
 3. 增加股权架构与未分配利润业务机会识别，但无内部财税资料时只能列触发信号、待取资料和服务方向，不得下风险结论。
-4. 默认使用宿主文档能力生成带统一品牌水印的可编辑 Word，并运行品牌交付检查。
-5. 用户明确要求 PDF 时才使用 `scripts/render_html_report.py` 生成 PDF，再运行 `scripts/validate_report_pdf.py`；PDF 与 Word 必须来自同一份已定稿正文。
+4. 按模式B规范和报告样式形成静态 HTML。在共创客户端预校验时设置 `deliveryProfileId="enterprise-panorama-professional"`，随后用同一画像调用 `gongchuang_deliver_pdf`，由客户端写入品牌并交付 PDF。
+5. 没有上述客户端工具的兼容宿主使用 `scripts/render_html_report.py` 生成 PDF，再运行 `scripts/validate_report_pdf.py` 和宿主实际版式检查。用户明确需要可编辑稿时才从同一份定稿正文追加 Word，追加稿仍执行对应品牌检查。
 
 ```bash
 python3 scripts/render_html_report.py --html <HTML路径> --out <PDF路径>
@@ -104,9 +105,9 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 
 ## 文件名
 
-- 模式A默认 Word：`<企业全称>_企业全景调研报告_标准销售版_<YYYYMMDD>.docx`
-- 模式B默认 Word：`<企业全称>_企业全景调研报告_GCIP深度顾问版_<YYYYMMDD>.docx`
-- 用户明确要求 PDF 时，将对应文件扩展名改为 `.pdf`，不额外发布 HTML 中间源。
+- 模式A：`<企业全称>_企业全景调研报告_标准销售版_<YYYYMMDD>.pdf`
+- 模式B：`<企业全称>_企业全景调研报告_GCIP深度顾问版_<YYYYMMDD>.pdf`
+- 用户明确要求可编辑稿时追加对应 `.docx`，不额外发布 HTML 中间源。
 
 ## 专项技能路由
 
@@ -119,8 +120,8 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 
 ## 平台与配置边界
 
-- 先读取 `first-run-configuration` 生成的能力报告；缺少团队知识、企查查或专利能力时只回到统一向导一次，再按报告执行降级。只有用户明确要求 PDF 时才检查 PDF 能力。
+- 先读取 `first-run-configuration` 生成的能力报告；缺少团队知识、企查查或专利能力时只回到统一向导一次，再按报告执行降级。报告默认需要 PDF 能力；不因此重新要求用户配置客户端已提供的宿主渲染器。
 - 团队知识服务只读取宿主安全凭据中的 `GONGCHUANG_KB_ENDPOINT` 和 `GONGCHUANG_KB_TOKEN`，不得把真实值写入Skill、报告或日志。
 - 企查查、政府网页、专利数据源和浏览器能力均按 `docs/user-guide/api-mcp-configuration.md` 由用户自行配置；任一外部能力缺失时执行对应降级，不得补造结果。
-- PDF、Word、Excel和网页渲染由宿主平台提供。默认 Word 不依赖 PDF 能力；明确要求 PDF 时使用宿主渲染能力，包内脚本只作为其他兼容宿主的确定性后备。
+- PDF、Word、Excel和网页渲染由宿主平台提供。共创客户端使用统一 PDF 交付工具，包内脚本只作为其他兼容宿主的确定性后备；没有可用 PDF 能力时保留草稿并说明，不把 Word 自动替代为默认成品。
 - 所有资源路径必须相对本Skill目录解析，禁止写入用户主目录或开发者机器绝对路径。

@@ -122,6 +122,9 @@ def _errors(value: object) -> list[str]:
             for child in item:
                 walk(child)
     if isinstance(value, dict) and isinstance(value.get('events'), list):
+        if value.get('failure_stage') == 'report-preparation':
+            found.append('错误上报准备失败：report-preparation')
+            walk(value.get('error'))
         for event in value['events']:
             if not isinstance(event, dict) or not isinstance(event.get('data'), dict):
                 continue
@@ -140,6 +143,88 @@ def _errors(value: object) -> list[str]:
     else:
         walk(value)
     return list(dict.fromkeys(found))[:20]
+
+
+def _failure_analysis(context: object) -> dict | None:
+    """Keep bounded client observations, never accept a client claim of a confirmed root cause."""
+    value = context.get("failure_analysis") if isinstance(context, dict) else None
+    if not isinstance(value, dict) or not isinstance(value.get("failures"), list):
+        return None
+    failed_turn = context.get("failed_turn")
+    if isinstance(failed_turn, int) and value.get("turn") != failed_turn:
+        return None
+
+    def incident(item: object) -> dict | None:
+        if not isinstance(item, dict) or not isinstance(item.get("event_seq"), int):
+            return None
+        if not isinstance(item.get("category"), str) or item["category"] not in {"runtime", "precondition", "waiting-user", "business-rejection", "outcome-unknown"}:
+            return None
+        if not isinstance(item.get("status"), str) or item["status"] not in {"unrecovered", "recovered", "expected-block", "outcome-unknown"}:
+            return None
+        result = {key: item[key][:2000] for key in ("tool", "operation", "stage", "code", "observed_reason") if isinstance(item.get(key), str)}
+        result.update(event_seq=item["event_seq"], category=item["category"], status=item["status"], cause_status="observed-failure-only")
+        for key in ("recovery_event_seq", "blocked_by_event_seq"):
+            if isinstance(item.get(key), int):
+                result[key] = item[key]
+        execution = item.get("execution")
+        if isinstance(execution, dict):
+            result["execution"] = {key: execution[key] for key in ("timedOut", "cancelled") if isinstance(execution.get(key), bool)}
+            result["execution"].update({key: execution[key] for key in ("elapsedMs", "exitCode") if isinstance(execution.get(key), (int, float))})
+            if isinstance(execution.get("timeoutStage"), str):
+                result["execution"]["timeoutStage"] = execution["timeoutStage"][:60]
+            stdout = execution.get("stdout")
+            if isinstance(stdout, dict):
+                result["execution"]["stdout"] = {key: stdout[key] for key in ("bytes", "json", "lossy")
+                                                   if isinstance(stdout.get(key), (int, bool)) or key == "json" and isinstance(stdout.get(key), str) and stdout[key] in {"not-started", "empty", "invalid", "valid", "unknown"}}
+            stderr = execution.get("stderr")
+            if isinstance(stderr, dict):
+                errors = stderr.get("errors")
+                result["execution"]["stderr"] = {"bytes": stderr.get("bytes") if isinstance(stderr.get("bytes"), int) else None,
+                    "errors": [item for item in errors[:9] if isinstance(item, str) and item in {"ModuleNotFoundError", "ImportError", "PermissionError", "FileNotFoundError", "UnicodeDecodeError", "UnicodeEncodeError", "MemoryError", "DLL load failed", "Access is denied"}] if isinstance(errors, list) else []}
+        return result
+
+    failures = [parsed for item in value["failures"][:34] if (parsed := incident(item)) is not None]
+    if not failures:
+        return None
+    primary = incident(value.get("primary_failure"))
+    first = incident(value.get("first_failure"))
+    # A primary observation must also belong to the supplied failure sequence.
+    if primary not in failures:
+        primary = None
+    if first not in failures:
+        first = None
+    return {"turn": value.get("turn") if isinstance(value.get("turn"), int) else None,
+            "turn_result": str(value.get("turn_result", "unknown"))[:60],
+            "delivery_result": str(value.get("delivery_result", "unknown"))[:60],
+            "first_failure": first, "primary_failure": primary, "failures": failures,
+            "omitted_failure_count": value.get("omitted_failure_count", 0) if isinstance(value.get("omitted_failure_count", 0), int) else 0}
+
+
+def _analysis_lines(analysis: dict) -> list[str]:
+    categories = {"runtime": "执行故障", "precondition": "前置条件受阻", "waiting-user": "等待用户选择",
+                  "business-rejection": "业务检查未通过", "outcome-unknown": "结果尚未确认"}
+    statuses = {"unrecovered": "未记录同操作恢复", "recovered": "同操作已恢复", "expected-block": "规则拦截", "outcome-unknown": "结果未知"}
+    lines = [f"客户端记录：轮次结束状态 {analysis['turn_result']}；专业交付状态 {analysis['delivery_result']}。", ""]
+    first = analysis.get("first_failure")
+    if first:
+        lines.extend([f"首个失败：事件 {first['event_seq']}，{first.get('operation') or first.get('tool', '未知操作')}；不能单独作为最终失败原因。", ""])
+    primary = analysis["primary_failure"]
+    lines.append(f"主要待排查失败：事件 {primary['event_seq']}，{primary.get('operation') or primary.get('tool', '未知操作')}，阶段 {primary.get('stage', '未知')}。"
+                 if primary else "未记录主要未解决故障；仍需查看已恢复错误或规则拦截，不能据此宣称业务验收通过。")
+    lines.extend(["", "失败与恢复顺序：", ""])
+    for failure in analysis["failures"]:
+        detail = f"事件 {failure['event_seq']}：{failure.get('operation') or failure.get('tool', '未知操作')}；阶段 {failure.get('stage', '未知')}；{categories[failure['category']]}；{statuses[failure['status']]}"
+        if "recovery_event_seq" in failure:
+            detail += f"；恢复于事件 {failure['recovery_event_seq']}"
+        if "blocked_by_event_seq" in failure:
+            detail += f"；同目标生成失败后的后续受阻，关联事件 {failure['blocked_by_event_seq']}"
+        lines.extend(["- " + detail, "", *["> " + line for line in failure.get("observed_reason", "未提供具体错误").splitlines()], ""])
+        execution = failure.get("execution")
+        if execution:
+            lines.extend(["执行事实：`" + json.dumps(execution, ensure_ascii=False) + "`", ""])
+    if analysis["omitted_failure_count"]:
+        lines.extend([f"另有 {analysis['omitted_failure_count']} 条失败未纳入摘要，请查看原始诊断。", ""])
+    return lines
 
 
 def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
@@ -163,23 +248,33 @@ def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
             if incomplete and datetime.fromisoformat(received_at) > now - timedelta(hours=24):
                 continue
             details = _errors(context)
+            analysis = _failure_analysis(context)
             review = {"report_id": report_id, "received_at": received_at,
                       "code": diagnostic["code"], "client_version": diagnostic["client_version"],
                       "errors": details, "files": [dict(file_id=r[0], name=r[1], size=r[2]) for r in files],
                       "missing_files": [item for item in expected if isinstance(item, dict) and item.get("status") != "pending"] + incomplete,
                       "root_cause": "待复现，错误文本不能单独证明根因",
                       "next_action": "使用同版本、相关输入和工具参数复现，修复后验证原失败路径及相邻成功路径"}
+            if analysis is not None:
+                review["failure_analysis"] = analysis
             connection.execute("INSERT INTO client_diagnostic_reviews(report_id,reviewed_at,day,review_json) VALUES (?,?,?,?)", (report_id, stamp, day, json.dumps(review, ensure_ascii=False)))
         reviews = [json.loads(row[0]) for row in connection.execute("SELECT review_json FROM client_diagnostic_reviews WHERE day=? ORDER BY report_id", (day,))]
-        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：以下按记录顺序列出程序提取的错误事实；首条错误不代表最终失败原因，根因及恢复情况尚须复现验证。", ""]
+        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：优先使用客户端记录的失败阶段、同操作恢复与交付状态。首条错误不代表最终失败原因；已观测失败不等于触发根因已确认。旧客户端未记录的信息标为未知。", ""]
         groups: dict[tuple[str, tuple[str, ...]], list[dict]] = {}
         for review in reviews:
-            groups.setdefault((review["code"], tuple(review["errors"] or ["未取得具体错误"])), []).append(review)
+            analysis = review.get("failure_analysis")
+            signature = json.dumps({"turn_result": analysis["turn_result"], "delivery_result": analysis["delivery_result"],
+                "failures": [{key: item.get(key) for key in ("tool", "operation", "stage", "code", "category", "status", "observed_reason")} for item in analysis["failures"]]}, sort_keys=True, ensure_ascii=False) if analysis else ""
+            groups.setdefault((review["code"], tuple([signature]) if signature else tuple(review["errors"] or ["未取得具体错误"])), []).append(review)
         for index, ((code, errors), members) in enumerate(groups.items(), 1):
             lines.extend([f"## {index}. {code}", "", "报告编号：" + "、".join(str(m["report_id"]) for m in members),
                           "", "错误事实：", ""])
-            for error in errors:
-                lines.extend([*["> " + line for line in error.splitlines()], ""])
+            if members[0].get("failure_analysis"):
+                lines.extend(_analysis_lines(members[0]["failure_analysis"]))
+            else:
+                lines.extend(["未提供结构化对话失败阶段与恢复记录；可能是旧版上报或独立采集失败，以下保留原始错误事实。", ""])
+                for error in errors:
+                    lines.extend([*["> " + line for line in error.splitlines()], ""])
             lines.extend(["根因：待复现。", "", "修复与验证：使用关联诊断、附件和失败成品复现；修复后回归同类失败及成功路径。", ""])
         if not reviews:
             lines.append("本批没有完成复盘的新错误；未传完附件的报告继续保留。")

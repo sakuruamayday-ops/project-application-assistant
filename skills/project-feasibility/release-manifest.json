@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-feasibility",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "51fbaf4baa03a83155bc1be153d633bd1c9e66e5c8ab94b0ac8bb4845de18b34",
+    "SKILL.md": "866489c83aabda572db327ca97df65adabbacddd415a9efaf7cef82e298c65bd",
     "assets/fonts/NotoSansSC-Variable.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
     "assets/fonts/OFL-NotoSansSC.txt": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
     "assets/report-templates/digitalization/feasibility.docx": "bf9dc6141dfb0d8dbc9f31cc888533c08e7b8301e813222fcd7a8d9322ce6fd4",
@@ -55,14 +55,15 @@
     "references/policy-application-path-contract.md": "7fd6c861374293bc43bfe7bb28be099f4283cc2effeceb929b270930bbee580b",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/report-cli-generation.md": "9c86f85498b3ca35ce66333bbbb5eeb5c9833768d01c2cc4d427b37982e6f5ca",
-    "references/report-template-registry.json": "f13ef15f361daf2c65e3a20db54722face1a576155fe251bfd7531312bb29336",
-    "references/sme-action-workflow.md": "ff75fb6eae9994fe6f08bd195b55d195fa535f3768e7976f3d2956b405e3196a",
-    "references/two-report-contract.md": "b277e556b3d9f47f882d9afe7d3a27f567bb325d299c283abc9c7a97cb9fffa7",
-    "scripts/fill_report_template.py": "bd4f44a38eb4558634dc453fae428e7e07a30605652137af575796941e9d0498",
+    "references/report-template-registry.json": "53d317e484344dfd07350a541511ff8b733580a120e58faa0d44b9de573edddf",
+    "references/sme-action-workflow.md": "4ae9e32f2887ab52d0d71942e4fcdbeb436f0171c0ab6fd18d5a061d11202514",
+    "references/two-report-contract.md": "17f8a3411d11c76d2a3da29d7805a130bca546ef6d7a02c2a5afae6ccb84c162",
+    "scripts/fill_report_template.py": "943377cb5560979d2471d9e499f84936ab1a1effbb8057264da919b7a6c4b7b7",
     "scripts/generate_report.py": "bd5ad6ebbf12cda345fca723d822d1cc24e80e8c37239a3f45f91da2a0a18289",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
+    "scripts/report_html.py": "304dc158f0bbe0330792114862acc0a42635205f6b7427179a0abcd7862150d1",
     "scripts/select_report_template.py": "eb99d4c0f378e91e96fe7edcafe5b623060750c3f5f4bc0fbe188d9737b9fb35",
-    "scripts/sme_action_report.py": "6e770e1917379ecea289b40e8a3e276075e7af362deb92d7cf48a46f8088de5d",
+    "scripts/sme_action_report.py": "89a3b27f816a35c25e228b0ef4baac8c3fb6e02056caf0dff9951548835d83d5",
     "scripts/validate_feasibility_assessment.py": "7e85154437bb8c4c79a166b21ebf86a2b6901dde38b52b4b74ce26926265bf7a",
     "scripts/validate_report_profile_delivery.py": "f336d434c9fd83f10fd3ab86ce6bd350a5b2af0fb31205fc796b90794f29cc75",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

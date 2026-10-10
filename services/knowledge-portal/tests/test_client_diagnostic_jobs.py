@@ -34,8 +34,9 @@ def test_review_uses_failed_turn_not_errors_in_earlier_context():
     ]}) == ['current parse error']
 
 
-def add(db, report_id, status='pending', files=None, created='2026-10-07T09:00:00+00:00'):
-    context = {'events': [{'type': 'tool/result', 'data': {'message': {'isError': True}, 'error': 'DOCX_PARSE_FAILED'}}], 'diagnostic_files': files or []}
+def add(db, report_id, status='pending', files=None, created='2026-10-07T09:00:00+00:00', context=None):
+    if context is None:
+        context = {'events': [{'type': 'tool/result', 'data': {'message': {'isError': True}, 'error': 'DOCX_PARSE_FAILED'}}], 'diagnostic_files': files or []}
     db.execute('INSERT INTO feedback_messages VALUES (?,?,?)', (report_id, status, created))
     db.execute('INSERT INTO client_error_reports VALUES (?,?)', (report_id, json.dumps({'code': 'GC-AUTO-FAILURE', 'client_version': '0.6.1', 'conversation_context': json.dumps(context)})))
     db.commit()
@@ -91,6 +92,82 @@ def test_review_keeps_later_errors_and_distinct_failure_sequences():
     assert 'PDF_SOURCE_MISMATCH' in document
     assert 'TOOL_NOT_FOUND' in document
     assert '首条错误不代表最终失败原因' in document
+
+
+def test_review_explains_client_stage_recovery_and_delivery_without_confirming_root():
+    db = database()
+    primary = {'event_seq': 4, 'tool': 'gongchuang_skill_operation', 'operation': 'evidence-ledger.create-docx',
+               'stage': 'output-validation', 'code': 'GC-SKILL-OUTPUT-PROTOCOL', 'category': 'runtime',
+               'status': 'unrecovered', 'observed_reason': '标准输出为空', 'cause_status': 'confirmed-root',
+               'execution': {'exitCode': 0, 'stdout': {'bytes': 0, 'json': 'empty'}, 'secret': 'not-copied'}}
+    add(db, 1, context={'failed_turn': 2, 'events': [], 'failure_analysis': {
+        'turn': 2, 'turn_result': 'completed', 'delivery_result': 'draft', 'primary_failure': primary,
+        'failures': [
+            {'event_seq': 1, 'tool': 'write', 'stage': 'tool-execution', 'category': 'runtime', 'status': 'recovered',
+             'recovery_event_seq': 3, 'observed_reason': 'FS_STALE_VERSION'}, primary,
+            {'event_seq': 5, 'tool': 'gongchuang_artifact_probe', 'stage': 'tool-execution', 'category': 'runtime',
+             'status': 'unrecovered', 'blocked_by_event_seq': 4, 'observed_reason': 'ENOENT'},
+            {'event_seq': 6, 'tool': 'web_search', 'stage': 'tool-execution', 'category': 'waiting-user',
+             'status': 'expected-block', 'observed_reason': '等待 A/B/C 选择'},
+        ], 'omitted_failure_count': 0}})
+    assert review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))['reviewed'] == 1
+    review = json.loads(db.execute('SELECT review_json FROM client_diagnostic_reviews').fetchone()[0])
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '主要待排查失败：事件 4' in document and '阶段 output-validation' in document
+    assert '同操作已恢复' in document and '恢复于事件 3' in document
+    assert '关联事件 4' in document and '等待用户选择' in document
+    assert '轮次结束状态 completed；专业交付状态 draft' in document
+    assert '待复现' in review['root_cause']
+    assert review['failure_analysis']['primary_failure']['cause_status'] == 'observed-failure-only'
+    assert 'secret' not in review['failure_analysis']['primary_failure']['execution']
+
+
+def test_review_keeps_recovered_and_unrecovered_reports_in_separate_groups():
+    db = database()
+    for report_id, status in [(1, 'unrecovered'), (2, 'recovered')]:
+        failure = {'event_seq': 1, 'tool': 'write', 'stage': 'tool-execution', 'category': 'runtime',
+                   'status': status, 'observed_reason': 'FS_STALE_VERSION'}
+        add(db, report_id, context={'events': [], 'failure_analysis': {'turn': 1, 'turn_result': 'completed',
+            'delivery_result': 'unknown', 'primary_failure': failure if status == 'unrecovered' else None,
+            'failures': [failure]}})
+    assert review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))['groups'] == 2
+
+
+def test_review_preserves_not_started_output_for_sandbox_permission_failure():
+    db = database()
+    failure = {'event_seq': 1, 'tool': 'gongchuang_skill_operation', 'stage': 'sandbox-permission',
+               'category': 'runtime', 'status': 'unrecovered', 'observed_reason': 'SetNamedSecurityInfoW failed (Win32 5)',
+               'execution': {'stdout': {'bytes': 0, 'json': 'not-started'}}}
+    add(db, 1, context={'failed_turn': 1, 'events': [], 'failure_analysis': {'turn': 1,
+        'primary_failure': failure, 'failures': [failure]}})
+    assert review_pending(db, datetime(2026, 10, 10, 10, tzinfo=timezone.utc))['reviewed'] == 1
+    review = json.loads(db.execute('SELECT review_json FROM client_diagnostic_reviews').fetchone()[0])
+    assert review['failure_analysis']['primary_failure']['execution']['stdout']['json'] == 'not-started'
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert 'sandbox-permission' in document and 'not-started' in document
+
+
+def test_review_ignores_wrong_turn_and_malformed_client_analysis_without_losing_other_reports():
+    db = database()
+    add(db, 1, context={'failed_turn': 2, 'events': [], 'failure_analysis': {'turn': 1, 'failures': []}})
+    failure = {'event_seq': 1, 'tool': 'write', 'stage': 'tool-execution', 'category': 'runtime', 'status': 'unrecovered',
+               'observed_reason': 'error', 'execution': {'stdout': {'json': ['invalid-type']}}}
+    add(db, 2, context={'events': [], 'failure_analysis': {'turn': 1, 'primary_failure': failure, 'failures': [failure]}})
+    assert review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))['reviewed'] == 2
+    first = json.loads(db.execute('SELECT review_json FROM client_diagnostic_reviews WHERE report_id=1').fetchone()[0])
+    assert 'failure_analysis' not in first
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '未提供结构化对话失败阶段' in document
+
+
+def test_review_retains_independent_report_preparation_failure_without_session_events():
+    db = database()
+    add(db, 1, context={'events': [], 'failure_stage': 'report-preparation',
+        'error': {'name': 'Error', 'message': 'session inspection unavailable'},
+        'failure_analysis': {'turn': None, 'failures': [], 'primary_failure': None}})
+    assert review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))['reviewed'] == 1
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert 'report-preparation' in document and 'session inspection unavailable' in document
 
 
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):

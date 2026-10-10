@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "gongchuang-humanizer-zh",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
@@ -34,7 +34,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "38b200931f25779c0a03aa3fad10874ff8926c0f7fe3082e981054351fed42c2",
+    "SKILL.md": "8044a0d66c70d6091028dc0573fbdd8d1e90dce1b630bc45095a89bc557f5155",
     "agents/openai.yaml": "768dcaefb3b32fbaa66942a3a77fe5de412f97e70c4fbd35b7a9149570905abf",
     "references/detector.md": "1daeb0da81739cf15f98f41a0b2f0a5b422b631526b508fc3c0fd5d222659da2",
     "references/evolution.md": "a47eda822ebf5c6e3c0270261fc3ab539f74d4799677b0ecbd2c7429d5407218",

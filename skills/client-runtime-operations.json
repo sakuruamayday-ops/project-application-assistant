@@ -641,10 +641,11 @@
     {
       "id": "project-feasibility.generate-report",
       "skill": "project-feasibility",
-      "description": "依据结构化事实与可读取原文，选择受控母版并直接回填成一份 Word 报告；不输出空白模板。双报告分别调用，保留每份完成结果。",
+      "description": "依据结构化事实与可读取原文回填受控母版。默认输出静态 HTML 供客户端生成 PDF；明确需要可编辑稿时输出 DOCX。不输出空白模板。双报告分别调用，保留每份完成结果。",
       "script": "project-feasibility/scripts/generate_report.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/scripts/report_html.py",
         "project-feasibility/scripts/sme_action_report.py",
         "project-feasibility/scripts/select_report_template.py",
         "project-feasibility/references/report-template-registry.json",
@@ -698,7 +699,8 @@
           "type": "workspace-output-file",
           "required": true,
           "extensions": [
-            ".docx"
+            ".docx",
+            ".html"
           ]
         },
         "reportType": {

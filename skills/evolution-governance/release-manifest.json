@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "evolution-governance",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "20ff6c44113d57f68907161a66f823f491986d44ee70115f7d4c161299b4d4ef",
+    "SKILL.md": "ef7eaa198e586b98119ee30f744134b9974ae85a995920ef1985e66821b995d1",
     "references/approval-contract.md": "8e7c105a02a5bf3653157efd08637b29d62b05873cfc9512a4ca6bd1e672c2c3",
     "references/change-risk-classification.md": "437404de9db633d03a4b4ec959b0c61ed8d0003fcb009500441e5aebf46e36fc",
     "references/governance-state-machine.md": "29104e5ecd74dd6e78cea09d1ea5c06b8bc45c9602bfa25ee03ba36b0699331c",

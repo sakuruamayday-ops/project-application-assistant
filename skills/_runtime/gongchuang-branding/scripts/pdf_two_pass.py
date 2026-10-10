@@ -20,7 +20,7 @@ def _hex_color(value: str) -> tuple[float, float, float]:
     return tuple(int(cleaned[index:index + 2], 16) / 255 for index in (0, 2, 4))
 
 
-def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
+def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> list[dict[str, Any]]:
     config = load_config()
     identity = public_identity()
     policy = config["policy"]
@@ -33,6 +33,7 @@ def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
         page.rect.y0 + 14 + font_size * 2.2,
     )
     existing = page.get_text().count(identity["document_header"])
+    inserted = []
     if existing == 0:
         page.insert_textbox(
             header_rect,
@@ -43,6 +44,8 @@ def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
             align=fitz.TEXT_ALIGN_RIGHT,
             overlay=True,
         )
+        inserted.append({"rect": list(header_rect), "text": identity["document_header"],
+                         "font_size": font_size, "color": list(color)})
         existing += 1
     if cover and existing < 2:
         cover_rect = fitz.Rect(
@@ -60,6 +63,9 @@ def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
             align=fitz.TEXT_ALIGN_RIGHT,
             overlay=True,
         )
+        inserted.append({"rect": list(cover_rect), "text": identity["cover_signature"],
+                         "font_size": max(font_size, 10), "color": list(color)})
+    return inserted
 
 
 def _overlap_area(a: fitz.Rect, b: fitz.Rect) -> float:
@@ -127,15 +133,13 @@ def _centered_rect(page_rect: fitz.Rect, size: float) -> fitz.Rect:
     return fitz.Rect(x0, y0, x0 + size, y0 + size)
 
 
-def brand_pdf_bytes(
-    pdf_bytes: bytes,
-    output_path: str | Path,
+def brand_pdf_document(
+    doc: fitz.Document,
     *,
     variant: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Analyze every page and save a branded second-pass PDF."""
+    """Brand an open candidate; the caller owns persistence and document closure."""
     config = load_config()
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     audit: list[dict[str, Any]] = []
 
     page_metrics = []
@@ -177,7 +181,7 @@ def brand_pdf_bytes(
             )
         if not existing_marks:
             page.insert_image(main_rect, filename=style["asset_path"], keep_proportion=True, overlay=True)
-        _insert_public_brand_text(page, cover=page_index == 0)
+        headers = _insert_public_brand_text(page, cover=page_index == 0)
 
         audit.append({
             "page": page_index + 1,
@@ -191,12 +195,25 @@ def brand_pdf_bytes(
             "document_header": public_identity()["document_header"],
             "cover_signature": page_index == 0,
             "watermark_action": "preserved" if existing_marks else "inserted",
+            "watermark_rect": list(main_rect) if not existing_marks else list(existing_marks[0]),
+            "asset_path": str(style["asset_path"]),
+            "inserted_headers": headers,
         })
+    return audit
 
+
+def brand_pdf_bytes(
+    pdf_bytes: bytes,
+    output_path: str | Path,
+    *,
+    variant: str | None = None,
+) -> list[dict[str, Any]]:
+    """Analyze every page and save a branded second-pass PDF."""
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        audit = brand_pdf_document(doc, variant=variant)
+        final_bytes = doc.tobytes(garbage=3, deflate=True)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    final_bytes = doc.tobytes(garbage=3, deflate=True)
-    doc.close()
     output_path.write_bytes(final_bytes)
     from delivery_gate import validate_artifact
     validate_artifact(output_path, check_stamp=False)

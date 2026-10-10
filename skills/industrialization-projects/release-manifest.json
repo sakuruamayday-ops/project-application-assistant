@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "industrialization-projects",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,8 +21,8 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "a3767621e72ceecbea50c1b73976f817b66b7fa3c8b7fe9bbd1730e80411a602",
-    "references/maturity-evidence-matrix.md": "9094e80f72f32466d18c4fe5c1c2828cb42628e5ecc3107e7f040700f8574880",
+    "SKILL.md": "1c857d3afc844f0a59cb408cdbd1a34deb5c64da3e60b5e8b6e0b93f194e958e",
+    "references/maturity-evidence-matrix.md": "0b7aab7cf978cd8612888352ff4972d1fa2d81ff52e098b9d8cb76fdbf3faef9",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/project-type-decision-tree.md": "b408e48443a6b89750c2bf5e463015e874034797aa2962e270219fb9cbf76e9f",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

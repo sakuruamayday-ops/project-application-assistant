@@ -26,11 +26,11 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 
 行动型报告按 [算法流程](references/sme-action-workflow.md) 执行。研发机构推荐由生成器读取 `research_equipment_screen` 计算，不由模型口算或改比例；金额统一为元，缺固定资产写 null，不用资产总额替代。其他项目推荐、定性加分作用和具体同行对照按已确认业务资料填写，不能把程序排版通过声称为政策或企业事实全部核验。
 
-共创客户端使用已激活本技能的 `project-feasibility.generate-report` 签名操作，由客户端内置 Python 执行，不使用系统 Python 或临时安装依赖。参数为工作区事实 JSON `input`、新 DOCX 路径 `output`、报告类型 `reportType`。事实 JSON 使用下方回填器既有格式，包含企业、项目对象、政策、资料路径与可核验原文锚点；工具返回成功仅证明文件回填检查通过，仍须核对分析结论、报告画像及实际版式。此调用替代下方的模板复制和回填两条 CLI 命令，不先向交付目录复制空白模板。
+共创客户端使用已激活本技能的 `project-feasibility.generate-report` 签名操作，由客户端内置 Python 执行，不使用系统 Python 或临时安装依赖。参数为工作区事实 JSON `input`、尚不存在的 HTML 路径 `output`、报告类型 `reportType`。生成器在内存中回填受控母版，再逐块转成静态 HTML，保留章节顺序、表格、强调和来源链接，不让模型重新抄写正文或拼接版式。生成成功后使用返回的 `delivery_profile` 对同一 HTML 执行 chat 专业预校验，再用同一任务和画像调用一次 `gongchuang_deliver_pdf`，由客户端分页、写入品牌、检查和交付最终 PDF。用户明确需要可编辑稿时才将 `output` 指定为新 DOCX 路径并执行相应 Office 检查。事实 JSON 使用下方回填器既有格式；回填成功不代表分析结论或实际版式通过。此调用替代下方的模板复制和回填两条 CLI 命令，不先复制空白模板。
 
 输入字段：`project_id` 使用模板索引项目 id；`enterprise` 企业名称，`project_object` 申报对象，`suggested_year` 建议年度，`deadline` 截止信息，`conclusion` 为可申报、有条件申报、不可申报或暂无法判断；`conclusion_basis`、`primary_gap`、`next_action` 分别为判断依据、主要差距与下一步。`materials` 为数组，每项含实际工作区文件绝对路径 `path`、至少一个四字以上逐字原文片段 `anchors`，来源知识库时标注 `source_type=knowledge-base`，其他来源按资料实际属性填写。`policies` 为数组，每项含实际政策名称 `title`、条款或原文位置 `locator`；未取得当期政策时如实注明资料缺口，不编造名称、条文或确定资格结论。已有该格式 JSON 时直接复用，不重写同一份事实。资料未提供的成果保留为待确认，不推断企业尚未形成；同行指标没有数据时标注待核验，不用资料文件名或本企业产品替代同行数据和对标对象。
 
-可选 `conditions` 为逐项条件数组，每项含 `match` 条件、`value` 企业值、`state` 证据状态、`gap` 差距及 `action` 动作。缺项明确待确认，不能用示例数据补齐。输入格式与字段已经明确，不读取脚本来猜接口。使用 `gongchuang_skill_operation`，例如 `{"operation":"project-feasibility.generate-report","parameters":{"input":"工作区事实.json","output":"前期评估.docx","reportType":"preassessment"}}`。返回成功后对该文件执行宿主专业校验和实际内容、版式检查；失败保留原始错误，不切换为系统 Python。
+可选 `conditions` 为逐项条件数组，每项含 `match` 条件、`value` 企业值、`state` 证据状态、`gap` 差距及 `action` 动作。缺项明确待确认，不能用示例数据补齐。输入格式与字段已经明确，不读取脚本来猜接口。使用 `gongchuang_skill_operation`，例如 `{"operation":"project-feasibility.generate-report","parameters":{"input":"工作区事实.json","output":"前期评估.html","reportType":"preassessment"}}`。返回成功后按上方流程交付 PDF；失败保留原始错误，不切换为系统 Python。
 
 通用母版的评分、数据口径、同行对照、补强、倒排、资源和风险表通过 `table_content` 逐表填写，不能只填总体结论而将已有数据改成“待企业确认”。每项格式为 `{"columns":["母版原表头逐列"],"rows":[["对应各列内容"]]}`；表头必须唯一匹配，行按实际数量生成，未提供事项逐项说明，不用同一段总述重复填满。政策表与条件表仍使用上面的专用字段。高企可行性报告另提供 `core_associations`，每行六列依次为研发项目、核心技术、知识产权及状态、成果转化、高新产品及收入、对应依据与缺口。输入列明的全部 RD 均须覆盖；同一 PS 关联多个 RD 不重复计收入。生成后逐表核对输入已有数据是否真实写入，结构完整不等于事实核验完成。
 
@@ -72,9 +72,9 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 
 `python3 scripts/validate_report_profile_delivery.py --plugin-root "${GONGCHUANG_SKILL_PLUGIN_ROOT}" --state-root <当前企业空间/.gongchuang/report-validation> --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx>`
 
-画像校验会按本轮实际交付格式核对必备章节、必备表格、可打开性、中文字体和共创红色水印；默认只校验 Word，用户明确要求 PDF 时才追加 `--artifact <报告.pdf>` 并校验其字体嵌入与正文。报告回填器使用随技能分发的 OFL 开源 Noto Sans SC，并把完整字体嵌入生成的 DOCX，供未安装该字体的阅读端显示和继续编辑；不修改用户的系统字体。字体文件与许可位于 `assets/fonts/`，不得只声明字体名称而遗漏字体载荷。实际内容或版式不合格时先修复再交付；内部状态目录或回执写入不可用时如实说明，不得把内部回执编号、校验值或本机路径写入对外交付，也不得据此拒绝用户继续修改已经生成的文件。
+画像校验会按本轮实际交付格式核对必备章节、必备表格、可打开性、中文字体和品牌水印；默认校验最终 PDF，明确要求可编辑稿时再校验对应 Word。共创客户端使用上述统一交付工具，不重复运行 CLI 检查；其他宿主把实际最终文件传给 CLI。报告回填器与客户端 PDF 渲染器均使用随包 OFL 开源 Noto Sans SC，不修改系统字体；DOCX 仍嵌入完整字体供继续编辑。字体文件与许可位于 `assets/fonts/`。实际内容或版式不合格时先修复再交付；内部状态目录或回执写入不可用时如实说明，不得把内部回执编号、校验值或本机路径写入对外交付，也不得据此拒绝用户继续修改已经生成的文件。
 
-受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和共创红色水印，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。默认只交付并校验一份可编辑 Word；只有用户明确要求 PDF 时，才从同一份已定稿正文导出 PDF 并追加 PDF 验收，不得重新生成正文或默认同时交付两种格式。
+受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和品牌，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。默认只交付并校验一份 PDF；只有用户明确要求可编辑稿时，才从同一事实和母版追加 Word，不重新生成正文，不默认同时交付两种格式。HTML 和内部完成回执不作为客户成品发布。
 
 对外报告的数据来源附录只保留“序号、文件名称、链接”三列。官方网页使用可点击原文链接；来源于共创知识库时，链接列写“来源共创知识库”。用户上传或工作区读取的企业原始文件使用 `source_type: customer-file`、`source: 用户提供`，不能因为本任务还查询了知识库就标为 `knowledge-base`；生成用 JSON 和中间文本不改变原始资料的来源类别。文件哈希、读取回执、命中锚点和本机路径只保存在内部校验回执中，不得出现在 Word、PDF、对话正文或文件卡片说明里。
 

@@ -822,6 +822,8 @@ def complete_report(
         raise ValueError(f"未知报告类型:{report_type}")
     template_path = template_path.expanduser().resolve()
     output_path = output_path.expanduser().resolve()
+    if output_path.suffix.lower() not in {".docx", ".html"}:
+        raise ValueError("报告输出仅支持 .docx 或供本地 PDF 渲染的 .html")
     if not template_path.is_file():
         raise FileNotFoundError(template_path)
     if output_path.exists() and output_path != template_path:
@@ -900,8 +902,13 @@ def complete_report(
     if errors:
         raise ValueError("成稿校验失败:" + "；".join(errors))
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.suffix.lower() == ".html":
+        from report_html import report_html
+        output_bytes = report_html(rendered).encode("utf-8")
+    else:
+        output_bytes = serialized.getvalue()
     with output_path.open("wb" if output_path == template_path else "xb") as output:
-        output.write(serialized.getvalue())
+        output.write(output_bytes)
     result = {
         "schema": "gongchuang-completed-project-report/v1",
         "status": "pass" if not errors else "fail",

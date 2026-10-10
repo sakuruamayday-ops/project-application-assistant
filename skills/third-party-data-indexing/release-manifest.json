@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "third-party-data-indexing",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/daily-automation-prompt.md",
@@ -28,10 +28,10 @@
   "files": {
     "SKILL.md": "935dd302aaa61ba6d6edc0f96a82de37126b80fb81b21c733adb61cc543aa2ff",
     "references/daily-automation-prompt.md": "a4eaa1dbf4e995467ce519cf63dd674cc28278fdfab44f8551455a576ba95d9d",
-    "references/index-schema.md": "94ffa95f342e3e40f7e638e66cd44b6128939c03977f82ba9743d67ebc6676f3",
+    "references/index-schema.md": "41d70c7438c5e8baae46dcbb7a7792a981016f1bbfd08d807f63aa8df63a72b4",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/daily_update.py": "400852ea03aa4f268cc8f4c41da7ecb791640ba22ecd4c11ef030533d530bb9b",
-    "scripts/index_engine.py": "b186c0367611d30cea1c20cec3b327e136165fbd51182bd643353a76fc53289d",
+    "scripts/index_engine.py": "54256cc6a7a67e4d509108af4baa7b8ab58c9991d7ecf0809379d54e03a1060d",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/quality_monitor.py": "75cfb242da6af16b1983bcc40bf4adfbcf18b139249752c86bccabfbc3a22930",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

@@ -137,6 +137,60 @@ def case_fixture(source: Path, project_id: str = "first-equipment") -> dict:
     }
 
 
+@pytest.mark.parametrize("project_id", [
+    "high-tech-enterprise", "specialized-sme", "little-giant", "first-equipment",
+    "first-material", "first-software", "enterprise-rd-center", "manufacturing-excellence",
+    "single-champion", "green-factory", "digitalization", "science-plan",
+])
+@pytest.mark.parametrize("report_type", ["preassessment", "feasibility"])
+def test_filled_master_produces_html_without_an_intermediate_word(tmp_path, monkeypatch, project_id, report_type):
+    from lxml import html
+    monkeypatch.syspath_prepend(str(FILLER_PATH.parent))
+    source = client_source(tmp_path / "client.docx")
+    fixture = case_fixture(source, project_id)
+    selected = SELECTOR.resolve_template(project_id, report_type)
+    output = tmp_path / "report.html"
+    result = FILLER.complete_report(template_path=Path(selected["template_path"]), output_path=output,
+                                   fixture=fixture, report_type=report_type, release_tag=selected["release_tag"],
+                                   public_root=SKILLS)
+    assert result["status"] == "pass"
+    body = html.fromstring(output.read_text(encoding="utf-8")).find("body")
+    text = body.text_content()
+    assert fixture["enterprise"] in text
+    assert fixture["project_object"] in text
+    assert "数据来源" in text
+    assert len(body.findall("table")) >= 5
+    assert set(tmp_path.glob("*.docx")) == {source}
+    with pytest.raises(FileExistsError):
+        FILLER.complete_report(template_path=Path(selected["template_path"]), output_path=output,
+                               fixture=fixture, report_type=report_type, release_tag=selected["release_tag"],
+                               public_root=SKILLS)
+
+
+def test_html_preserves_master_title_and_header_typography(monkeypatch):
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import Pt, RGBColor
+    monkeypatch.syspath_prepend(str(FILLER_PATH.parent))
+    from report_html import report_html
+    from lxml import html
+    document = Document()
+    title = document.add_paragraph("Controlled master title")
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title.runs[0].font.size = Pt(25)
+    table = document.add_table(rows=1, cols=2)
+    table.cell(0, 0).text = "Header"
+    table.cell(0, 0).paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
+    shading = OxmlElement("w:shd")
+    shading.set(qn("w:fill"), "234567")
+    table.cell(0, 0)._tc.get_or_add_tcPr().append(shading)
+    result = html.fromstring(report_html(document))
+    assert result.xpath('//p[@style="text-align:center"]/span[@style="font-size:25pt"]')[0].text == title.text
+    assert result.xpath('//th[@style="background:#234567"]//span[@style="color:#FFFFFF"]')[0].text == "Header"
+    assert len(result.xpath('//colgroup/col')) == 2
+
+
 @pytest.mark.parametrize("report_type,heading", [
     ("preassessment", "三、项目专属核心对象"),
     ("feasibility", "四、项目专属核心对象"),

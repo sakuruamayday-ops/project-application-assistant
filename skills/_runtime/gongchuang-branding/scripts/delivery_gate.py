@@ -70,50 +70,52 @@ def validate_pdf(
         raise FileNotFoundError(pdf_path)
     document = fitz.open(pdf_path)
     try:
-        if not document.page_count:
-            raise GateFailure("PDF没有页面")
-        if expected_pages is not None and document.page_count != expected_pages:
-            raise GateFailure(f"PDF页数为{document.page_count}，要求为{expected_pages}")
-        metadata = document.metadata or {}
-        if expected_author and metadata.get("author") != expected_author:
-            raise GateFailure(f"PDF作者元数据为{metadata.get('author')!r}，要求为{expected_author!r}")
-        if expected_title_contains and expected_title_contains not in (metadata.get("title") or ""):
-            raise GateFailure(f"PDF标题元数据未包含{expected_title_contains!r}")
-
-        sizes: list[tuple[float, float]] = []
-        page_audit: list[dict[str, Any]] = []
-        for page_number, page in enumerate(document, start=1):
-            marks = pdf_brand_watermark_rects(document, page)
-            if len(marks) != 1:
-                raise GateFailure(f"PDF第{page_number}页品牌水印数量为{len(marks)}，要求为1")
-            mark = marks[0]
-            if abs((mark.x0 + mark.x1) / 2 - page.rect.width / 2) > 0.75:
-                raise GateFailure(f"PDF第{page_number}页水印未水平居中")
-            if abs((mark.y0 + mark.y1) / 2 - page.rect.height / 2) > 0.75:
-                raise GateFailure(f"PDF第{page_number}页水印未垂直居中")
-            size = (round(mark.width, 3), round(mark.height, 3))
-            sizes.append(size)
-            page_audit.append({"page": page_number, "watermarks": 1, "size": list(size), "centered": True})
-        base_width, base_height = sizes[0]
-        for page_number, (width, height) in enumerate(sizes[1:], start=2):
-            if abs(width - base_width) > 0.25 or abs(height - base_height) > 0.25:
-                raise GateFailure(f"PDF第{page_number}页水印尺寸为{width}×{height}，基准为{base_width}×{base_height}")
-        return {
-            "status": "passed",
-            "path": str(pdf_path),
-            "format": "pdf",
-            "pages": document.page_count,
-            "watermarks": len(sizes),
-            "watermark_size": list(sizes[0]),
-            "metadata": {
-                "title": metadata.get("title", ""),
-                "author": metadata.get("author", ""),
-                "producer": metadata.get("producer", ""),
-            },
-            "page_audit": page_audit,
-        }
+        return {**validate_pdf_document(document, expected_pages=expected_pages,
+                    expected_author=expected_author, expected_title_contains=expected_title_contains),
+                "path": str(pdf_path)}
     finally:
         document.close()
+
+
+def validate_pdf_document(
+    document: fitz.Document,
+    *,
+    expected_pages: int | None = None,
+    expected_author: str | None = None,
+    expected_title_contains: str | None = None,
+) -> dict[str, Any]:
+    """Apply the same final-file checks before a host persists its candidate bytes."""
+    if not document.page_count:
+        raise GateFailure("PDF没有页面")
+    if expected_pages is not None and document.page_count != expected_pages:
+        raise GateFailure(f"PDF页数为{document.page_count}，要求为{expected_pages}")
+    metadata = document.metadata or {}
+    if expected_author and metadata.get("author") != expected_author:
+        raise GateFailure(f"PDF作者元数据为{metadata.get('author')!r}，要求为{expected_author!r}")
+    if expected_title_contains and expected_title_contains not in (metadata.get("title") or ""):
+        raise GateFailure(f"PDF标题元数据未包含{expected_title_contains!r}")
+    sizes: list[tuple[float, float]] = []
+    page_audit: list[dict[str, Any]] = []
+    for page_number, page in enumerate(document, start=1):
+        marks = pdf_brand_watermark_rects(document, page)
+        if len(marks) != 1:
+            raise GateFailure(f"PDF第{page_number}页品牌水印数量为{len(marks)}，要求为1")
+        mark = marks[0]
+        if abs((mark.x0 + mark.x1) / 2 - page.rect.width / 2) > 0.75:
+            raise GateFailure(f"PDF第{page_number}页水印未水平居中")
+        if abs((mark.y0 + mark.y1) / 2 - page.rect.height / 2) > 0.75:
+            raise GateFailure(f"PDF第{page_number}页水印未垂直居中")
+        size = (round(mark.width, 3), round(mark.height, 3))
+        sizes.append(size)
+        page_audit.append({"page": page_number, "watermarks": 1, "size": list(size), "centered": True})
+    base_width, base_height = sizes[0]
+    for page_number, (width, height) in enumerate(sizes[1:], start=2):
+        if abs(width - base_width) > 0.25 or abs(height - base_height) > 0.25:
+            raise GateFailure(f"PDF第{page_number}页水印尺寸为{width}×{height}，基准为{base_width}×{base_height}")
+    return {"status": "passed", "format": "pdf", "pages": document.page_count,
+            "watermarks": len(sizes), "watermark_size": list(sizes[0]),
+            "metadata": {key: metadata.get(key, "") for key in ("title", "author", "producer")},
+            "page_audit": page_audit}
 
 
 def validate_docx(path: str | Path) -> dict[str, Any]:

@@ -68,9 +68,9 @@ def test_common_strengthening_and_watermark_contract_are_mandatory() -> None:
         "国内产品技术水平评价咨询报告",
         "国际产品技术水平评价咨询报告",
         "国内领先、国际先进",
-        "共创红色居中水印",
-        "默认只输出一份可编辑 Word",
-        "用户明确要求 PDF",
+        "共享品牌运行时",
+        "默认只输出一份 PDF",
+        "用户明确要求可编辑稿",
         "不设置文档加密或编辑限制",
     ):
         assert phrase in text
@@ -184,14 +184,17 @@ def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     assert manifest["release"]["tag"] == f"V{contract['rule_version']}"
 
 
-def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_word() -> None:
+def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_pdf() -> None:
     text = read(SKILLS / "enterprise-panorama-analysis" / "SKILL.md")
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
     assert "A 第一版｜标准销售版" in text
     assert "B 第二版｜GCIP深度顾问版" in text
     assert "C 全生成｜同时生成A和B" in text
-    assert "每种已选报告默认只交付一份可编辑 Word" in text
-    assert "用户明确要求 PDF 时才生成对应 PDF" in text
+    assert "每种已选报告默认只交付一份 PDF" in text
+    assert "只有用户明确要求可编辑稿时才追加对应 Word" in text
+    assert "gongchuang_deliver_pdf" in text
+    assert 'deliveryProfileId="enterprise-panorama-standard"' in text
+    assert 'deliveryProfileId="enterprise-panorama-professional"' in text
     assert "不再提供标准销售版" not in text
     contract = json.loads(read(SKILLS / "delivery-contracts.json"))
     assert manifest["release"]["version"] == contract["rule_version"]

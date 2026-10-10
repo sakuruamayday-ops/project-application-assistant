@@ -67,6 +67,8 @@ python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文�
 python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx> --state-root <当前轮次行为状态目录>
 ```
 
+分析与体检报告默认只交付 PDF；申报书、原生表单、标准正文和可编辑数据仍按主技能要求交付 Office 文件。共创客户端提供 `gongchuang_deliver_pdf` 时，先按主技能模板形成静态 HTML 并完成 chat 专业预校验，再以同一任务和画像调用一次该工具。PDF 导出、品牌和各项真实文件检查由客户端顺序完成，模型不自行重建该执行顺序。失败只修返回的具体问题，不凭猜测要求用户重启，不发布旧稿或中间源。
+
 共创客户端生成正式 DOCX 时，主技能声明的专用模板或生成器始终优先。主技能
 没有专用模板或生成器时，chat 专业预校验通过后，调用已验签操作
 `evidence-ledger.create-docx`，`content` 传空字符串以选用当前已校验正文，或传完全相同的正文变量，并把工作区

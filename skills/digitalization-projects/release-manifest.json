@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "digitalization-projects",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/digital-maturity-model.md",
@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "9ad9abef435ad79103662d52461795ca98243a610328d95a40c0779ec283fc3c",
+    "SKILL.md": "f0029f7bf070abfa6c69a56170e41a8fed87558ec529a137485ceeaab89e18ec",
     "references/digital-maturity-model.md": "d4f76712ac3516af741ac0604f00cc693e5be954691e20f7f0f44e18a7fd95d6",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

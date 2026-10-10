@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "checking-patdocx-cn-single-agent",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -25,9 +25,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "f3fa4d82835f39d78dcdd938d50f06f900266c54f72aa631610fab73ecc3557d",
+    "SKILL.md": "b45fd0ca7192a545315dd44be07c072e3af26cffbb9b4a8d31a32b75c364494f",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/review-method.md": "0b0e84b3f7d25223ecc73f035f7bb374befc47bcff8f2a0987f9556ddbc347db",
+    "references/review-method.md": "b3446d472810314495e8651fb4cc0ea1ea6eedd19f20b81e10d235c71551eaeb",
     "scripts/patent_extractor.py": "92d98c62711af2d3ad89a5d2b431c8b821ca7b867311d35fbae172b36ba2ae6a",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/review_adder.py": "8fd0513b00d8bbac4d63673bdccbb24e66c9b55c439e50caa0a286d488f0912c",

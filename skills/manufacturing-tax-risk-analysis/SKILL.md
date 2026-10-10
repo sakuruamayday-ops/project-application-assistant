@@ -142,7 +142,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 1. 固定使用 `assets/gold-advisor.css` 与包内生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
    生成器已从共享品牌运行时向每个固定页面写入金色水印、品牌抬头及封面署名，作者也在 HTML 元数据中声明。品牌不由模型拼写或另行决定。
-2. 在提供 `gongchuang_render_pdf` 的共创客户端内，使用该宿主渲染器一次生成最终 PDF。品牌已在真实 HTML 预校验之前写入，渲染后不得再调用 `brand_gold_pdf.py`、修改 PDF 或另出一份同正文 PDF，否则会使同源视觉预览失效。继续对同一文件完成专业、打开、正文、品牌与视觉检查。
+2. 在提供 `gongchuang_deliver_pdf` 的共创客户端内，对生成器返回的 HTML 执行 chat 专业预校验，保留本任务和画像，通过后只调用一次该工具。客户端完成渲染、专业、打开、正文、品牌与逐页视觉检查，并发布同一个 PDF 文件卡。已有品牌由客户端保留，不重复叠加；渲染后不得再调用 `brand_gold_pdf.py`、修改 PDF 或另出一份同正文 PDF，也不重复运行下方其他宿主的交付流程。
 3. 以下内存管道仅用于没有上述宿主渲染器的兼容宿主；已有品牌会由共享运行时保留，不得重复叠加。
    确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。以内存管道渲染并调用同一技能包内 `skills/_runtime/gongchuang-branding` 共享运行时：
 
@@ -155,7 +155,7 @@ node scripts/render_pdf_stdout.js /abs/report.html \
 
 ### 8. 交付闸门
 
-从当前 Skill 目录执行共享交付闸门。`REPORT_PAGES` 使用本次生成器 JSON 返回的 `pages` 数值，不能固定为17：
+共创客户端由上述统一工具完成检查。其他宿主从当前 Skill 目录执行共享交付闸门。`REPORT_PAGES` 使用本次生成器 JSON 返回的 `pages` 数值，不能固定为17：
 
 ```bash
 python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py \
@@ -170,7 +170,7 @@ python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py \
 
 ## 交付要求
 
-- 交付 PDF、可编辑 HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件。
+- 默认只交付 PDF。HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件保留在本地供计算、修订和证据复用；用户明确需要可编辑数据或源文件时才追加交付。
 - 说明数据缺口和 OCR 不确定性。
 - 不承诺不存在其他税务风险，不替代税务鉴证或法律意见。
 - 任务结束询问是否归档报告，并询问是否把本次结构继续沉淀为行业模板。

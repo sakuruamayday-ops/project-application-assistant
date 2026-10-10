@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "application-writing",
-  "release_tag": "V1.7.1",
+  "release_tag": "V1.7.3",
   "required_paths": [
     "SKILL.md",
     "references/application-section-patterns.md",
@@ -22,9 +22,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "b1e9e1588ccecc49e7eed3c59128832e0802cb5da19b06f78db53decc67b2c1c",
+    "SKILL.md": "b1c57950a8bb56efabd04b6db58c7e3f7e6044ea6b9b594650328d6c342603b7",
     "references/application-section-patterns.md": "eacf946deffc7fea4635121b02f5d48bc152b39eb4189d7c5289e4ba37d747e2",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "references/product-candidate-output-template.md": "d84d529db2f399f8deece733cd75c27921ff8709c703d5fe2d160dea5cdabcb9",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
