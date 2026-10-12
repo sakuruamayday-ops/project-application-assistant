@@ -122,11 +122,12 @@ def test_server_transaction_completes_and_records_phase_history(tmp_path, monkey
     assert state["phase"] == "completed"
     assert state["terminal"] is True
     assert state["success"] is True
-    assert state["retention_cleanup"]["removed_count"] == 1
-    assert state["cleanup_pending"] is True
-    assert len(state["cleanup_plan_sha256"]) == 64
-    assert not stale.exists()
-    assert len(list(trash.iterdir())) == 1
+    assert state["retention_cleanup"]["applied"] is False
+    assert state["client_release_retention"] == {"changed": False, "initial_run": "not-requested"}
+    assert state["cleanup_pending"] is False
+    assert stale.exists()
+    assert not trash.exists()
+    assert not any("diagnostics-" in part or "client-release-retention" in part for cmd in commands for part in cmd)
     assert (runtime / "current").resolve() == release
     phases = [item["phase"] for item in state["history"]]
     assert phases == [
@@ -139,6 +140,26 @@ def test_server_transaction_completes_and_records_phase_history(tmp_path, monkey
         "completed",
     ]
     assert not any("refresh_index_from_oss.py" in part for cmd in commands for part in cmd)
+
+
+def test_index_transaction_retains_existing_maintenance_behavior(tmp_path, monkeypatch):
+    module, request, request_path, state_path, _, _, _ = make_request(tmp_path, release_mode="index")
+    commands = install_success_fakes(monkeypatch, module, request["expected_build"])
+    stale = Path(request["release_root"]) / "stale-release"
+    stale.mkdir()
+    (stale / "payload.bin").write_bytes(b"stale")
+    trash = tmp_path / "trash"
+    monkeypatch.setenv("JIAOTANG_RELEASE_TRASH_ROOT", str(trash))
+
+    assert module.execute(request_path, state_path) == 0
+
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["retention_cleanup"]["removed_count"] == 1
+    assert state["client_release_retention"] == {"enabled": True, "initial_run": "completed"}
+    assert len(list(trash.iterdir())) == 1
+    assert ["systemctl", "start", "jiaotang-kb-client-release-retention.service"] in commands
+    assert any("jiaotang-client-diagnostics-review.timer" in cmd for cmd in commands)
+    assert any("jiaotang-client-diagnostics-purge.timer" in cmd for cmd in commands)
 
 
 def test_candidate_environment_is_activated_atomically_with_fixed_modes(tmp_path):

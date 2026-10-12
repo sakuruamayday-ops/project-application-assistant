@@ -479,27 +479,30 @@ def execute(request_path: Path, state_path: Path) -> int:
         run_checked(
             ["systemctl", "enable", "--now", "jiaotang-kb-backup.timer"]
         )
-        run_checked(["systemctl", "enable", "--now", "jiaotang-client-diagnostics-review.timer", "jiaotang-client-diagnostics-purge.timer"])
         client_retention: dict[str, Any]
-        try:
-            run_checked(
-                [
-                    "systemctl",
-                    "enable",
-                    "--now",
-                    "jiaotang-kb-client-release-retention.timer",
-                ]
-            )
-            run_checked(
-                ["systemctl", "start", "jiaotang-kb-client-release-retention.service"]
-            )
-            client_retention = {"enabled": True, "initial_run": "completed"}
-        except Exception as retention_error:
-            client_retention = {
-                "enabled": False,
-                "initial_run": "failed",
-                "error": str(retention_error)[:2000],
-            }
+        if request["release_mode"] == "code":
+            client_retention = {"changed": False, "initial_run": "not-requested"}
+        else:
+            run_checked(["systemctl", "enable", "--now", "jiaotang-client-diagnostics-review.timer", "jiaotang-client-diagnostics-purge.timer"])
+            try:
+                run_checked(
+                    [
+                        "systemctl",
+                        "enable",
+                        "--now",
+                        "jiaotang-kb-client-release-retention.timer",
+                    ]
+                )
+                run_checked(
+                    ["systemctl", "start", "jiaotang-kb-client-release-retention.service"]
+                )
+                client_retention = {"enabled": True, "initial_run": "completed"}
+            except Exception as retention_error:
+                client_retention = {
+                    "enabled": False,
+                    "initial_run": "failed",
+                    "error": str(retention_error)[:2000],
+                }
         # Keep the health timer stopped until the active index verifier has
         # atomically refreshed the receipt consumed by the health service.
         # Otherwise a minute-boundary activation can race the verifier and
@@ -511,10 +514,13 @@ def execute(request_path: Path, state_path: Path) -> int:
         )
         retention_cleanup: dict[str, Any]
         try:
-            retention_cleanup = prune_release_generations(
-                Path(str(request["release_root"])),
-                runtime,
-                apply=True,
+            retention_cleanup = (
+                {"schema": "jiaotang-release-retention/v1", "applied": False,
+                 "reason": "code-only deployment preserves existing generations"}
+                if request["release_mode"] == "code"
+                else prune_release_generations(
+                    Path(str(request["release_root"])), runtime, apply=True,
+                )
             )
         except Exception as cleanup_error:
             # Production is already healthy.  A retention warning must not
