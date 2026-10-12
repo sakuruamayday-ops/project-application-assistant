@@ -73,10 +73,32 @@ def test_client_download_cards_use_the_shared_readable_dark_surface() -> None:
 def test_section_routes_show_their_rendered_content_without_a_page_allowlist() -> None:
     css = (STATIC / "atelier.css").read_text(encoding="utf-8")
 
-    assert ".section-page .section-block { display: grid; }" in css
+    assert ".section-page .section-block { display: grid; min-height: 0; }" in css
     assert ".page-overview #overview" not in css
     assert ".page-algorithms #algorithms" not in css
     assert ".page-feedback #feedback" not in css
+
+
+def test_workspace_keeps_the_sidebar_fixed_without_page_motion_or_wheel_navigation() -> None:
+    css = (STATIC / "atelier.css").read_text(encoding="utf-8")
+    portal_js = (STATIC / "portal.js").read_text(encoding="utf-8")
+
+    sidebar_rule = re.search(r"\.sidebar\s*\{([^}]+)\}", css)
+    assert sidebar_rule is not None
+    assert "position: fixed;" in sidebar_rule.group(1)
+    workspace_rule = re.search(r"\.portal-page,\s*\.single-page\.portal-page\s*\{([^}]+)\}", css)
+    assert workspace_rule is not None
+    for declaration in ("animation: none !important;", "transform: none !important;", "filter: none !important;"):
+        assert declaration in workspace_rule.group(1)
+    assert 'scrollToPortalSection(section, "smooth")' in portal_js
+    assert 'if (question && (cockpitPage || singlePage))' in portal_js
+    assert "if (targetUrl.search) return;" in portal_js
+    assert 'closest(".section-block")' in portal_js
+    assert "page-is-leaving" not in portal_js
+    assert "gongchuang-page-direction" not in portal_js
+    assert not re.search(r'addEventListener\([\"\'](?:wheel|touchmove|touchend)[\"\']', portal_js)
+    assert "portal-page-in" not in css
+    assert "portal-page-out" not in css
 
 
 def test_single_generic_skill_package_uses_the_full_download_width() -> None:

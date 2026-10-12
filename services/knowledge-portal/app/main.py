@@ -11297,7 +11297,11 @@ def agent_connection_status_payload(
     user_id: int,
     latest_result: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    result = latest_result or latest_agent_install_result_payload(connection, user_id)
+    result = (
+        latest_result
+        if latest_result is not None
+        else latest_agent_install_result_payload(connection, user_id)
+    )
     activity = connection.execute(
         """
         SELECT usage.activity_type,usage.activity_name,usage.called_at
@@ -11417,16 +11421,22 @@ def portal_payload(
     algorithm_project_id: str = "",
     algorithm_coverage: str = "",
 ) -> dict[str, object]:
-    needs_agent_state = active_page in {"skills", "legacy-access-disabled"}
-    needs_client_usage = active_page in {"overview", "downloads"}
-    needs_usage_summary = active_page in {
+    # The main workspace is one scrollable document. Independent admin tools
+    # and retired access routes retain their own routing and permission checks.
+    single_page = active_page in {
+        "overview", "cockpit", "algorithms", "downloads", "feedback", "skills",
+        "health", "knowledge-admin", "skill-admin", "members",
+    }
+    needs_agent_state = single_page or active_page in {"skills", "legacy-access-disabled"}
+    needs_client_usage = single_page or active_page in {"overview", "downloads"}
+    needs_usage_summary = single_page or active_page in {
         "overview",
         "cockpit",
         "legacy-access-disabled",
     }
     release_guidance = (
         public_release_guidance()
-        if active_page in {"legacy-access-disabled", "members"}
+        if single_page or active_page in {"legacy-access-disabled", "members"}
         else {}
     )
     latest_member_install_version = str(
@@ -11551,7 +11561,7 @@ def portal_payload(
             agent_connection_status_payload(
                 connection,
                 int(user["id"]),
-                latest_agent_install_result,
+                latest_agent_install_result or {},
             )
             if needs_agent_state
             else {}
@@ -11620,17 +11630,17 @@ def portal_payload(
                     (user["id"], *assistant_day_bounds()),
                 ).fetchone()[0]
             )
-            if active_page == "cockpit"
+            if single_page or active_page == "cockpit"
             else 0
         )
         assistant_daily_limit = (
             None
-            if user["is_admin"] or active_page != "cockpit"
+            if user["is_admin"] or (not single_page and active_page != "cockpit")
             else assistant_limit_for_user(int(user["id"]), connection)
         )
         client_release = (
             latest_client_release_payload(connection)
-            if active_page in {"overview", "downloads"}
+            if single_page or active_page in {"overview", "downloads"}
             else None
         )
         latest_client_download = (
@@ -11705,7 +11715,7 @@ def portal_payload(
         releases = []
         historical_releases = []
         admin_health: dict[str, object] = {}
-        if user["is_admin"] and active_page == "members":
+        if user["is_admin"] and (single_page or active_page == "members"):
             users = format_row_datetimes(connection.execute(
                 """
                 WITH version_observations AS (
@@ -12063,7 +12073,7 @@ def portal_payload(
             LEFT JOIN client_error_reports ON client_error_reports.feedback_id=feedback_messages.id
         """
         feedback_parameters: tuple[object, ...] = ()
-        if active_page != "feedback":
+        if not single_page and active_page != "feedback":
             feedback_sql += " WHERE 0"
         elif not user["is_admin"]:
             feedback_sql += " WHERE feedback_messages.user_id=?"
@@ -12105,7 +12115,7 @@ def portal_payload(
                     )
                 ).casefold()
             ]
-        if user["is_admin"] and active_page == "knowledge-admin":
+        if user["is_admin"] and (single_page or active_page == "knowledge-admin"):
             update_jobs = format_row_datetimes(connection.execute(
                 """
                 SELECT id, original_name, status, extraction_status, text_characters,
@@ -12130,7 +12140,7 @@ def portal_payload(
             ORDER BY published_at DESC, id DESC
             """,
         ).fetchall()
-        if active_page in {"skills", "skill-admin"}:
+        if single_page or active_page in {"skills", "skill-admin"}:
             releases = [
                 {
                     **dict(row),
@@ -12151,7 +12161,7 @@ def portal_payload(
                 for row in release_rows
                 if is_public_skill_release_version(str(row["version"]))
             ]
-        if user["is_admin"] and active_page == "health":
+        if user["is_admin"] and (single_page or active_page == "health"):
             since_24_hours = isoformat(utc_now() - timedelta(hours=24))
             since_7_days = isoformat(utc_now() - timedelta(days=7))
             admin_health = {
@@ -12247,7 +12257,7 @@ def portal_payload(
                 LIMIT 1
                 """
             ).fetchone()
-            if active_page == "skills"
+            if single_page or active_page == "skills"
             else None
         )
         release_stage_payload = (
@@ -12261,12 +12271,12 @@ def portal_payload(
             else None
         )
         latest_release_payload = None
-        if latest_release and active_page in {"overview", "cockpit"}:
+        if latest_release and not single_page and active_page in {"overview", "cockpit"}:
             latest_release_payload = {
                 "id": latest_release["id"],
                 "version": latest_release["version"],
             }
-        elif latest_release and active_page == "skills":
+        elif latest_release and (single_page or active_page == "skills"):
             latest_generic_available = release_artifact_is_servable(
                 latest_generic_artifact,
                 target="generic",
@@ -12292,7 +12302,7 @@ def portal_payload(
                 "workbuddy_available": latest_workbuddy["installable"],
                 "workbuddy": latest_workbuddy,
             }
-        if active_page == "skills":
+        if single_page or active_page == "skills":
             historical_releases = [
                 release
                 for release in releases
@@ -12355,30 +12365,30 @@ def portal_payload(
         "latest_release": latest_release_payload,
         "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
-        "skill_center": skill_catalog_payload() if active_page == "skills" else {},
+        "skill_center": skill_catalog_payload() if single_page or active_page == "skills" else {},
         "project_algorithms": (
             project_algorithm_catalog_payload(algorithm_coverage)
-            if active_page == "algorithms"
+            if single_page or active_page == "algorithms"
             else {}
         ),
         "project_algorithm_detail": (
             project_algorithm_detail_payload(algorithm_project_id)
-            if active_page == "algorithms"
+            if single_page or active_page == "algorithms"
             else None
         ),
         "four_city_policy_registry": (
             load_four_city_rd_platform_policy_registry()
-            if active_page == "algorithms"
+            if single_page or active_page == "algorithms"
             else {}
         ),
         "four_city_rd_platform_threshold_packs": (
             load_four_city_rd_platform_threshold_packs()
-            if active_page == "algorithms"
+            if single_page or active_page == "algorithms"
             else {}
         ),
         "four_city_green_factory_policy_registry": (
             load_four_city_green_factory_policy_registry()
-            if active_page == "algorithms"
+            if single_page or active_page == "algorithms"
             else {}
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
@@ -12392,7 +12402,7 @@ def portal_payload(
         "assistant_mode": "大模型增强" if AI_API_BASE and AI_API_KEY and AI_MODEL else "免费知识检索",
         "public_endpoint": str(request.base_url).rstrip("/"),
         "active_page": active_page,
-        "single_page": False,
+        "single_page": single_page,
         "greeting": (
             "晚上好"
             if datetime.now(ASSISTANT_TIMEZONE).hour >= 18
@@ -13272,9 +13282,7 @@ def logout(
 
 @app.get("/portal", response_class=HTMLResponse)
 def portal(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
-    return templates.TemplateResponse(
-        request, "portal.html", portal_payload(request, user, active_page="overview")
-    )
+    return portal_page_response(request, user, active_page="overview")
 
 
 def preference_page_context(

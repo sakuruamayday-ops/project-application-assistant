@@ -1535,7 +1535,7 @@ textarea:focus-visible, select:focus-visible {
 .account-logout-button { width: 100%; margin-top: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--atelier-danger); background: transparent; border: 1px solid rgba(234,217,178,.3); border-radius: 9px; cursor: pointer; }
 
 .content-wrap { width: min(1500px, 100%); margin: 0 auto; padding: clamp(24px, 4vw, 62px); }
-.section-block { min-height: calc(100vh - 136px); display: none; align-content: start; animation: atelier-enter .56s cubic-bezier(.2,.72,.2,1) both; }
+.section-block { min-height: 0; display: none; align-content: start; }
 .single-page .section-block {
   display: grid;
   min-height: auto;
@@ -1543,9 +1543,9 @@ textarea:focus-visible, select:focus-visible {
   border-bottom: 1px solid rgba(202,169,105,.08);
   scroll-margin-top: 92px;
 }
-.single-page .section-block:first-of-type { min-height: calc(100vh - 118px); padding-top: 18px; }
+.single-page .section-block:first-of-type { min-height: 0; padding-top: 18px; }
 .single-page .section-block:last-of-type {
-  min-height: calc(100vh - 92px);
+  min-height: 0;
   border-bottom: 0;
 }
 .single-page .section-block.algorithm-section {
@@ -1553,7 +1553,7 @@ textarea:focus-visible, select:focus-visible {
 }
 /* Section routes render only their active section, so page visibility must not
    depend on a manually maintained route allowlist. */
-.section-page .section-block { display: grid; }
+.section-page .section-block { display: grid; min-height: 0; }
 .client-downloads { gap: 24px; }
 .client-download-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr); gap: 36px; align-items: end; padding: clamp(28px, 5vw, 54px); color: #f8f4eb; background: radial-gradient(circle at 82% 18%, rgba(202,169,105,.28), transparent 34%), #151516; border: 1px solid rgba(202,169,105,.28); border-radius: 24px; }
 .client-download-hero h3 { margin: 8px 0 14px; font-size: clamp(32px, 5vw, 60px); line-height: 1.05; }
@@ -2124,7 +2124,7 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
 .preference-advanced[open] summary { margin-bottom: 18px; }
 .preference-advanced label { display: grid; gap: 8px; }
 
-.page-continuation { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 0 56px; }
+.page-continuation { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 0; padding: 0 0 56px; }
 .single-page .page-continuation { display: none; }
 
 .pagination .page-link,
@@ -2156,7 +2156,7 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
   box-shadow: inset 0 -3px 0 #7e5529;
 }
 .pagination .page-ellipsis { cursor: default; }
-.portal-page { animation: atelier-enter .56s cubic-bezier(.2,.72,.2,1) both; }
+.portal-page,
 .single-page.portal-page {
   animation: none !important;
   transform: none !important;
@@ -2164,14 +2164,6 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
   will-change: auto !important;
   backface-visibility: visible !important;
 }
-html[data-page-direction="previous"] .portal-page { animation-name: atelier-enter-top; }
-body.is-page-leaving .portal-page { animation: atelier-leave .44s cubic-bezier(.4,0,.2,1) both; }
-body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: atelier-leave-down; }
-
-@keyframes atelier-enter { from { opacity: 0; transform: translateY(22px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
-@keyframes atelier-enter-top { from { opacity: 0; transform: translateY(-22px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
-@keyframes atelier-leave { to { opacity: 0; transform: translateY(-34px); filter: blur(3px); } }
-@keyframes atelier-leave-down { to { opacity: 0; transform: translateY(34px); filter: blur(3px); } }
 @keyframes atelier-flow-orbit { to { --atelier-flow-angle: 660deg; } }
 @keyframes atelier-flow-perimeter-orbit { to { stroke-dashoffset: -1000; } }
 /* mountains-drift 背景动画已移除：逐 section 重绘 1.7MB 背景图代价过高 */

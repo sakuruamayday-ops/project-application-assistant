@@ -28,13 +28,6 @@ if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
     // Storage can be unavailable in hardened browser profiles.
   }
 }
-try {
-  document.documentElement.dataset.pageDirection =
-    sessionStorage.getItem("gongchuang-page-direction") || "next";
-  sessionStorage.removeItem("gongchuang-page-direction");
-} catch {
-  document.documentElement.dataset.pageDirection = "next";
-}
 
 const RISK_CONTROL_SELECTOR = ".text-danger,.text-button.danger,.button.danger,.button.danger-outline,.account-logout-button";
 const RISK_SUBMIT_SELECTOR = "button[type='submit'].text-danger,button[type='submit'].text-button.danger,button[type='submit'].button.danger";
@@ -909,15 +902,18 @@ document.addEventListener("click", async (event) => {
     const question = document.querySelector('#assistant-form textarea[name="question"]');
     const cockpitPage = document.querySelector(".portal-page.page-cockpit");
     const releaseForm = questionButton.closest(".release-modal-card");
-    if (question && cockpitPage) {
-      question.value = questionButton.dataset.question;
-      document.querySelector("#assistant-form")?.requestSubmit();
-    } else if (releaseForm) {
-      sessionStorage.setItem("gongchuang-cockpit-question", questionButton.dataset.question);
+    if (releaseForm) {
       dismissReleaseDialog();
       await fetch(releaseForm.action, {method: "POST", body: new FormData(releaseForm)});
-      sessionStorage.setItem("gongchuang-page-direction", "next");
-      window.location.href = "/cockpit";
+    }
+    if (question && (cockpitPage || singlePage)) {
+      question.value = questionButton.dataset.question;
+      if (singlePage) {
+        scrollToPortalSection(document.getElementById("cockpit"), "smooth");
+        activateSectionLink("cockpit");
+        history.replaceState(null, "", "/portal#cockpit");
+      }
+      document.querySelector("#assistant-form")?.requestSubmit();
     } else {
       sessionStorage.setItem("gongchuang-cockpit-question", questionButton.dataset.question);
       window.location.href = "/cockpit";
@@ -1085,9 +1081,13 @@ const singlePage = document.querySelector(".single-page");
 const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
 const portalMobileQuery = window.matchMedia("(max-width: 760px)");
 const activateSectionLink = (sectionId) => {
+  const activeId = document.getElementById(sectionId)?.closest(".section-block")?.id || sectionId;
   sectionLinks.forEach((link) => {
-    link.classList.toggle("active", link.dataset.sectionLink === sectionId);
+    link.classList.toggle("active", link.dataset.sectionLink === activeId);
   });
+  const activeLink = sectionLinks.find((link) => link.dataset.sectionLink === activeId);
+  const currentLabel = document.querySelector(".topbar > div:first-child > strong");
+  if (activeLink && currentLabel) currentLabel.textContent = activeLink.textContent.trim();
 };
 const scrollToPortalSection = (section, behavior) => {
   const instant = behavior === "instant";
@@ -1140,6 +1140,7 @@ document.querySelectorAll("a.page-transition-link").forEach((link) => {
   link.addEventListener("click", (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const targetUrl = new URL(link.href, window.location.origin);
+    if (targetUrl.origin !== window.location.origin || targetUrl.search) return;
     const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];
     const section = sectionId ? document.getElementById(sectionId) : null;
     if (singlePage && section) {
@@ -1149,21 +1150,20 @@ document.querySelectorAll("a.page-transition-link").forEach((link) => {
       history.replaceState(null, "", `/portal#${sectionId}`);
       return;
     }
-    event.preventDefault();
-    sessionStorage.setItem("gongchuang-page-direction", "next");
-    document.body.classList.add("is-page-leaving");
-    window.setTimeout(() => {
-      window.location.href = link.href;
-    }, 360);
+    // Independent pages use normal links; the workspace itself only scrolls.
   });
 });
 
 document.querySelector(".single-page")?.addEventListener("click", (event) => {
   const link = event.target.closest("a[href]");
   if (!link || link.classList.contains("page-transition-link")) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  if (link.target && link.target !== "_self") return;
   if (link.hasAttribute("data-force-navigation")) return;
   const targetUrl = new URL(link.href, window.location.origin);
   if (targetUrl.origin !== window.location.origin) return;
+  // Filters and project details need their server response, not just an anchor.
+  if (targetUrl.search) return;
   const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];
   const section = sectionId ? document.getElementById(sectionId) : null;
   if (!section) return;
@@ -1205,101 +1205,8 @@ if (sectionLinks.length && observedSections.length) {
   scheduleSectionActivation();
 }
 
-const pageContinuation = document.querySelector(".portal-page:not(.single-page) .page-continuation");
-if (pageContinuation) {
-  let wheelProgress = 0;
-  let wheelDirection = "";
-  let resetTimer = null;
-  let touchStart = null;
-  let navigating = false;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const interactiveTarget = (target) => target instanceof Element
-    && Boolean(target.closest("input,textarea,select,button,[contenteditable='true'],dialog[open]"));
-  const pageAtBoundary = (direction) => direction === "next"
-    ? window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 3
-    : window.scrollY <= 2;
-  const destinationFor = (direction) => direction === "next"
-    ? pageContinuation.dataset.autoNext
-    : pageContinuation.dataset.autoPrevious;
-  const nestedScrollerConsumes = (target, delta) => {
-    let element = target instanceof Element ? target : null;
-    while (element && element !== document.body && element !== document.documentElement) {
-      if (/auto|scroll/.test(getComputedStyle(element).overflowY)
-          && element.scrollHeight > element.clientHeight + 2
-          && (delta > 0
-            ? element.scrollTop + element.clientHeight < element.scrollHeight - 2
-            : element.scrollTop > 2)) return true;
-      element = element.parentElement;
-    }
-    return false;
-  };
-  const resetPageGesture = () => {
-    wheelProgress = 0;
-    wheelDirection = "";
-  };
-  const navigatePage = (direction) => {
-    const destination = destinationFor(direction);
-    if (!destination || navigating) return;
-    navigating = true;
-    try { sessionStorage.setItem("gongchuang-page-direction", direction); } catch {}
-    document.body.classList.add("is-page-leaving");
-    document.body.classList.toggle("is-page-leaving-previous", direction === "previous");
-    window.setTimeout(() => { window.location.href = destination; }, reducedMotion ? 10 : 360);
-  };
-  window.addEventListener("wheel", (event) => {
-    if (navigating || event.ctrlKey || event.defaultPrevented
-        || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)
-        || interactiveTarget(event.target) || nestedScrollerConsumes(event.target, event.deltaY)) {
-      resetPageGesture();
-      return;
-    }
-    const direction = event.deltaY > 0 ? "next" : "previous";
-    if (!pageAtBoundary(direction) || !destinationFor(direction)) {
-      resetPageGesture();
-      return;
-    }
-    event.preventDefault();
-    if (wheelDirection !== direction) resetPageGesture();
-    wheelDirection = direction;
-    const delta = event.deltaMode === 1 ? event.deltaY * 16
-      : event.deltaMode === 2 ? event.deltaY * window.innerHeight : event.deltaY;
-    wheelProgress += Math.min(Math.abs(delta), 70);
-    window.clearTimeout(resetTimer);
-    resetTimer = window.setTimeout(resetPageGesture, 420);
-    if (wheelProgress >= 130) navigatePage(direction);
-  }, {passive: false});
-  window.addEventListener("touchstart", (event) => {
-    const touch = event.touches.length === 1 ? event.touches[0] : null;
-    touchStart = touch && !interactiveTarget(event.target) ? {
-      y: touch.clientY, target: event.target,
-      atTop: pageAtBoundary("previous"), atBottom: pageAtBoundary("next"),
-    } : null;
-  }, {passive: true});
-  window.addEventListener("touchend", (event) => {
-    const start = touchStart;
-    touchStart = null;
-    const touch = event.changedTouches[0];
-    if (!start || !touch || navigating || event.defaultPrevented) return;
-    const delta = start.y - touch.clientY;
-    const direction = delta > 0 ? "next" : "previous";
-    if (Math.abs(delta) >= 80 && (direction === "next" ? start.atBottom : start.atTop)
-        && pageAtBoundary(direction) && !nestedScrollerConsumes(start.target, delta)) {
-      navigatePage(direction);
-    }
-  }, {passive: true});
-  window.addEventListener("touchcancel", () => { touchStart = null; }, {passive: true});
-  window.addEventListener("keydown", (event) => {
-    if (navigating || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
-        || interactiveTarget(event.target)) return;
-    const direction = ["PageDown", "ArrowDown"].includes(event.key) ? "next"
-      : ["PageUp", "ArrowUp"].includes(event.key) ? "previous" : "";
-    if (direction && pageAtBoundary(direction) && destinationFor(direction)
-        && !nestedScrollerConsumes(event.target, direction === "next" ? 1 : -1)) {
-      event.preventDefault();
-      navigatePage(direction);
-    }
-  });
-}
+// Native wheel, touch and keyboard scrolling move through the same document.
+// Do not intercept boundary gestures or navigate between workspace modules.
 
 const skillCenter = document.querySelector("[data-skill-center]");
 if (skillCenter) {

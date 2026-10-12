@@ -1729,7 +1729,7 @@ def test_windows_update_sha512_cache_tracks_file_identity(tmp_path, monkeypatch)
         "/admin/releases",
     ),
 )
-def test_unrelated_portal_pages_skip_skill_artifact_integrity_work(
+def test_workspace_routes_load_the_shared_skill_catalog_once(
     tmp_path,
     monkeypatch,
     route,
@@ -1751,19 +1751,30 @@ def test_unrelated_portal_pages_skip_skill_artifact_integrity_work(
         )
         client.cookies.update(login.cookies)
 
-        def unexpected(*_args, **_kwargs):
-            raise AssertionError("unrelated page loaded Skills artifact integrity")
+        catalog_calls = 0
+        original_catalog = module.skill_catalog_payload
 
-        monkeypatch.setattr(module, "release_artifact_is_servable", unexpected)
-        monkeypatch.setattr(module, "latest_workbuddy_artifact", unexpected)
-        monkeypatch.setattr(module, "skill_catalog_payload", unexpected)
+        def counted_catalog():
+            nonlocal catalog_calls
+            catalog_calls += 1
+            return original_catalog()
+
+        monkeypatch.setattr(module, "skill_catalog_payload", counted_catalog)
 
         response = client.get(route)
 
     assert response.status_code == 200
+    assert catalog_calls == 1
+    assert 'class="app-layout portal-page single-page ' in response.text
+    section_ids = re.findall(r'<section id="([^"]+)" class="section-block', response.text)
+    assert section_ids == [
+        "overview", "cockpit", "algorithms", "downloads", "feedback", "skills",
+        "health-admin", "knowledge-admin", "skill-admin", "members",
+    ]
+    assert response.headers["cache-control"] == "private, no-store"
 
 
-def test_feedback_page_skips_unrelated_member_runtime_queries(tmp_path, monkeypatch):
+def test_workspace_loads_shared_runtime_data_once(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
         client.post(
@@ -1781,21 +1792,84 @@ def test_feedback_page_skips_unrelated_member_runtime_queries(tmp_path, monkeypa
         )
         client.cookies.update(login.cookies)
 
-        def unexpected(*_args, **_kwargs):
-            raise AssertionError("feedback page loaded unrelated member runtime data")
-
-        monkeypatch.setattr(
-            module,
+        calls = {}
+        for helper in (
             "latest_agent_install_result_payload",
-            unexpected,
-        )
-        monkeypatch.setattr(module, "agent_connection_status_payload", unexpected)
-        monkeypatch.setattr(module, "latest_client_release_payload", unexpected)
-        monkeypatch.setattr(module, "assistant_limit_for_user", unexpected)
+            "agent_connection_status_payload",
+            "latest_client_release_payload",
+            "assistant_limit_for_user",
+        ):
+            original = getattr(module, helper)
+            calls[helper] = 0
+
+            def counted(*args, _name=helper, _original=original, **kwargs):
+                calls[_name] += 1
+                return _original(*args, **kwargs)
+
+            monkeypatch.setattr(module, helper, counted)
 
         response = client.get("/feedback")
 
     assert response.status_code == 200
+    assert calls == {
+        "latest_agent_install_result_payload": 1,
+        "agent_connection_status_payload": 1,
+        "latest_client_release_payload": 1,
+        "assistant_limit_for_user": 0,
+    }
+
+
+def test_member_long_workspace_keeps_admin_sections_and_other_feedback_private(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "owner-password-123"},
+        )
+        with closing(module.database()) as connection:
+            now = module.isoformat(module.utc_now())
+            member_id = connection.execute(
+                "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,?)",
+                ("member", module.password_hasher.hash("member-password-123"), now),
+            ).lastrowid
+            connection.execute(
+                """
+                INSERT INTO registration_authorizations(
+                    real_name,identity_code,status,user_id,created_at,registered_at
+                ) VALUES ('测试成员','0086','registered',?,?,?)
+                """,
+                (member_id, now, now),
+            )
+            owner_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+            for user_id, subject in ((owner_id, "owner-feedback-private"), (member_id, "member-feedback-visible")):
+                connection.execute(
+                    """
+                    INSERT INTO feedback_messages(user_id,category,subject,content,status,created_at,updated_at)
+                    VALUES (?,'bug',?,'isolated feedback fixture','pending',?,?)
+                    """,
+                    (user_id, subject, now, now),
+                )
+            connection.commit()
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        response = client.get("/portal")
+        assert response.status_code == 200
+        section_ids = re.findall(r'<section id="([^"]+)" class="section-block', response.text)
+        assert section_ids == ["overview", "cockpit", "algorithms", "downloads", "feedback", "skills"]
+        assert "member-feedback-visible" in response.text
+        assert "owner-feedback-private" not in response.text
+        assert 'id="members"' not in response.text
+        assert 'id="health-admin"' not in response.text
+        assert 'id="knowledge-admin"' not in response.text
+        assert 'id="skill-admin"' not in response.text
+        assert "管理员不限次数" not in response.text
+        assert response.headers["cache-control"] == "private, no-store"
+        assert client.get("/admin/members", follow_redirects=False).status_code == 403
+        assert client.get("/admin/operations", follow_redirects=False).status_code == 403
 
 
 @pytest.mark.parametrize(
@@ -3157,15 +3231,15 @@ def test_setup_login_and_device_token(tmp_path):
         assert "page-overview" in portal.text
         assert re.search(r'/static/app\.css\?v=[0-9a-f]{16}', portal.text)
         assert re.search(r'/static/portal\.js\?v=[0-9a-f]{16}', portal.text)
-        assert 'class="app-layout portal-page section-page page-overview"' in portal.text
+        assert 'class="app-layout portal-page single-page page-overview"' in portal.text
         assert 'id="overview"' in portal.text
-        assert 'id="cockpit"' not in portal.text
-        assert 'id="downloads"' not in portal.text
+        assert 'id="cockpit"' in portal.text
+        assert 'id="downloads"' in portal.text
         assert 'id="api-access"' not in portal.text
-        assert 'id="skills"' not in portal.text
+        assert 'id="skills"' in portal.text
         assert 'href="/cockpit" data-section-link="cockpit"' in portal.text
         assert 'href="/downloads" data-section-link="downloads"' in portal.text
-        assert 'class="page-continuation"' in portal.text
+        assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
         assert "下载共创客户端" in access_page.text
         assert "不再提供旧版宿主专用包" in access_page.text
@@ -3287,7 +3361,7 @@ def test_setup_login_and_device_token(tmp_path):
         access_page = client.get("/access")
         assert access_page.status_code == 200
         assert "page-skills" in access_page.text
-        assert 'class="page-continuation"' in access_page.text
+        assert 'class="page-continuation"' not in access_page.text
         assert 'href="/feedback"' in access_page.text
         assert 'class="page-step' not in access_page.text
         assert token not in access_page.text

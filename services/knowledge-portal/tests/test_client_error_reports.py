@@ -163,7 +163,9 @@ def test_feedback_list_excludes_large_context_but_preserves_export(tmp_path):
     assert page.text.count('<summary>客户端诊断 #') == 51
     assert '0.4.8-workbench.1' in page.text
     assert 'retained-context-marker' not in page.text
-    assert len(page.content) < 200_000
+    feedback_html = page.text.split('<section id="feedback"', 1)[1].split('</section>', 1)[0]
+    assert len(feedback_html.encode()) < 200_000
+    assert len(page.content) < 1_000_000
     assert peak < 32 * 1024 * 1024
     assert '客户端诊断 #' in client.get('/feedback?feedback_query=GC-REPORT').text
     exported = client.get(f'/admin/feedback/{report_ids[-1]}/diagnostic')
