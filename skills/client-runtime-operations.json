@@ -1,11 +1,11 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.7.4",
+  "skill_bundle_version": "1.7.5",
   "operations": [
     {
       "id": "high-tech-enterprise-application-drafting.fill-application-fields",
       "skill": "high-tech-enterprise-application-drafting",
-      "description": "按原母版物理单元格回填登记、封面、年度财务、RD支出、PS、人员、IP与创新能力；不使用网格列坐标，不覆盖原文件。",
+      "description": "按原母版物理单元格回填高新申请书，直接生成可编辑 DOCX，不生成 PDF。回填登记、封面、年度财务、RD支出、PS、人员、IP与创新能力；不使用网格列坐标，不覆盖原文件。",
       "script": "high-tech-enterprise-application-drafting/scripts/fill_application_fields.py",
       "files": [
         "high-tech-enterprise-application-drafting/scripts/fill_rd_core_innovation.py",
@@ -641,21 +641,22 @@
     {
       "id": "project-feasibility.generate-report",
       "skill": "project-feasibility",
-      "description": "依据结构化事实与可读取原文回填受控母版。默认输出静态 HTML 供客户端生成 PDF；明确需要可编辑稿时输出 DOCX。不输出空白模板。双报告分别调用，保留每份完成结果。",
+      "description": "高新、专精及小巨人的分析、体检报告依据结构化事实直接回填固定 HTML 模板，由客户端导出 PDF，不读取 Word 母版、不生成 DOCX。申请书使用独立 Word 回填入口。其他项目保留原格式支持。双报告分别调用，保留每份完成结果。",
       "script": "project-feasibility/scripts/generate_report.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
         "project-feasibility/scripts/report_html.py",
+        "project-feasibility/scripts/direct_html_report.py",
         "project-feasibility/scripts/sme_action_report.py",
         "project-feasibility/scripts/select_report_template.py",
         "project-feasibility/references/report-template-registry.json",
         "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
-        "project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
-        "project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
-        "project-feasibility/assets/report-templates/specialized-sme/preassessment.docx",
-        "project-feasibility/assets/report-templates/specialized-sme/feasibility.docx",
-        "project-feasibility/assets/report-templates/little-giant/preassessment.docx",
-        "project-feasibility/assets/report-templates/little-giant/feasibility.docx",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.html",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.html",
+        "project-feasibility/assets/report-templates/specialized-sme/preassessment.html",
+        "project-feasibility/assets/report-templates/specialized-sme/feasibility.html",
+        "project-feasibility/assets/report-templates/little-giant/preassessment.html",
+        "project-feasibility/assets/report-templates/little-giant/feasibility.html",
         "project-feasibility/assets/report-templates/first-equipment/preassessment.docx",
         "project-feasibility/assets/report-templates/first-equipment/feasibility.docx",
         "project-feasibility/assets/report-templates/first-material/preassessment.docx",
@@ -680,7 +681,8 @@
       "timeout_ms": 60000,
       "max_output_bytes": 1048576,
       "result_exit_codes": [
-        0
+        0,
+        2
       ],
       "passing_exit_codes": [
         0

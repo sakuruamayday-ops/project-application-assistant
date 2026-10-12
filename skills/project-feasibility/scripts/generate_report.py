@@ -7,13 +7,17 @@ import json
 from pathlib import Path
 
 from fill_report_template import complete_report
-from select_report_template import resolve_template
+from select_report_template import _select_by_alias, load_registry, resolve_template
 
 
 def generate_report(input_path: Path, output_path: Path, report_type: str) -> dict:
     fixture = json.loads(input_path.read_text(encoding="utf-8"))
-    selection = resolve_template(str(fixture["project_id"]), report_type)
     output_path = output_path.expanduser().resolve()
+    project = _select_by_alias(str(fixture["project_id"]), load_registry()["projects"])
+    direct_html = project["id"] in {"high-tech-enterprise", "specialized-sme", "little-giant"}
+    if direct_html and output_path.suffix.lower() != ".html":
+        raise ValueError("高新、专精分析及体检报告只生成 HTML 供客户端直接导出 PDF；申请书使用独立 Word 回填操作")
+    selection = resolve_template(str(project["id"]), report_type, template_format="html" if direct_html else "docx")
     # The copied blank master is never an intermediate delivery artifact.
     skill_root = Path(__file__).resolve().parents[1]
     if output_path.is_relative_to(skill_root):
@@ -35,7 +39,12 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report-type", choices=("preassessment", "feasibility"), required=True)
     args = parser.parse_args()
-    result = generate_report(args.input, args.output, args.report_type)
+    try:
+        result = generate_report(args.input, args.output, args.report_type)
+    except (ValueError, FileNotFoundError, FileExistsError) as error:
+        print(json.dumps({"schema_version": "gongchuang-project-report-operation/v1",
+                          "status": "fail", "errors": [str(error)]}, ensure_ascii=False))
+        return 2
     print(json.dumps(result, ensure_ascii=False))
     return 0
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_tag": "V1.7.4",
+  "release_tag": "V1.7.5",
   "selection_rule": "exact-or-longest-alias",
   "report_types": {
     "preassessment": {
@@ -100,6 +100,16 @@
           "path": "assets/report-templates/high-tech-enterprise/feasibility.docx",
           "sha256": "a2407a71f01e313735e5273b02ffb146eeb68fc36bfcd4c3b9bdecd524818651"
         }
+      },
+      "html_templates": {
+        "preassessment": {
+          "path": "assets/report-templates/high-tech-enterprise/preassessment.html",
+          "sha256": "710fee4ad92312f137a51b4b9631a102ff62319732291c5e55d425af23ce2a95"
+        },
+        "feasibility": {
+          "path": "assets/report-templates/high-tech-enterprise/feasibility.html",
+          "sha256": "2fcdbc2195ab1409fd8b62952cc8da2167edeed600d3dc1398305aeaa7e8388d"
+        }
       }
     },
     {
@@ -120,6 +130,16 @@
           "path": "assets/report-templates/specialized-sme/feasibility.docx",
           "sha256": "4740a5783fc98b9dc62c4dafe3163a43962274151f5d0d065effba0155a0f522"
         }
+      },
+      "html_templates": {
+        "preassessment": {
+          "path": "assets/report-templates/specialized-sme/preassessment.html",
+          "sha256": "172966ded39f9e50d5bdde55775ac1572256fc03a1a9d51d7981ce2985252691"
+        },
+        "feasibility": {
+          "path": "assets/report-templates/specialized-sme/feasibility.html",
+          "sha256": "1471a29aa271af4f1e0bcd661c5af351f74027fea485b289ccb7c30fdfe513b1"
+        }
       }
     },
     {
@@ -139,6 +159,16 @@
         "feasibility": {
           "path": "assets/report-templates/little-giant/feasibility.docx",
           "sha256": "aab910b75281341386d48266e32301d5954f6030994e3a5ded5fee38be31a870"
+        }
+      },
+      "html_templates": {
+        "preassessment": {
+          "path": "assets/report-templates/little-giant/preassessment.html",
+          "sha256": "e47171b164b56726e2152553ccb5b3864697244210accdf90083b7bcb5ce7c9f"
+        },
+        "feasibility": {
+          "path": "assets/report-templates/little-giant/feasibility.html",
+          "sha256": "9033b81ca72b7872076c6e78ada69e41a82c299de8c24cc9045858e9f7cb9b9c"
         }
       }
     },

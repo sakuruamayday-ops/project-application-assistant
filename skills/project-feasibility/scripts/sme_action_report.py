@@ -171,7 +171,7 @@ def validate_sections(fixture):
     return sections
 
 
-def _table(document, headers, rows, project_id=None):
+def table_rows(rows, project_id=None):
     rows = public_rows(rows, project_id)
     if project_id == "little-giant":
         rows = [([row[0], "已获认定的省级专精特新中小企业", *row[2:]]
@@ -179,10 +179,10 @@ def _table(document, headers, rows, project_id=None):
                  else [row[0], row[1], "已获认定的省级专精特新中小企业", *row[3:]]
                  if len(row) == 6 and row[0] in {"前置资格", "前置称号"}
                  else row) for row in rows]
-    if not rows:
-        return
-    table = document.add_table(rows=1, cols=len(headers))
-    table.autofit = False
+    return rows
+
+
+def table_widths(headers):
     widths = {2: [4, 13], 3: [3.5, 6, 7.5], 4: [3.3, 4.2, 3.1, 6.4],
               6: [2.1, 1.4, 3.3, 2.8, 2.5, 4.9]}[len(headers)]
     if headers[0] == "补强动作":
@@ -191,6 +191,16 @@ def _table(document, headers, rows, project_id=None):
         widths = [3, 4, 5, 5]
     if headers[0] == "主导产品首选":
         widths = [4.25] * 4
+    return widths
+
+
+def _table(document, headers, rows, project_id=None):
+    rows = table_rows(rows, project_id)
+    if not rows:
+        return
+    table = document.add_table(rows=1, cols=len(headers))
+    table.autofit = False
+    widths = table_widths(headers)
     for col, width in zip(table.columns, widths):
         col.width = Cm(width)
     for i, text in enumerate(headers):
@@ -284,3 +294,34 @@ def build_action_document(template_path: Path, fixture):
                 if public_text(note, fixture["project_id"]):
                     document.add_paragraph(public_text(note, fixture["project_id"]))
     return document
+
+
+def build_action_html(fixture):
+    """Render the same fixed five chapters from facts without opening a Word master."""
+    from html import escape
+    from report_html import html_document, html_table
+
+    sections = prepare_sections(fixture)
+    label = "专精特新中小企业" if fixture["project_id"] == "specialized-sme" else "专精特新小巨人"
+    body = [f'<h1 style="font-size:18pt;color:#000000">{escape(fixture["enterprise"])}</h1>',
+            f'<p style="font-size:12pt">{label}前期评估报告</p>',
+            f'<p>报告日期：{escape(fixture["report_date"])}　建议申报年度：{escape(fixture["suggested_year"])}<br>报告人：共创研究院</p>']
+    blocks = {key: (heading, headers) for key, heading, headers in SECTIONS}
+    for group_heading, keys in GROUPS:
+        body.append(f"<h1>{escape(group_heading)}</h1>")
+        for key in keys:
+            heading, headers = blocks[key]
+            if heading:
+                body.append(f"<h2>{escape(heading)}</h2>")
+            for paragraph in sections[key]["paragraphs"]:
+                text = public_text(paragraph, fixture["project_id"])
+                if text:
+                    body.append(f"<p>{escape(text)}</p>")
+            rows = table_rows(sections[key].get("rows", []), fixture["project_id"])
+            if rows:
+                body.append(html_table(headers, rows, table_widths(headers)))
+            for note in sections[key].get("notes", []):
+                text = public_text(note, fixture["project_id"])
+                if text:
+                    body.append(f"<p>{escape(text)}</p>")
+    return html_document(f'{fixture["enterprise"]}_专精特新申报体检与培育建议报告', "".join(body))

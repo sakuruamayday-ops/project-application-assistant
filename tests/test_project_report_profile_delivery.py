@@ -50,6 +50,19 @@ def test_report_profile_does_not_ignore_an_explicit_missing_pdf(tmp_path):
     assert f"交付文件不存在或不是文件:{missing_pdf.name}" in result["errors"]
 
 
+@pytest.mark.parametrize("profile_id", ["sme-action-report", "sme-application-checkup-report"])
+def test_sme_report_delivery_requires_pdf_not_a_word_substitute(tmp_path, profile_id):
+    target = tmp_path / "report.docx"
+    Document().save(target)
+    result = MODULE.validate_profile(
+        plugin_root=ROOT,
+        profile_id=profile_id,
+        artifacts=[target],
+    )
+    assert result["status"] == "fail"
+    assert "缺少要求格式:pdf" in result["errors"]
+
+
 def test_pdf_section_matching_tolerates_glyph_fragmentation_but_not_missing_text():
     fragmented = "\u4e8c\u3001\u7533\n\u62a5\n\u6761\u4ef6\n\u5bf9\n\u7167"
     assert MODULE._compact_text("申报条件对照") in MODULE._compact_text(fragmented)

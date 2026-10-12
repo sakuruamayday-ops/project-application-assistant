@@ -84,8 +84,12 @@ def report_html(document) -> str:
             blocks.append(_paragraph(Paragraph(element, document)))
         elif element.tag == qn("w:tbl"):
             blocks.append(_table(Table(element, document)))
-    title = escape(document.core_properties.title or "项目分析报告")
-    return (f'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>{title}</title>'
+    return html_document(document.core_properties.title or "项目分析报告", "".join(blocks))
+
+
+def html_document(title: str, body: str) -> str:
+    """Wrap program-rendered report blocks in the fixed local PDF stylesheet."""
+    return (f'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>{escape(title)}</title>'
             '<meta name="author" content="共创知识产权"><style>'
             '@page{size:A4;margin:18mm 18mm 16mm}html,body{margin:0;padding:0;background:white;color:#20262f;letter-spacing:0}'
             'body{width:174mm;font-size:10.5pt;line-height:1.55}h1{font-size:19pt;color:#233d66;margin:10pt 0}'
@@ -93,4 +97,13 @@ def report_html(document) -> str:
             'p{margin:4pt 0;white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;table-layout:fixed;width:100%;margin:6pt 0}'
             'th,td{border:1px solid #cbd9eb;padding:5pt;vertical-align:top;overflow-wrap:anywhere}th{background:#e8eff8;color:#233d66;font-weight:700}'
             'th p,td p{margin:0;font-size:9pt;line-height:1.45}a{color:#233d66;text-decoration:underline}'
-            '</style></head><body>' + "".join(blocks) + "</body></html>")
+            '</style></head><body>' + body + "</body></html>")
+
+
+def html_table(headers, rows, widths=None) -> str:
+    """Escape report values while keeping the declared header and column order."""
+    columns = ("<colgroup>" + "".join(f'<col style="width:{width / sum(widths) * 100:.6g}%">' for width in widths)
+               + "</colgroup>") if widths else ""
+    values = ["<tr>" + "".join(f"<th><p>{escape(value)}</p></th>" for value in headers) + "</tr>"]
+    values.extend("<tr>" + "".join(f"<td><p>{escape(str(value))}</p></td>" for value in row) + "</tr>" for row in rows)
+    return '<table data-repeat-header="true">' + columns + "<tbody>" + "".join(values) + "</tbody></table>"

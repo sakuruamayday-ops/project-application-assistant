@@ -809,6 +809,57 @@ def document_text(document: Document) -> str:
     return "\n".join(paragraph.text for paragraph in _iter_paragraphs(document))
 
 
+def _write_completed_report(template_path, output_path, validated, report_type, release_tag,
+                            output_bytes, text, placeholders):
+    errors: list[str] = []
+    if placeholders.search(text):
+        errors.append("仍存在方括号填写占位符")
+    for marker in TRAINING_MARKERS:
+        if marker in text:
+            errors.append(f"仍存在培训标记:{marker}")
+    for marker in INTERNAL_DRAFT_MARKERS:
+        if marker in text:
+            errors.append(f"仍存在内部候选标记:{marker}")
+    if str(validated["enterprise"]) not in text:
+        errors.append("成稿缺企业名称")
+    if str(validated["project_object"]) not in text:
+        errors.append("成稿缺项目核心对象")
+    if "数据来源" not in text:
+        errors.append("成稿缺资料来源台账")
+    if PUBLIC_DIGEST.search(text):
+        errors.append("对外成稿不得展示内部文件校验值")
+    if errors:
+        raise ValueError("成稿校验失败:" + "；".join(errors))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("wb" if output_path == template_path else "xb") as output:
+        output.write(output_bytes)
+    result = {
+        "schema": "gongchuang-completed-project-report/v1",
+        "status": "pass",
+        "release_tag": release_tag,
+        "project_id": validated["project_id"],
+        "report_type": report_type,
+        "delivery_profile": "sme-action-report" if validated.get("report_layout") == "sme-action" else (
+            "project-presale-assessment-report" if report_type == "preassessment"
+            else "project-feasibility-analysis-report"
+        ),
+        "enterprise": validated["enterprise"],
+        "template_path": str(template_path),
+        "template_sha256": sha256_file(template_path),
+        "output_path": str(output_path),
+        "output_sha256": sha256_file(output_path),
+        "source_count": len(validated["_validated_sources"]),
+        "source_receipts": [
+            {"name": item["name"], "sha256": item["sha256"], "anchor_count": len(item["anchors"])}
+            for item in validated["_validated_sources"]
+        ],
+        "errors": [],
+    }
+    receipt = output_path.with_suffix(".completion.json")
+    receipt.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {**result, "receipt_path": str(receipt)}
+
+
 def complete_report(
     *,
     template_path: Path,
@@ -836,6 +887,13 @@ def complete_report(
     layout = fixture.get("report_layout")
     if layout not in {None, "sme-action"}:
         raise ValueError(f"未知报告布局:{layout}")
+    if template_path.suffix.lower() == ".html":
+        if output_path.suffix.lower() != ".html":
+            raise ValueError("HTML 报告模板只生成 HTML；申请书使用独立 Word 回填操作")
+        from direct_html_report import render_report
+        source_html, text, placeholders = render_report(template_path, validated, report_type, release_tag)
+        return _write_completed_report(template_path, output_path, validated, report_type, release_tag,
+                                       source_html.encode("utf-8"), text, placeholders)
     if layout == "sme-action":
         from sme_action_report import build_action_document
         document = build_action_document(template_path, validated)
@@ -882,62 +940,13 @@ def complete_report(
     serialized.seek(0)
     rendered = Document(serialized)
     text = document_text(rendered)
-    errors: list[str] = []
-    if placeholders.search(text):
-        errors.append("仍存在方括号填写占位符")
-    for marker in TRAINING_MARKERS:
-        if marker in text:
-            errors.append(f"仍存在培训标记:{marker}")
-    for marker in INTERNAL_DRAFT_MARKERS:
-        if marker in text:
-            errors.append(f"仍存在内部候选标记:{marker}")
-    if str(validated["enterprise"]) not in text:
-        errors.append("成稿缺企业名称")
-    if str(validated["project_object"]) not in text:
-        errors.append("成稿缺项目核心对象")
-    if "数据来源" not in text:
-        errors.append("成稿缺资料来源台账")
-    if PUBLIC_DIGEST.search(text):
-        errors.append("对外成稿不得展示内部文件校验值")
-    if errors:
-        raise ValueError("成稿校验失败:" + "；".join(errors))
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     if output_path.suffix.lower() == ".html":
         from report_html import report_html
         output_bytes = report_html(rendered).encode("utf-8")
     else:
         output_bytes = serialized.getvalue()
-    with output_path.open("wb" if output_path == template_path else "xb") as output:
-        output.write(output_bytes)
-    result = {
-        "schema": "gongchuang-completed-project-report/v1",
-        "status": "pass" if not errors else "fail",
-        "release_tag": release_tag,
-        "project_id": validated["project_id"],
-        "report_type": report_type,
-        "delivery_profile": "sme-action-report" if layout == "sme-action" else (
-            "project-presale-assessment-report" if report_type == "preassessment"
-            else "project-feasibility-analysis-report"
-        ),
-        "enterprise": validated["enterprise"],
-        "template_path": str(template_path),
-        "template_sha256": sha256_file(template_path),
-        "output_path": str(output_path),
-        "output_sha256": sha256_file(output_path),
-        "source_count": len(validated["_validated_sources"]),
-        "source_receipts": [
-            {
-                "name": item["name"],
-                "sha256": item["sha256"],
-                "anchor_count": len(item["anchors"]),
-            }
-            for item in validated["_validated_sources"]
-        ],
-        "errors": errors,
-    }
-    receipt = output_path.with_suffix(".completion.json")
-    receipt.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return {**result, "receipt_path": str(receipt)}
+    return _write_completed_report(template_path, output_path, validated, report_type, release_tag,
+                                   output_bytes, text, placeholders)
 
 
 def main() -> int:

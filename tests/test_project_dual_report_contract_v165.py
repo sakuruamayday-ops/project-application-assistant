@@ -148,7 +148,7 @@ def test_action_report_declares_host_required_delivery_fields() -> None:
     assert profile["requires_peer_comparison"] is True
     assert profile["required_artifacts"] == [{
         "role": "assessment_report",
-        "formats": ["docx", "pdf"],
+        "formats": ["pdf"],
         "requires_sha256": True,
         "validation_gate": "document-render-and-structure-gate",
     }]

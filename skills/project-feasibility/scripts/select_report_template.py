@@ -78,6 +78,7 @@ def resolve_template(
     report_type: str,
     *,
     registry_path: Path = REGISTRY_PATH,
+    template_format: str = "docx",
 ) -> dict[str, Any]:
     registry = load_registry(registry_path)
     project = _select_by_alias(project_type, registry["projects"])
@@ -88,7 +89,9 @@ def resolve_template(
     ]
     report = _select_by_alias(report_type, report_records)
     report_id = str(report["id"])
-    template = project.get("templates", {}).get(report_id)
+    if template_format not in {"docx", "html"}:
+        raise ValueError(f"未知模板格式:{template_format}")
+    template = project.get("html_templates" if template_format == "html" else "templates", {}).get(report_id)
     if not isinstance(template, dict):
         raise ValueError(f"项目未配置该报告模板:{project.get('id')}/{report_id}")
     skill_root = registry_path.resolve().parents[1]
