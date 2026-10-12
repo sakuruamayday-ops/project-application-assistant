@@ -15,6 +15,14 @@ def test_provincial_sme_full_name_routes_to_authoritative_table():
         assert resolve_projects([name]) == [("provincial_specialized_sme", "", name)]
 
 
+def test_innovative_sme_routes_to_existing_unified_recognition_queries():
+    assert resolve_projects(['创新型中小企业']) == [('unified', '创新型中小企业', '创新型中小企业')]
+    connection = sqlite3.connect(':memory:')
+    connection.row_factory = sqlite3.Row
+    result = recognition_search(connection, query='查询创新型中小企业名单', projects=['创新型中小企业'], subject_terms=['电子'])
+    assert result['query_plan']['projects'] == ['创新型中小企业']
+
+
 def test_three_first_subject_discovery_separates_product_and_recognition_evidence():
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row

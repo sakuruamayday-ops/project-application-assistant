@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors
+from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors, _turn_outcome, _failure_analysis
 
 
 def test_review_extracts_failed_tool_text_not_successful_content():
@@ -168,6 +168,225 @@ def test_review_retains_independent_report_preparation_failure_without_session_e
     assert review_pending(db, datetime(2026, 10, 9, 10, tzinfo=timezone.utc))['reviewed'] == 1
     document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
     assert 'report-preparation' in document and 'session inspection unavailable' in document
+
+
+def outcome_event(kind, seq, **data):
+    return {'type': kind, 'seq': seq, 'data': {'turn': 1, **data}}
+
+
+def test_review_checks_final_requested_pdf_not_a_model_completion_claim_or_attachment():
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': '给我转成PDF格式'}]}},
+        outcome_event('assistant/message', 2, message={'content': [
+            {'type': 'reasoning', 'text': 'must-not-copy'}, {'type': 'text', 'text': 'PDF 已完成'}]}),
+        outcome_event('turn/end', 3, reason={'kind': 'completed'}),
+    ], 'diagnostic_files': [{'name': 'input.pdf', 'status': 'pending'}]}
+    result = _turn_outcome(context, None)
+    assert result['status'] == 'not-delivered'
+    assert result['files'] == []
+    assert result['last_reply']['text'] == 'PDF 已完成'
+    assert 'must-not-copy' not in json.dumps(result)
+    context['events'].insert(2, outcome_event('tool/ptc-dispatch', 4, name='gongchuang_artifact_probe',
+        arguments={'artifactPath': 'report.html'}, isError=False))
+    assert _turn_outcome(context, None)['status'] == 'not-delivered'
+
+
+def test_review_retains_a_published_word_when_later_pdf_work_is_interrupted():
+    context = {'failed_turn': 1, 'events': [
+        outcome_event('tool/ptc-dispatch', 518, name='gongchuang_artifact_probe', arguments={'artifactPath': 'C:\\空间\\回填.docx'}, isError=False),
+        outcome_event('tool/ptc-dispatch', 520, name='gongchuang_publish_files', arguments={'paths': ['C:\\空间\\回填.docx']}, isError=False),
+        outcome_event('tool/ptc-dispatch', 539, name='gongchuang_render_pdf', arguments={'outputPath': 'report.pdf'}, isError=True),
+        outcome_event('turn/end', 541, reason={'kind': 'interrupted'}),
+    ]}
+    result = _turn_outcome(context, None)
+    assert result['status'] == 'partial'
+    assert result['files'] == [{'name': '回填.docx', 'format': 'docx', 'phase': 'published', 'event_seq': 520, 'source': 'gongchuang_publish_files'}]
+    assert result['unpublished_files'][0]['name'] == 'report.pdf'
+    assert 'C:' not in json.dumps(result)
+
+
+def test_review_preserves_final_outcome_computed_before_cropping_but_not_unsupported_success():
+    outcome = {'status': 'delivered', 'requested_formats': ['pdf'],
+        'user_request': {'event_seq': 1, 'text': '输出PDF', 'truncated': False},
+        'last_reply': {'event_seq': 8, 'text': '已交付', 'truncated': False, 'final': True},
+        'files': [{'name': 'report.pdf', 'format': 'pdf', 'phase': 'formal', 'event_seq': 7, 'source': 'professional-notice'}],
+        'unpublished_files': []}
+    context = {'failed_turn': 1, 'omitted_event_count': 2, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'completed', 'delivery_result': 'formal', 'failures': [], 'outcome': outcome}}
+    result = _turn_outcome(context, _failure_analysis(context))
+    assert result['status'] == 'delivered' and result['last_reply']['final']
+    outcome['files'] = []
+    result = _turn_outcome(context, _failure_analysis(context))
+    assert result['status'] != 'delivered'
+
+
+@pytest.mark.parametrize('code,message,stage', [
+    ('QUOTA', 'Insufficient Balance', 'model-balance'),
+    ('QUOTA', 'rate limit exceeded', 'model-quota'),
+    ('GC-ACCOUNT-UPGRADE', '最低支持版本为 V0.6.4', 'client-upgrade'),
+    ('MISSING_CREDENTIAL', 'no API key', 'model-credentials'),
+])
+def test_review_separates_account_conditions_from_execution_faults(code, message, stage):
+    failure = dict(event_seq=3, tool='turn', stage='turn-execution', code=code, category='runtime', status='unrecovered', observed_reason=message)
+    context = {'failed_turn': 1, 'events': [outcome_event('turn/end', 3, reason={'kind': 'error', 'error': {'code': code, 'message': message}})],
+        'failure_analysis': {'turn': 1, 'turn_result': 'error', 'delivery_result': 'unknown', 'failures': [failure], 'primary_failure': failure}}
+    analysis = _failure_analysis(context)
+    assert analysis['primary_failure']['stage'] == stage
+    assert _turn_outcome(context, analysis)['status'] == 'blocked'
+    db = database()
+    add(db, 1, context=context)
+    review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))
+    doc = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '账号条件或用户确认阻塞' in doc
+    assert '不等同于文件生成程序故障' in doc
+
+
+def test_review_handles_old_upgrade_clients_and_preserves_failure_details_after_outcome():
+    context = {'failed_turn': 1, 'events': [outcome_event('turn/end', 17,
+        reason={'kind': 'error', 'error': {'code': 'GC-ACCOUNT-UPGRADE', 'message': '最低支持版本为 V0.6.4'}})]}
+    assert _turn_outcome(context, None)['status'] == 'blocked'
+    db = database()
+    add(db, 1, context=context)
+    review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))
+    doc = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert doc.index('最终结果：') < doc.index('GC-ACCOUNT-UPGRADE')
+    assert '不等同于文件生成程序故障' in doc
+
+
+def test_review_keeps_recovered_delivery_and_missing_delivery_in_separate_groups():
+    db = database()
+    for report_id, path in [(1, 'report.pdf'), (2, None)]:
+        events = [{'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': '输出PDF'}]}}]
+        if path:
+            events.append(outcome_event('tool/ptc-dispatch', 2, name='gongchuang_artifact_probe', arguments={'artifactPath': path}, isError=False))
+        events.append(outcome_event('turn/end', 3, reason={'kind': 'completed'}))
+        add(db, report_id, context={'failed_turn': 1, 'events': events})
+    assert review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))['groups'] == 2
+    results = [json.loads(row[0])['outcome']['status'] for row in db.execute('SELECT review_json FROM client_diagnostic_reviews ORDER BY report_id')]
+    assert results == ['delivered', 'not-delivered']
+
+
+def test_review_does_not_turn_a_recovered_account_condition_back_into_an_active_block():
+    failure = dict(event_seq=2, tool='model-connection', stage='tool-execution', code='QUOTA', category='runtime',
+        status='recovered', recovery_event_seq=3, observed_reason='Insufficient Balance')
+    context = {'failed_turn': 1, 'events': [
+        outcome_event('tool/ptc-dispatch', 4, name='gongchuang_artifact_probe', arguments={'artifactPath': 'report.pdf'}, isError=False),
+        outcome_event('turn/end', 5, reason={'kind': 'completed'}),
+    ], 'failure_analysis': {'turn': 1, 'turn_result': 'completed', 'failures': [failure], 'primary_failure': None}}
+    analysis = _failure_analysis(context)
+    assert analysis['failures'][0]['status'] == 'recovered'
+    assert analysis['failures'][0]['stage'] == 'model-balance'
+    assert _turn_outcome(context, analysis)['status'] == 'delivered'
+
+
+@pytest.mark.parametrize('request_text,publish,status,formats', [
+    ('不要生成PDF，给我Word版本', True, 'delivered', ['docx']),
+    ('能生成PDF文件吗？', False, 'unknown', []),
+])
+def test_review_does_not_require_negated_formats_or_capability_question_files(request_text, publish, status, formats):
+    events = [{'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': request_text}]}}]
+    if publish:
+        events.append(outcome_event('tool/ptc-dispatch', 2, name='gongchuang_artifact_probe', arguments={'artifactPath': 'application.docx'}, isError=False))
+    events.append(outcome_event('turn/end', 3, reason={'kind': 'completed'}))
+    outcome = _turn_outcome({'failed_turn': 1, 'events': events}, None)
+    assert outcome['status'] == status
+    assert outcome['requested_formats'] == formats
+
+
+def test_review_ignores_malformed_opaque_context_ids_without_losing_other_reports():
+    db = database()
+    add(db, 1, context={'failed_turn': 1, 'events': [
+        outcome_event('tool/call', 1, callId=[], name='gongchuang_artifact_probe'),
+        outcome_event('tool/result', 2, message={'toolCallId': {}, 'isError': False}),
+        outcome_event('turn/end', 3, reason={'kind': 'error', 'error': {'code': []}}),
+    ], 'failure_analysis': {'turn': 1, 'turn_result': 'error', 'failures': [],
+        'outcome': {'files': [{'name': 'report.pdf', 'event_seq': 2, 'source': []}]}}})
+    add(db, 2)
+    assert review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))['reviewed'] == 2
+    review = json.loads(db.execute('SELECT review_json FROM client_diagnostic_reviews WHERE report_id=1').fetchone()[0])
+    assert review['outcome']['files'] == []
+
+
+def test_review_keeps_occurrence_and_late_receipt_dates_distinct():
+    db = database()
+    add(db, 1, created='2026-10-12T00:59:57+00:00')
+    raw = json.loads(db.execute('SELECT diagnostic_json FROM client_error_reports').fetchone()[0])
+    raw['occurred_at'] = '2026-10-11T09:25:25Z'
+    db.execute('UPDATE client_error_reports SET diagnostic_json=?', (json.dumps(raw),))
+    db.commit()
+    review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))
+    review = json.loads(db.execute('SELECT review_json FROM client_diagnostic_reviews').fetchone()[0])
+    assert review['occurred_at'] == '2026-10-11T09:25:25Z'
+    doc = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '2026-10-11T09:25:25Z' in doc and '2026-10-12T00:59:57+00:00' in doc
+
+
+@pytest.mark.parametrize('reply_text,status,structure', [
+    ('{"products":[]}', 'answered', 'valid-object'),
+    ('下面是JSON。\n{"products":[]}', 'not-delivered', 'invalid'),
+    ('```json\n{"products":[]}\n```', 'not-delivered', 'invalid'),
+    ('[]', 'not-delivered', 'invalid'),
+    ('{"products":', 'not-delivered', 'invalid'),
+    ('', 'not-delivered', 'absent'),
+])
+def test_review_checks_json_only_goal_before_a_continue_request(reply_text, status, structure):
+    goal = '根据给定字段整理测算方案，只输出一个 JSON 对象，不调用工具，不写文件。'
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': goal}]}},
+        {'type': 'user/message', 'seq': 2, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': '继续'}]}},
+        outcome_event('assistant/message', 3, message={'content': [{'type': 'text', 'text': reply_text}]}),
+        outcome_event('turn/end', 4, reason={'kind': 'blocked'}),
+    ]}
+    outcome = _turn_outcome(context, None)
+    assert outcome['status'] == status and outcome['structured_reply'] == structure
+    assert outcome['verification_scope'] == 'json-structure-only'
+    assert outcome['goal_request']['text'] == goal
+    assert outcome['user_request']['text'] == '继续'
+    db = database()
+    add(db, 1, context=context)
+    review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '仅检查 JSON 结构' in document and goal in document
+    assert ('JSON-only 要求未满足' in document) == (structure != 'valid-object')
+
+
+def test_review_preserves_complete_json_structure_observation_after_event_crop():
+    context = {'failed_turn': 1, 'events': [], 'omitted_event_count': 5, 'failure_analysis': {
+        'turn': 1, 'turn_result': 'completed', 'failures': [], 'outcome': {
+            'goal_request': {'event_seq': 1, 'text': '只返回JSON对象'},
+            'last_reply': {'event_seq': 9, 'text': '{"text":"' + 'x' * 2990, 'truncated': True, 'final': True},
+            'structured_reply': 'valid-object',
+        }}}
+    outcome = _turn_outcome(context, _failure_analysis(context))
+    assert outcome['status'] == 'answered' and outcome['last_reply']['truncated']
+    context['failure_analysis']['outcome']['structured_reply'] = []
+    assert _turn_outcome(context, _failure_analysis(context))['status'] != 'answered'
+
+
+def test_review_does_not_call_unresolved_recognition_failure_a_normal_confirmation_stop():
+    failure = dict(event_seq=1, tool='recognition_search', stage='tool-execution', category='runtime',
+        status='unrecovered', observed_reason='暂不支持的认定项目：创新型中小企业')
+    context = {'failed_turn': 1, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'blocked', 'delivery_result': 'draft', 'failures': [failure], 'primary_failure': failure}}
+    assert _turn_outcome(context, _failure_analysis(context))['status'] == 'not-delivered'
+
+
+def test_review_records_refused_json_only_model_request_as_undelivered():
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': '只输出一个JSON对象'}]}},
+        outcome_event('turn/end', 2, reason={'kind': 'error', 'error': {'code': 'INVALID_REQUEST', 'message': 'unsupported developer role'}}),
+    ]}
+    assert _turn_outcome(context, None)['status'] == 'not-delivered'
+
+
+def test_review_does_not_accept_a_missing_tool_success_flag_or_ignore_failed_host_delivery():
+    publication = outcome_event('tool/ptc-dispatch', 1, name='gongchuang_artifact_probe', arguments={'artifactPath': 'report.pdf'})
+    context = {'failed_turn': 1, 'events': [publication, outcome_event('turn/end', 3, reason={'kind': 'completed'})]}
+    assert _turn_outcome(context, None)['files'] == []
+    publication['data']['isError'] = False
+    context['events'].insert(1, {'type': 'user/message', 'seq': 2, 'data': {'source': {
+        'kind': 'plugin:gongchuang-policy-gate', 'delivery': {'turn': 1, 'phase': 'failed', 'files': []}}}})
+    assert _turn_outcome(context, None)['status'] == 'partial'
 
 
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):

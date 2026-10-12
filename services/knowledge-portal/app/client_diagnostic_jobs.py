@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import sqlite3
 import shutil
 from datetime import datetime, timezone, timedelta
@@ -163,6 +164,14 @@ def _failure_analysis(context: object) -> dict | None:
             return None
         result = {key: item[key][:2000] for key in ("tool", "operation", "stage", "code", "observed_reason") if isinstance(item.get(key), str)}
         result.update(event_seq=item["event_seq"], category=item["category"], status=item["status"], cause_status="observed-failure-only")
+        condition_status = "recovered" if result["status"] == "recovered" else "expected-block"
+        if result.get("code") == "GC-ACCOUNT-UPGRADE":
+            result.update(stage="client-upgrade", category="precondition", status=condition_status)
+        elif result.get("code") in {"MISSING_CREDENTIAL", "INVALID_CREDENTIAL"}:
+            result.update(stage="model-credentials", category="precondition", status=condition_status)
+        elif result.get("code") in {"QUOTA", "ACCOUNT_QUOTA"}:
+            balance = re.search(r"insufficient\s+(?:balance|credits?)|余额不足|欠费|\bHTTP\s*402\b", result.get("observed_reason", ""), re.I)
+            result.update(stage="model-balance" if balance else "model-quota", category="precondition", status=condition_status)
         for key in ("recovery_event_seq", "blocked_by_event_seq"):
             if isinstance(item.get(key), int):
                 result[key] = item[key]
@@ -184,7 +193,7 @@ def _failure_analysis(context: object) -> dict | None:
         return result
 
     failures = [parsed for item in value["failures"][:34] if (parsed := incident(item)) is not None]
-    if not failures:
+    if not failures and value.get("turn_result", "unknown") == "unknown" and not isinstance(value.get("outcome"), dict):
         return None
     primary = incident(value.get("primary_failure"))
     first = incident(value.get("first_failure"))
@@ -198,6 +207,189 @@ def _failure_analysis(context: object) -> dict | None:
             "delivery_result": str(value.get("delivery_result", "unknown"))[:60],
             "first_failure": first, "primary_failure": primary, "failures": failures,
             "omitted_failure_count": value.get("omitted_failure_count", 0) if isinstance(value.get("omitted_failure_count", 0), int) else 0}
+
+
+def _turn_outcome(context: object, analysis: dict | None) -> dict:
+    """Inspect final visible replies and Host file receipts; attachments and model claims are not receipts."""
+    context = context if isinstance(context, dict) else {}
+    turn = context.get("failed_turn", (analysis or {}).get("turn"))
+    supplied = context.get("failure_analysis", {})
+    supplied = supplied.get("outcome") if isinstance(supplied, dict) and supplied.get("turn") == turn else None
+    supplied = supplied if isinstance(supplied, dict) else {}
+    files: dict[str, dict] = {}
+    targets: dict[str, dict] = {}
+    request = None
+    goal_request = None
+    reply = None
+    reply_text = ""
+    calls = {}
+    turn_result = (analysis or {}).get("turn_result", "unknown")
+    delivery_result = (analysis or {}).get("delivery_result", "unknown")
+    terminal_account_block = False
+
+    def body(content):
+        return "\n".join(item["text"] for item in content if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str)) if isinstance(content, list) else ""
+
+    def excerpt(text, seq, **extra):
+        return dict(event_seq=seq, text=text[:3000], truncated=len(text) > 3000, **extra)
+
+    def publish(path, phase, seq, source):
+        if not isinstance(path, str) or not path.strip() or "[已隐藏路径]" in path or "[REDACTED]" in path:
+            return
+        key = path.replace("\\", "/")
+        name = key.rsplit("/", 1)[-1][:240]
+        files[key] = dict(name=name, format=Path(name).suffix[1:].lower(), phase=phase, event_seq=seq, source=source)
+
+    events = context.get("events", [])
+    for index, event in enumerate(events if isinstance(events, list) else []):
+        if not isinstance(event, dict) or not isinstance(event.get("data"), dict):
+            continue
+        data = event["data"]
+        kind = event.get("type")
+        seq = event.get("seq") if isinstance(event.get("seq"), int) else index
+        source = data.get("source", {})
+        source = source if isinstance(source, dict) else {}
+        if kind == "user/message" and source.get("kind") == "user":
+            text = source["displayText"] if isinstance(source.get("displayText"), str) else body(data.get("content"))
+            if text:
+                request = excerpt(text, seq)
+                if not re.fullmatch(r"\s*(?:继续|重试|再试一次|continue|retry)\s*[。.!！]?\s*", text, re.I):
+                    goal_request = request
+        delivery = source.get("delivery", {}) if source.get("kind") == "plugin:gongchuang-policy-gate" else {}
+        delivery = delivery if isinstance(delivery, dict) else {}
+        if isinstance(turn, int) and data.get("turn", delivery.get("turn")) != turn:
+            continue
+        if kind == "assistant/message":
+            message = data.get("message", {})
+            content = message.get("content", []) if isinstance(message, dict) else []
+            text = body(content)
+            if text:
+                reply_text = text
+                reply = excerpt(text, seq, final=not any(isinstance(item, dict) and item.get("type") == "tool-call" for item in content))
+        if kind == "turn/end":
+            reason = data.get("reason", {})
+            if isinstance(reason, dict):
+                turn_result = str(reason.get("kind", "unknown"))
+                error = reason.get("error", {})
+                terminal_account_block = isinstance(error, dict) and isinstance(error.get("code"), str) and error["code"] in {"GC-ACCOUNT-UPGRADE", "MISSING_CREDENTIAL", "INVALID_CREDENTIAL", "QUOTA", "ACCOUNT_QUOTA"}
+            break
+        if kind == "user/message" and delivery:
+            delivery_result = str(delivery.get("phase", delivery_result))
+            for file in delivery.get("files", []) if isinstance(delivery.get("files"), list) else []:
+                if isinstance(file, dict):
+                    publish(file.get("path"), str(file.get("phase", delivery_result)), seq, "professional-notice")
+        if kind == "deliverables/presented":
+            for file in data.get("files", []) if isinstance(data.get("files"), list) else []:
+                if isinstance(file, dict):
+                    publish(file.get("path"), "published", seq, kind)
+        if kind == "tool/call" and isinstance(data.get("callId"), str):
+            calls[data["callId"]] = (data.get("name"), data.get("arguments"))
+        if kind not in {"tool/ptc-dispatch", "tool/result"}:
+            continue
+        result = data if kind == "tool/ptc-dispatch" else data.get("message", {})
+        if not isinstance(result, dict):
+            continue
+        call_id = result.get("toolCallId")
+        name, args = (data.get("name"), data.get("arguments")) if kind == "tool/ptc-dispatch" else calls.get(call_id, (None, None)) if isinstance(call_id, str) else (None, None)
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except ValueError:
+                args = None
+        if not isinstance(args, dict):
+            continue
+        output = args.get("outputPath")
+        parameters = args.get("parameters")
+        if isinstance(parameters, dict):
+            output = parameters.get("output", output)
+        if isinstance(output, str) and Path(output).suffix.lower() in {".pdf", ".docx", ".xlsx", ".pptx"}:
+            key = output.replace("\\", "/")
+            targets[key] = dict(name=key.rsplit("/", 1)[-1][:240], format=Path(output).suffix[1:].lower(), event_seq=seq)
+        if result.get("isError") is not False:
+            continue
+        if name == "gongchuang_artifact_probe":
+            publish(args.get("artifactPath"), "published", seq, name)
+        elif name == "gongchuang_publish_files" and isinstance(args.get("paths"), list):
+            for path in args["paths"]:
+                publish(path, "published", seq, name)
+
+    # New clients compute this before event-size cropping, so their bounded observations survive omitted events.
+    for key in ("user_request", "goal_request", "last_reply"):
+        value = supplied.get(key)
+        if isinstance(value, dict) and isinstance(value.get("event_seq"), int) and isinstance(value.get("text"), str):
+            parsed = excerpt(value["text"], value["event_seq"])
+            parsed["truncated"] = parsed["truncated"] or value.get("truncated") is True
+            if key == "user_request":
+                request = parsed
+            elif key == "goal_request":
+                goal_request = parsed
+            else:
+                reply = dict(parsed, final=value.get("final") is True)
+                if not parsed["truncated"]:
+                    reply_text = value["text"]
+    if isinstance(supplied.get("files"), list):
+        files = {}
+        for file in supplied["files"][:32]:
+            if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("event_seq"), int) and isinstance(file.get("source"), str) and file["source"] in {"professional-notice", "deliverables/presented", "gongchuang_artifact_probe", "gongchuang_publish_files"}:
+                publish(file["name"], str(file.get("phase", "unknown"))[:30], file["event_seq"], file["source"])
+    request_text = (goal_request or request or {}).get("text", "")
+    json_requested = bool(re.search(r"(?:只|仅)(?:输出|返回)[^。！？；;\n]{0,12}JSON\s*对象", request_text, re.I))
+    structured_reply = "absent" if json_requested else "not-requested"
+    if json_requested and reply_text:
+        try:
+            structured_reply = "valid-object" if isinstance(json.loads(reply_text), dict) else "invalid"
+        except ValueError:
+            structured_reply = "invalid"
+    structure = supplied.get("structured_reply")
+    if json_requested and not reply_text and context.get("omitted_event_count") and isinstance(structure, str) and structure in {"valid-object", "invalid", "absent"}:
+        structured_reply = structure
+    direct_request = "" if re.search(r"(?:吗|么|[?？])\s*$", request_text) else re.sub(r"(?:不要|不用|无需|不必|别|不)(?:再|自动)?(?:生成|输出|导出|制作|交付|提供)[^。！？\n]{0,24}?(?:PDF|Word|DOCX)\b", "", request_text, flags=re.I | re.ASCII)
+    formats = list(dict.fromkeys("pdf" if token.lower() == "pdf" else "docx" for token in re.findall(r"(?:生成|输出|导出|转成|转换成|转为|制作|交付|提供|给我)(?!看|读|分析|检查|介绍)[^。！？\n]{0,24}?(PDF|Word|DOCX)\b", direct_request, re.I | re.ASCII)))
+    if isinstance(supplied.get("requested_formats"), list):
+        formats = list(dict.fromkeys(item for item in supplied["requested_formats"] if isinstance(item, str) and item in {"pdf", "docx"}))
+    if reply:
+        reply["final"] = reply["final"] and turn_result == "completed"
+    failures = (analysis or {}).get("failures", [])
+    delivered = [file for file in files.values() if file["phase"] in {"published", "formal"}]
+    account_block = any(item.get("stage") in {"client-upgrade", "model-credentials", "model-balance", "model-quota"} and item.get("status") != "recovered" for item in failures)
+    unresolved_execution = any(item.get("status") == "unrecovered" and item.get("category") == "runtime" for item in failures)
+    failed_file = any(item.get("status") == "unrecovered" and (item.get("stage", "").startswith("pdf-") or item.get("tool") in {"gongchuang_artifact_probe", "gongchuang_content_audit", "gongchuang_branding_gate", "gongchuang_visual_inspection"}) for item in failures)
+    status = "unknown"
+    if turn_result == "aborted":
+        status = "cancelled"
+    elif json_requested and not account_block and not terminal_account_block:
+        status = "answered" if structured_reply == "valid-object" and not unresolved_execution and turn_result in {"completed", "blocked"} else "not-delivered" if turn_result in {"completed", "blocked", "error"} else "unknown"
+    elif delivered:
+        complete_formats = all(any(file["format"] == fmt for file in delivered) for fmt in formats)
+        status = "not-delivered" if formats and not any(file["format"] in formats for file in delivered) else "delivered" if turn_result == "completed" and delivery_result not in {"draft", "failed", "waiting-user"} and complete_formats and not failed_file and len(delivered) == len(files) else "partial"
+    elif account_block or terminal_account_block or delivery_result == "waiting-user" or turn_result == "blocked" and delivery_result == "draft" and not unresolved_execution:
+        status = "blocked"
+    elif failed_file or delivery_result == "failed" or turn_result == "blocked" and unresolved_execution or turn_result == "completed" and (formats or targets) and not context.get("omitted_event_count"):
+        status = "not-delivered"
+    unpublished = supplied.get("unpublished_files")
+    unpublished = [dict(name=file["name"][:240], format=file["format"][:30], event_seq=file["event_seq"]) for file in unpublished[:32] if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("format"), str) and isinstance(file.get("event_seq"), int)] if isinstance(unpublished, list) else [file for key, file in targets.items() if key not in files][:32]
+    return dict(status=status, verification_scope="json-structure-only" if json_requested else "file-delivery-only", requested_formats=formats,
+                user_request=request, goal_request=goal_request, structured_reply=structured_reply,
+                last_reply=reply, files=list(files.values())[:32], unpublished_files=unpublished)
+
+
+def _outcome_lines(outcome: dict) -> list[str]:
+    labels = {"delivered": "已记录实际文件交付", "partial": "部分文件已交付，整体尚未完成确认", "not-delivered": "目标结果未达成" if outcome.get("verification_scope") == "json-structure-only" else "目标文件未交付", "answered": "回复符合单一 JSON 对象结构", "blocked": "账号条件或用户确认阻塞", "cancelled": "用户取消", "unknown": "最终结果未知"}
+    scope = "仅检查 JSON 结构，字段内容与计算是否正确仍需验收。" if outcome.get("verification_scope") == "json-structure-only" else "文件回执只证明交付，内容是否满足需求仍需验收。"
+    lines = ["最终结果：" + labels[outcome["status"]] + "。" + scope, ""]
+    request = outcome.get("goal_request") or outcome["user_request"]
+    if request:
+        lines.extend(["用户目标：", "", "> " + request["text"].replace("\n", "\n> "), ""])
+    if outcome.get("structured_reply") in {"invalid", "absent"}:
+        lines.extend(["JSON-only 要求未满足：回复为空、夹杂说明或代码围栏，或不是可解析的单一 JSON 对象。", ""])
+    if outcome["last_reply"]:
+        reply = outcome["last_reply"]
+        lines.extend(["最终可见回复：" if reply["final"] else "最后可见进度回复，不能当作完成：", "", "> " + reply["text"].replace("\n", "\n> "), ""])
+    for file in outcome["files"]:
+        lines.extend([f"- 文件：{file['name']}；格式 {file['format']}；状态 {file['phase']}；宿主事件 {file['event_seq']}。", ""])
+    for file in outcome["unpublished_files"]:
+        lines.extend([f"- 未取得发布回执：{file['name']}；格式 {file['format']}；事件 {file['event_seq']}。", ""])
+    return lines
 
 
 def _analysis_lines(analysis: dict) -> list[str]:
@@ -249,33 +441,44 @@ def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
                 continue
             details = _errors(context)
             analysis = _failure_analysis(context)
+            outcome = _turn_outcome(context, analysis)
             review = {"report_id": report_id, "received_at": received_at,
+                      "occurred_at": diagnostic.get("occurred_at") if isinstance(diagnostic.get("occurred_at"), str) else None,
                       "code": diagnostic["code"], "client_version": diagnostic["client_version"],
                       "errors": details, "files": [dict(file_id=r[0], name=r[1], size=r[2]) for r in files],
                       "missing_files": [item for item in expected if isinstance(item, dict) and item.get("status") != "pending"] + incomplete,
                       "root_cause": "待复现，错误文本不能单独证明根因",
                       "next_action": "使用同版本、相关输入和工具参数复现，修复后验证原失败路径及相邻成功路径"}
+            review["outcome"] = outcome
+            if outcome["status"] == "blocked" and analysis and any(item.get("stage") in {"model-balance", "model-quota", "model-credentials", "client-upgrade"} for item in analysis["failures"]):
+                review.update(root_cause="已观测账号或版本条件未满足，不等同于文件生成程序故障", next_action="按具体诊断处理余额、额度、模型密钥或客户端升级；条件恢复后验收原任务最终结果")
+            elif outcome["status"] == "blocked" and any(re.search(r"GC-ACCOUNT-UPGRADE|MISSING_CREDENTIAL|INVALID_CREDENTIAL|Insufficient Balance|最低支持版本", detail, re.I) for detail in details):
+                review.update(root_cause="已观测账号或版本条件未满足，不等同于文件生成程序故障", next_action="处理诊断记录的账号条件或升级要求，然后继续原任务；不能把拦截本身记为生成程序缺陷")
             if analysis is not None:
                 review["failure_analysis"] = analysis
             connection.execute("INSERT INTO client_diagnostic_reviews(report_id,reviewed_at,day,review_json) VALUES (?,?,?,?)", (report_id, stamp, day, json.dumps(review, ensure_ascii=False)))
         reviews = [json.loads(row[0]) for row in connection.execute("SELECT review_json FROM client_diagnostic_reviews WHERE day=? ORDER BY report_id", (day,))]
-        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：优先使用客户端记录的失败阶段、同操作恢复与交付状态。首条错误不代表最终失败原因；已观测失败不等于触发根因已确认。旧客户端未记录的信息标为未知。", ""]
+        lines = [f"# 客户端错误复盘与修复清单 {day}", "", "说明：先检查用户目标、最终回复与实际文件交付，再分析失败阶段和同操作恢复。首条错误不代表最终失败原因；已观测失败不等于触发根因已确认。旧客户端未记录的信息标为未知。", ""]
         groups: dict[tuple[str, tuple[str, ...]], list[dict]] = {}
         for review in reviews:
             analysis = review.get("failure_analysis")
             signature = json.dumps({"turn_result": analysis["turn_result"], "delivery_result": analysis["delivery_result"],
                 "failures": [{key: item.get(key) for key in ("tool", "operation", "stage", "code", "category", "status", "observed_reason")} for item in analysis["failures"]]}, sort_keys=True, ensure_ascii=False) if analysis else ""
-            groups.setdefault((review["code"], tuple([signature]) if signature else tuple(review["errors"] or ["未取得具体错误"])), []).append(review)
+            outcome_signature = json.dumps(review.get("outcome", {"status": "unknown"}), sort_keys=True, ensure_ascii=False)
+            groups.setdefault((review["code"], tuple([signature, outcome_signature]) if signature else tuple(review["errors"] or ["未取得具体错误"]) + (outcome_signature,)), []).append(review)
         for index, ((code, errors), members) in enumerate(groups.items(), 1):
             lines.extend([f"## {index}. {code}", "", "报告编号：" + "、".join(str(m["report_id"]) for m in members),
                           "", "错误事实：", ""])
+            for member in members:
+                lines.extend([f"- #{member['report_id']} 客户端发生时间：{member.get('occurred_at') or '未记录'}；服务器接收时间：{member['received_at']}。", ""])
+            lines.extend(_outcome_lines(members[0].get("outcome", {"status": "unknown", "files": [], "unpublished_files": [], "user_request": None, "last_reply": None})))
             if members[0].get("failure_analysis"):
                 lines.extend(_analysis_lines(members[0]["failure_analysis"]))
             else:
                 lines.extend(["未提供结构化对话失败阶段与恢复记录；可能是旧版上报或独立采集失败，以下保留原始错误事实。", ""])
-                for error in errors:
+                for error in members[0]["errors"]:
                     lines.extend([*["> " + line for line in error.splitlines()], ""])
-            lines.extend(["根因：待复现。", "", "修复与验证：使用关联诊断、附件和失败成品复现；修复后回归同类失败及成功路径。", ""])
+            lines.extend(["根因：" + members[0]["root_cause"], "", "修复与验证：" + members[0]["next_action"], ""])
         if not reviews:
             lines.append("本批没有完成复盘的新错误；未传完附件的报告继续保留。")
         connection.execute("INSERT INTO client_diagnostic_days(day,created_at,document) VALUES (?,?,?) ON CONFLICT(day) DO UPDATE SET created_at=excluded.created_at,document=excluded.document", (day, stamp, "\n".join(lines)))

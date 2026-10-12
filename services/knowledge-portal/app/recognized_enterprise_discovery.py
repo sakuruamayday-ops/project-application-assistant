@@ -28,6 +28,7 @@ PROJECT_ALIASES = {
     "浙江省专精特新中小企业": ("provincial_specialized_sme", ""),
     "省专": ("provincial_specialized_sme", ""),
     "provincial_specialized_sme": ("provincial_specialized_sme", ""),
+    "创新型中小企业": ("unified", "创新型中小企业"),
     "首台套": ("three_first", "浙江省制造业首台（套）装备"),
     "首台（套）装备": ("three_first", "浙江省制造业首台（套）装备"),
     "首版次": ("three_first", "浙江省首版次软件产品"),
