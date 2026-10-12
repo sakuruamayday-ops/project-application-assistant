@@ -126,6 +126,9 @@ def _errors(value: object) -> list[str]:
         if value.get('failure_stage') == 'report-preparation':
             found.append('错误上报准备失败：report-preparation')
             walk(value.get('error'))
+        if value.get('module') == 'enterprise-trash' and value.get('failure_stage') in {'workspace-deletion', 'conversation-deletion'}:
+            found.append('企业空间或对话删除未完成：' + value['failure_stage'])
+            walk(value.get('error'))
         for event in value['events']:
             if not isinstance(event, dict) or not isinstance(event.get('data'), dict):
                 continue
@@ -229,6 +232,14 @@ def _failure_analysis(context: object) -> dict | None:
 def _turn_outcome(context: object, analysis: dict | None) -> dict:
     """Inspect final visible replies and Host file receipts; attachments and model claims are not receipts."""
     context = context if isinstance(context, dict) else {}
+    operation = context.get('user_operation')
+    if (context.get('module') == 'enterprise-trash' and isinstance(operation, dict)
+            and operation.get('operation') in {'workspace', 'conversation'} and operation.get('result') == 'failed'
+            and context.get('failure_stage') == operation['operation'] + '-deletion'):
+        target = '删除企业空间' if operation['operation'] == 'workspace' else '删除历史对话'
+        return dict(status='not-delivered', verification_scope='host-operation-only', requested_formats=[],
+                    file_requested=False, user_request=dict(event_seq=0, text=target, truncated=False),
+                    goal_request=None, structured_reply='not-requested', last_reply=None, files=[], unpublished_files=[])
     turn = context.get("failed_turn", (analysis or {}).get("turn"))
     supplied = context.get("failure_analysis", {})
     supplied = supplied.get("outcome") if isinstance(supplied, dict) and supplied.get("turn") == turn else None
@@ -406,6 +417,9 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
 def _outcome_lines(outcome: dict) -> list[str]:
     labels = {"delivered": "已记录实际文件交付", "partial": "部分文件已交付，整体尚未完成确认", "not-delivered": "目标结果未达成" if outcome.get("verification_scope") == "json-structure-only" else "目标文件未交付", "answered": "回复符合单一 JSON 对象结构", "blocked": "账号条件或用户确认阻塞", "cancelled": "用户取消", "unknown": "最终结果未知"}
     scope = "仅检查 JSON 结构，字段内容与计算是否正确仍需验收。" if outcome.get("verification_scope") == "json-structure-only" else "文件回执只证明交付，内容是否满足需求仍需验收。"
+    if outcome.get('verification_scope') == 'host-operation-only':
+        labels['not-delivered'] = '目标操作未完成'
+        scope = '宿主记录删除失败，修复后须重试并验收实际删除结果。'
     lines = ["最终结果：" + labels[outcome["status"]] + "。" + scope, ""]
     request = outcome.get("goal_request") or outcome["user_request"]
     if request:

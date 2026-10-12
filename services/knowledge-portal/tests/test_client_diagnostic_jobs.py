@@ -17,6 +17,32 @@ def test_review_extracts_failed_tool_text_not_successful_content():
     ]}) == ['MissingSessionID', 'connection lost']
 
 
+@pytest.mark.parametrize('operation', ['workspace', 'conversation'])
+def test_review_records_failed_host_deletion_without_conversation_events(operation):
+    context = {'events': [], 'module': 'enterprise-trash', 'failure_stage': operation + '-deletion',
+               'user_operation': {'operation': operation, 'result': 'failed', 'target_id': 'synthetic-id'},
+               'error': {'name': 'Error', 'message': 'synthetic cold record missing'}}
+    assert 'synthetic cold record missing' in _errors(context)
+    outcome = _turn_outcome(context, None)
+    assert outcome['status'] == 'not-delivered'
+    assert outcome['verification_scope'] == 'host-operation-only'
+    db = database()
+    add(db, 1, context=context)
+    assert review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))['reviewed'] == 1
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '目标操作未完成' in document
+    assert 'synthetic cold record missing' in document
+    assert '目标文件未交付' not in document
+    assert '待复现' in document
+
+
+def test_review_does_not_infer_host_deletion_from_unowned_operation_fields():
+    context = {'events': [], 'user_operation': {'operation': 'conversation', 'result': 'failed'},
+               'failure_stage': 'conversation-deletion'}
+    assert _turn_outcome(context, None)['verification_scope'] == 'file-delivery-only'
+    assert _turn_outcome(context, None)['status'] == 'unknown'
+
+
 def database():
     db = sqlite3.connect(':memory:')
     db.executescript('''
