@@ -12055,7 +12055,9 @@ def portal_payload(
                     ).casefold()
                 ]
         feedback_sql = """
-            SELECT feedback_messages.*,users.username,users.real_name,client_error_reports.diagnostic_json
+            SELECT feedback_messages.*,users.username,users.real_name,
+                   json_remove(client_error_reports.diagnostic_json,
+                               '$.conversation_context') AS diagnostic_json
             FROM feedback_messages
             JOIN users ON users.id=feedback_messages.user_id
             LEFT JOIN client_error_reports ON client_error_reports.feedback_id=feedback_messages.id
@@ -12067,6 +12069,8 @@ def portal_payload(
             feedback_sql += " WHERE feedback_messages.user_id=?"
             feedback_parameters = (int(user["id"]),)
         feedback_sql += " ORDER BY feedback_messages.id DESC LIMIT 100"
+        # Full conversation context is retained for individual diagnostic export.
+        # Project it out in SQLite before the list fetch/render can amplify it.
         feedback_messages = format_row_datetimes(
             connection.execute(feedback_sql, feedback_parameters).fetchall(),
             "created_at",

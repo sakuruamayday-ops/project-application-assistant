@@ -1205,8 +1205,101 @@ if (sectionLinks.length && observedSections.length) {
   scheduleSectionActivation();
 }
 
-// 滚轮/触摸/方向键自动翻页已移除：滚动到边界即跳页容易误触。
-// 翻页改为页面底部显式的「上一页 / 下一页」链接（portal.html 的 .page-continuation）。
+const pageContinuation = document.querySelector(".portal-page:not(.single-page) .page-continuation");
+if (pageContinuation) {
+  let wheelProgress = 0;
+  let wheelDirection = "";
+  let resetTimer = null;
+  let touchStart = null;
+  let navigating = false;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const interactiveTarget = (target) => target instanceof Element
+    && Boolean(target.closest("input,textarea,select,button,[contenteditable='true'],dialog[open]"));
+  const pageAtBoundary = (direction) => direction === "next"
+    ? window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 3
+    : window.scrollY <= 2;
+  const destinationFor = (direction) => direction === "next"
+    ? pageContinuation.dataset.autoNext
+    : pageContinuation.dataset.autoPrevious;
+  const nestedScrollerConsumes = (target, delta) => {
+    let element = target instanceof Element ? target : null;
+    while (element && element !== document.body && element !== document.documentElement) {
+      if (/auto|scroll/.test(getComputedStyle(element).overflowY)
+          && element.scrollHeight > element.clientHeight + 2
+          && (delta > 0
+            ? element.scrollTop + element.clientHeight < element.scrollHeight - 2
+            : element.scrollTop > 2)) return true;
+      element = element.parentElement;
+    }
+    return false;
+  };
+  const resetPageGesture = () => {
+    wheelProgress = 0;
+    wheelDirection = "";
+  };
+  const navigatePage = (direction) => {
+    const destination = destinationFor(direction);
+    if (!destination || navigating) return;
+    navigating = true;
+    try { sessionStorage.setItem("gongchuang-page-direction", direction); } catch {}
+    document.body.classList.add("is-page-leaving");
+    document.body.classList.toggle("is-page-leaving-previous", direction === "previous");
+    window.setTimeout(() => { window.location.href = destination; }, reducedMotion ? 10 : 360);
+  };
+  window.addEventListener("wheel", (event) => {
+    if (navigating || event.ctrlKey || event.defaultPrevented
+        || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        || interactiveTarget(event.target) || nestedScrollerConsumes(event.target, event.deltaY)) {
+      resetPageGesture();
+      return;
+    }
+    const direction = event.deltaY > 0 ? "next" : "previous";
+    if (!pageAtBoundary(direction) || !destinationFor(direction)) {
+      resetPageGesture();
+      return;
+    }
+    event.preventDefault();
+    if (wheelDirection !== direction) resetPageGesture();
+    wheelDirection = direction;
+    const delta = event.deltaMode === 1 ? event.deltaY * 16
+      : event.deltaMode === 2 ? event.deltaY * window.innerHeight : event.deltaY;
+    wheelProgress += Math.min(Math.abs(delta), 70);
+    window.clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(resetPageGesture, 420);
+    if (wheelProgress >= 130) navigatePage(direction);
+  }, {passive: false});
+  window.addEventListener("touchstart", (event) => {
+    const touch = event.touches.length === 1 ? event.touches[0] : null;
+    touchStart = touch && !interactiveTarget(event.target) ? {
+      y: touch.clientY, target: event.target,
+      atTop: pageAtBoundary("previous"), atBottom: pageAtBoundary("next"),
+    } : null;
+  }, {passive: true});
+  window.addEventListener("touchend", (event) => {
+    const start = touchStart;
+    touchStart = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch || navigating || event.defaultPrevented) return;
+    const delta = start.y - touch.clientY;
+    const direction = delta > 0 ? "next" : "previous";
+    if (Math.abs(delta) >= 80 && (direction === "next" ? start.atBottom : start.atTop)
+        && pageAtBoundary(direction) && !nestedScrollerConsumes(start.target, delta)) {
+      navigatePage(direction);
+    }
+  }, {passive: true});
+  window.addEventListener("touchcancel", () => { touchStart = null; }, {passive: true});
+  window.addEventListener("keydown", (event) => {
+    if (navigating || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+        || interactiveTarget(event.target)) return;
+    const direction = ["PageDown", "ArrowDown"].includes(event.key) ? "next"
+      : ["PageUp", "ArrowUp"].includes(event.key) ? "previous" : "";
+    if (direction && pageAtBoundary(direction) && destinationFor(direction)
+        && !nestedScrollerConsumes(event.target, direction === "next" ? 1 : -1)) {
+      event.preventDefault();
+      navigatePage(direction);
+    }
+  });
+}
 
 const skillCenter = document.querySelector("[data-skill-center]");
 if (skillCenter) {

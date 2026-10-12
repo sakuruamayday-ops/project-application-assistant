@@ -232,7 +232,7 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
       {% elif active_page == 'skill-admin' %}{% set next_page = '/admin/members' %}{% set previous_page = '/admin/knowledge-update' %}
       {% elif active_page == 'members' %}{% set next_page = '/portal' %}{% set previous_page = '/admin/releases' %}
       {% else %}{% set next_page = '/portal' %}{% set previous_page = '' %}{% endif %}
-      <nav class="page-continuation" aria-label="页面切换">
+      <nav class="page-continuation" aria-label="页面切换" data-auto-next="{{ next_page }}" data-auto-previous="{{ previous_page }}">
         {% if previous_page %}<a class="page-continuation-link page-transition-link" href="{{ previous_page }}">← 返回上一页</a>{% endif %}
         {% if next_page %}<a class="page-continuation-link is-next page-transition-link" href="{{ next_page }}">继续前往下一页 →</a>{% endif %}
       </nav>

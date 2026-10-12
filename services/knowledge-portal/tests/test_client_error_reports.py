@@ -3,6 +3,7 @@ from uuid import uuid4
 import base64
 import json
 import re
+import tracemalloc
 from fastapi.testclient import TestClient
 from test_portal import load_app
 
@@ -127,3 +128,44 @@ def test_attachment_resume_admin_download_and_review_route(tmp_path):
         db.execute("UPDATE users SET is_admin=0 WHERE username='owner'"); db.commit()
     assert client.get(f'/admin/feedback/{rid}/diagnostic-files/{fid}', follow_redirects=False).status_code in (403, 303)
     assert client.get('/admin/client-diagnostic-reviews', follow_redirects=False).status_code in (403, 303)
+
+
+def test_feedback_list_excludes_large_context_but_preserves_export(tmp_path):
+    module, client, _ = setup(tmp_path)
+    payload = report()
+    payload['conversation_context'] = json.dumps({
+        'events': [{'text': 'retained-context-marker ' * 90_000}],
+    })
+    diagnostic_json = json.dumps(payload)
+    with closing(module.database()) as db:
+        owner = db.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+        now = module.isoformat(module.utc_now())
+        report_ids = []
+        for _ in range(51):
+            rid = db.execute(
+                "INSERT INTO feedback_messages(user_id,category,subject,content,status,created_at,updated_at) VALUES (?,'bug','客户端错误 GC-REPORT-WORKBENCH','点击生成失败','pending',?,?)",
+                (owner, now, now),
+            ).lastrowid
+            db.execute(
+                'INSERT INTO client_error_reports(feedback_id,user_id,request_id,diagnostic_json) VALUES (?,?,?,?)',
+                (rid, owner, str(uuid4()), diagnostic_json),
+            )
+            report_ids.append(rid)
+        db.commit()
+    client.post('/login', data=dict(username='owner', password='synthetic-password-123'))
+    tracemalloc.start()
+    try:
+        page = client.get('/feedback')
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert page.status_code == 200
+    assert page.text.count('<summary>客户端诊断 #') == 51
+    assert '0.4.8-workbench.1' in page.text
+    assert 'retained-context-marker' not in page.text
+    assert len(page.content) < 200_000
+    assert peak < 32 * 1024 * 1024
+    assert '客户端诊断 #' in client.get('/feedback?feedback_query=GC-REPORT').text
+    exported = client.get(f'/admin/feedback/{report_ids[-1]}/diagnostic')
+    assert exported.status_code == 200
+    assert exported.json()['conversation_context'] == payload['conversation_context']
