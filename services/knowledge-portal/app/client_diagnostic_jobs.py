@@ -364,6 +364,15 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
     formats = list(dict.fromkeys("pdf" if token.lower() == "pdf" else "docx" for token in re.findall(r"(?:生成|输出|导出|转成|转换成|转为|制作|交付|提供|给我)(?!看|读|分析|检查|介绍)[^。！？\n]{0,24}?(PDF|Word|DOCX)\b", direct_request, re.I | re.ASCII)))
     if isinstance(supplied.get("requested_formats"), list):
         formats = list(dict.fromkeys(item for item in supplied["requested_formats"] if isinstance(item, str) and item in {"pdf", "docx"}))
+    report_requested = any(re.search(r"报告(?!中的|的|摘要|标题|目录|大纲|模板|模版|模块)", clause)
+        and re.search(r"生成|撰写|出具|制作|交付|输出|出一份|出一版|出一个|给我一份|给我两份|给我一个|做一份|做一个|做一下|做下", clause)
+        and not re.search(r"不要|不生成|不撰写|不输出|不用|无需|禁止", clause)
+        for clause in re.split(r"[，,。！？；;\n]", request_text))
+    if re.search(r"不(?:写|创建|生成)文件|只在对话中|只(?:输出|返回)[^。！？\n]{0,12}JSON", request_text, re.I) or re.search(r"^(?:请问)?(?:你)?(?:能否|能不能|能|会|支持)[^。！？\n]*报告(?:吗[?？]?|[?？])\s*$", request_text):
+        report_requested = False
+    file_requested = bool(formats or report_requested)
+    if isinstance(supplied.get("file_requested"), bool):
+        file_requested = supplied["file_requested"]
     if reply:
         reply["final"] = reply["final"] and turn_result == "completed"
     failures = (analysis or {}).get("failures", [])
@@ -379,13 +388,17 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
     elif delivered:
         complete_formats = all(any(file["format"] == fmt for file in delivered) for fmt in formats)
         status = "not-delivered" if formats and not any(file["format"] in formats for file in delivered) else "delivered" if turn_result == "completed" and delivery_result not in {"draft", "failed", "waiting-user"} and complete_formats and not failed_file and len(delivered) == len(files) else "partial"
+    elif files:
+        status = "partial"
+    elif file_requested and not account_block and not terminal_account_block and delivery_result != "waiting-user" and turn_result in {"completed", "blocked"} and (not context.get("omitted_event_count") or isinstance(supplied.get("file_requested"), bool) and isinstance(supplied.get("files"), list)):
+        status = "not-delivered"
     elif account_block or terminal_account_block or delivery_result == "waiting-user" or turn_result == "blocked" and delivery_result == "draft" and not unresolved_execution:
         status = "blocked"
     elif failed_file or delivery_result == "failed" or turn_result == "blocked" and unresolved_execution or turn_result == "completed" and (formats or targets) and not context.get("omitted_event_count"):
         status = "not-delivered"
     unpublished = supplied.get("unpublished_files")
     unpublished = [dict(name=file["name"][:240], format=file["format"][:30], event_seq=file["event_seq"]) for file in unpublished[:32] if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("format"), str) and isinstance(file.get("event_seq"), int)] if isinstance(unpublished, list) else [file for key, file in targets.items() if key not in files][:32]
-    return dict(status=status, verification_scope="json-structure-only" if json_requested else "file-delivery-only", requested_formats=formats,
+    return dict(status=status, verification_scope="json-structure-only" if json_requested else "file-delivery-only", requested_formats=formats, file_requested=file_requested,
                 user_request=request, goal_request=goal_request, structured_reply=structured_reply,
                 last_reply=reply, files=list(files.values())[:32], unpublished_files=unpublished)
 
@@ -474,6 +487,8 @@ def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
                 review.update(root_cause="已观测账号或版本条件未满足，不等同于文件生成程序故障", next_action="按具体诊断处理余额、额度、模型密钥或客户端升级；条件恢复后验收原任务最终结果")
             elif outcome["status"] == "blocked" and any(re.search(r"GC-ACCOUNT-UPGRADE|MISSING_CREDENTIAL|INVALID_CREDENTIAL|Insufficient Balance|最低支持版本", detail, re.I) for detail in details):
                 review.update(root_cause="已观测账号或版本条件未满足，不等同于文件生成程序故障", next_action="处理诊断记录的账号条件或升级要求，然后继续原任务；不能把拦截本身记为生成程序缺陷")
+            elif outcome["status"] == "not-delivered" and outcome.get("file_requested") and analysis and analysis["delivery_result"] == "draft" and not analysis["failures"]:
+                review.update(root_cause="专业流程在待完善状态停止，未取得目标报告的文件回执；这不单独证明程序崩溃", next_action="核对本轮报告意图、待完善原因及导出步骤；修复后验收实际文件，不能只以正常规则拦截关闭问题")
             if analysis is not None:
                 review["failure_analysis"] = analysis
             connection.execute("INSERT INTO client_diagnostic_reviews(report_id,reviewed_at,day,review_json) VALUES (?,?,?,?)", (report_id, stamp, day, json.dumps(review, ensure_ascii=False)))

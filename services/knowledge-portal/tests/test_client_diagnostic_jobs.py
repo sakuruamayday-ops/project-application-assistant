@@ -415,6 +415,25 @@ def test_review_keeps_identical_failures_on_different_actual_models_separate():
     assert review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))['groups'] == 2
 
 
+def test_review_records_report_goal_without_file_although_draft_stop_has_no_runtime_error():
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': '杭州焙焙家食品有限公司 给我一份企业全景报告'}]}},
+        outcome_event('user/message', 2, source={'kind': 'plugin:gongchuang-policy-gate', 'delivery': {'turn': 1, 'phase': 'draft', 'files': []}}),
+        outcome_event('turn/end', 3, reason={'kind': 'blocked'}),
+    ]}
+    outcome = _turn_outcome(context, None)
+    assert outcome['status'] == 'not-delivered' and outcome['file_requested']
+    context['events'][1]['data']['source']['delivery']['files'] = [{'path': 'report.pending.pdf', 'phase': 'draft'}]
+    assert _turn_outcome(context, None)['status'] == 'partial'
+
+
+def test_review_keeps_unfulfilled_report_goal_after_crop_with_bounded_no_file_observation():
+    context = {'failed_turn': 1, 'omitted_event_count': 4, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'blocked', 'delivery_result': 'draft', 'failures': [], 'outcome': {
+            'goal_request': {'event_seq': 1, 'text': '给我一份企业全景报告'}, 'file_requested': True, 'files': []}}}
+    assert _turn_outcome(context, _failure_analysis(context))['status'] == 'not-delivered'
+
+
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):
     db = database()
     add(db, 1, 'resolved')
