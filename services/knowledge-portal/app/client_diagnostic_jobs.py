@@ -202,10 +202,27 @@ def _failure_analysis(context: object) -> dict | None:
         primary = None
     if first not in failures:
         first = None
+    model_request = value.get("model_request")
+    if not isinstance(model_request, dict) or not isinstance(model_request.get("event_seq"), int) or not all(isinstance(model_request.get(key), str) for key in ("provider", "model")):
+        model_request = None
+        for index, event in enumerate(context.get("events", []) if isinstance(context.get("events"), list) else []):
+            if not isinstance(event, dict) or event.get("type") != "request/header" or not isinstance(event.get("data"), dict):
+                continue
+            data = event["data"]
+            if data.get("turn") != value.get("turn"):
+                continue
+            header = data.get("header", {})
+            config = header.get("config", {}) if isinstance(header, dict) else {}
+            if isinstance(config, dict) and all(isinstance(config.get(key), str) for key in ("provider", "model")):
+                model_request = dict(event_seq=event.get("seq") if isinstance(event.get("seq"), int) else index,
+                                     provider=config["provider"], model=config["model"])
+    if model_request:
+        model_request = dict(event_seq=model_request["event_seq"], provider=model_request["provider"][:100], model=model_request["model"][:240])
     return {"turn": value.get("turn") if isinstance(value.get("turn"), int) else None,
             "turn_result": str(value.get("turn_result", "unknown"))[:60],
             "delivery_result": str(value.get("delivery_result", "unknown"))[:60],
             "first_failure": first, "primary_failure": primary, "failures": failures,
+            "model_request": model_request,
             "omitted_failure_count": value.get("omitted_failure_count", 0) if isinstance(value.get("omitted_failure_count", 0), int) else 0}
 
 
@@ -397,6 +414,9 @@ def _analysis_lines(analysis: dict) -> list[str]:
                   "business-rejection": "业务检查未通过", "outcome-unknown": "结果尚未确认"}
     statuses = {"unrecovered": "未记录同操作恢复", "recovered": "同操作已恢复", "expected-block": "规则拦截", "outcome-unknown": "结果未知"}
     lines = [f"客户端记录：轮次结束状态 {analysis['turn_result']}；专业交付状态 {analysis['delivery_result']}。", ""]
+    model = analysis.get("model_request")
+    if model:
+        lines.extend([f"本轮最后一次实际模型请求：{model['provider']} / {model['model']}；宿主事件 {model['event_seq']}。不是设置页的默认模型。", ""])
     first = analysis.get("first_failure")
     if first:
         lines.extend([f"首个失败：事件 {first['event_seq']}，{first.get('operation') or first.get('tool', '未知操作')}；不能单独作为最终失败原因。", ""])
@@ -463,6 +483,7 @@ def review_pending(connection: sqlite3.Connection, now: datetime) -> dict:
         for review in reviews:
             analysis = review.get("failure_analysis")
             signature = json.dumps({"turn_result": analysis["turn_result"], "delivery_result": analysis["delivery_result"],
+                "model_request": analysis.get("model_request"),
                 "failures": [{key: item.get(key) for key in ("tool", "operation", "stage", "code", "category", "status", "observed_reason")} for item in analysis["failures"]]}, sort_keys=True, ensure_ascii=False) if analysis else ""
             outcome_signature = json.dumps(review.get("outcome", {"status": "unknown"}), sort_keys=True, ensure_ascii=False)
             groups.setdefault((review["code"], tuple([signature, outcome_signature]) if signature else tuple(review["errors"] or ["未取得具体错误"]) + (outcome_signature,)), []).append(review)

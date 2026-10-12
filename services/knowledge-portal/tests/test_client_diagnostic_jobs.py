@@ -389,6 +389,32 @@ def test_review_does_not_accept_a_missing_tool_success_flag_or_ignore_failed_hos
     assert _turn_outcome(context, None)['status'] == 'partial'
 
 
+def test_review_retains_actual_request_model_without_keys_before_event_crop():
+    observed = dict(event_seq=8, provider='commandcode', model='Qwen/Qwen3.8-Max', apiKey='must-not-copy')
+    context = {'failed_turn': 1, 'omitted_event_count': 2, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'error', 'failures': [], 'model_request': observed}}
+    analysis = _failure_analysis(context)
+    assert analysis['model_request'] == {key: observed[key] for key in ('event_seq', 'provider', 'model')}
+    assert 'must-not-copy' not in json.dumps(analysis)
+    context['failure_analysis'].pop('model_request')
+    context['events'] = [outcome_event('request/header', 8, header={'config': observed})]
+    assert _failure_analysis(context)['model_request']['model'] == 'Qwen/Qwen3.8-Max'
+    db = database()
+    add(db, 1, context=context)
+    review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))
+    document = db.execute('SELECT document FROM client_diagnostic_days').fetchone()[0]
+    assert '本轮最后一次实际模型请求：commandcode / Qwen/Qwen3.8-Max' in document
+
+
+def test_review_keeps_identical_failures_on_different_actual_models_separate():
+    db = database()
+    for report_id, model in enumerate(['Qwen/Qwen3.8-Max', 'Qwen/Qwen3.8-Flash'], 1):
+        add(db, report_id, context={'failed_turn': 1, 'events': [], 'failure_analysis': {
+            'turn': 1, 'turn_result': 'error', 'failures': [],
+            'model_request': {'event_seq': 8, 'provider': 'commandcode', 'model': model}}})
+    assert review_pending(db, datetime(2026, 10, 12, 10, tzinfo=timezone.utc))['groups'] == 2
+
+
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):
     db = database()
     add(db, 1, 'resolved')
