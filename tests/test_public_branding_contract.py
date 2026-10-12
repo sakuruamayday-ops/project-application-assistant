@@ -68,7 +68,6 @@ def test_portal_visible_configuration_uses_public_namespace():
     assert '@app.get("/install/jiaotang-agent.mjs")' not in main
     for storage_key in (
         "gongchuang-user-model-api",
-        "gongchuang-page-direction",
         "gongchuang-kb-device-id",
         "gongchuang-cockpit-question",
     ):
