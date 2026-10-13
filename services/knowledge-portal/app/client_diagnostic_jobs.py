@@ -379,6 +379,17 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
         and re.search(r"生成|撰写|出具|制作|交付|输出|出一份|出一版|出一个|给我一份|给我两份|给我一个|做一份|做一个|做一下|做下", clause)
         and not re.search(r"不要|不生成|不撰写|不输出|不用|无需|禁止", clause)
         for clause in re.split(r"[，,。！？；;\n]", request_text))
+    shorthand_report = bool(re.fullmatch(
+        r"\s*[\u4e00-\u9fffA-Za-z0-9·（）()]{2,}公司[，,\s]*"
+        r"(?=[^。！？；;\n]*?(?:高企|高新技术企业|专精特新|研发中心))"
+        r"[^。！？；;\n]*?(?:双报告|可行性(?:分析)?报告)\s*[。.!！]?\s*",
+        request_text,
+    )) and not re.search(
+        r"阅读|解读|解释|查看|审核|审查|分析(?:这|该|已有|现有|提供|所附)|这份|该份|附件"
+        r"|不要|不用|无需|不必|禁止|别|不生成|不做|不出|能否|能不能|能生成|能做|是否|支持|吗|么|[?？]",
+        request_text,
+    )
+    report_requested = report_requested or shorthand_report
     if re.search(r"不(?:写|创建|生成)文件|只在对话中|只(?:输出|返回)[^。！？\n]{0,12}JSON", request_text, re.I) or re.search(r"^(?:请问)?(?:你)?(?:能否|能不能|能|会|支持)[^。！？\n]*报告(?:吗[?？]?|[?？])\s*$", request_text):
         report_requested = False
     file_requested = bool(formats or report_requested)

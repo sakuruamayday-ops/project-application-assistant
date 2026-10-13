@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 
 SIGNATURE_FILES = (
@@ -36,8 +39,9 @@ def verify_ed25519(skill_dir: Path, metadata: dict[str, object]) -> str | None:
     actual_fingerprint = fingerprint.stdout.split()[1]
     if actual_fingerprint != metadata.get("public_key_fingerprint"):
         return "发布公钥指纹与签名元数据不一致"
-    with tempfile.TemporaryDirectory(prefix="jiaotang-deploy-signature-") as temporary:
-        allowed_signers = Path(temporary) / "allowed_signers"
+    temporary = Path(tempfile.mkdtemp(prefix="jiaotang-deploy-signature-"))
+    try:
+        allowed_signers = temporary / "allowed_signers"
         allowed_signers.write_text(
             "publisher " + public_key.read_text(encoding="utf-8").strip() + "\n",
             encoding="utf-8",
@@ -60,6 +64,23 @@ def verify_ed25519(skill_dir: Path, metadata: dict[str, object]) -> str | None:
             check=False,
             capture_output=True,
         )
+    finally:
+        if sys.platform == "darwin":
+            trash = Path.home() / ".Trash"
+        else:
+            trash_root = Path(
+                os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local/share")
+            ) / "Trash"
+            trash = trash_root / "files"
+            (trash_root / "info").mkdir(parents=True, exist_ok=True)
+            (trash_root / "info" / f"{temporary.name}.trashinfo").write_text(
+                "[Trash Info]\n"
+                f"Path={quote(str(temporary), safe='/')}\n"
+                f"DeletionDate={datetime.now().isoformat(timespec='seconds')}\n",
+                encoding="utf-8",
+            )
+        trash.mkdir(parents=True, exist_ok=True)
+        temporary.rename(trash / temporary.name)
     return None if verification.returncode == 0 else "发布清单 Ed25519 验签失败"
 
 

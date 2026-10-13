@@ -460,6 +460,42 @@ def test_review_keeps_unfulfilled_report_goal_after_crop_with_bounded_no_file_ob
     assert _turn_outcome(context, _failure_analysis(context))['status'] == 'not-delivered'
 
 
+@pytest.mark.parametrize('request_text', [
+    '宁波展奕捷精密机械有限公司，高新技术企业专精特新，双报告',
+    '宁波海格亚阿科比轴承有限公司，研发中心可行性分析报告',
+    '杭州示例有限公司 高企可行性报告。',
+])
+def test_review_keeps_shorthand_company_project_report_goal_without_a_file(request_text):
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': request_text}]}},
+        outcome_event('user/message', 2, source={'kind': 'plugin:gongchuang-policy-gate', 'delivery': {'turn': 1, 'phase': 'draft', 'files': []}}),
+        outcome_event('turn/end', 3, reason={'kind': 'blocked'}),
+    ]}
+    outcome = _turn_outcome(context, None)
+    assert outcome['file_requested'] is True
+    assert outcome['status'] == 'not-delivered'
+
+
+@pytest.mark.parametrize('request_text', [
+    '阅读宁波海格亚阿科比轴承有限公司，研发中心可行性分析报告',
+    '解释这份宁波海格亚阿科比轴承有限公司，研发中心可行性分析报告',
+    '分析这份宁波海格亚阿科比轴承有限公司，研发中心可行性分析报告',
+    '宁波展奕捷精密机械有限公司，高新技术企业专精特新，双报告吗？',
+    '宁波展奕捷精密机械有限公司，是否支持高新技术企业专精特新双报告',
+    '宁波展奕捷精密机械有限公司，不要生成高新技术企业专精特新双报告',
+    '你能生成宁波海格亚阿科比轴承有限公司的研发中心可行性分析报告吗？',
+])
+def test_review_does_not_infer_shorthand_creation_from_existing_reports_or_questions(request_text):
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'user/message', 'seq': 1, 'data': {'source': {'kind': 'user'}, 'content': [{'type': 'text', 'text': request_text}]}},
+        outcome_event('user/message', 2, source={'kind': 'plugin:gongchuang-policy-gate', 'delivery': {'turn': 1, 'phase': 'draft', 'files': []}}),
+        outcome_event('turn/end', 3, reason={'kind': 'blocked'}),
+    ]}
+    outcome = _turn_outcome(context, None)
+    assert outcome['file_requested'] is False
+    assert outcome['status'] == 'blocked'
+
+
 def test_expiry_keeps_today_unresolved_and_unreviewed(tmp_path):
     db = database()
     add(db, 1, 'resolved')

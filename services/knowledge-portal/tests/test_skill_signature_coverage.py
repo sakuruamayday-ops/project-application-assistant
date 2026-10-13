@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_skill_signature_coverage.py"
@@ -38,6 +41,31 @@ def test_missing_signature_blocks_deployment(tmp_path):
     assert result["status"] == "fail"
     assert result["signature_count"] == 0
     assert any("签名数量 0 与技能总数 1 不一致" in error for error in result["errors"])
+
+
+@pytest.mark.parametrize("platform", ["darwin", "linux"])
+def test_invalid_signature_is_rejected_and_own_verification_files_are_recoverable(tmp_path, monkeypatch, platform):
+    skills_root = Path(__file__).resolve().parents[3] / "skills"
+    skill_name = json.loads((skills_root / "suite-manifest.json").read_text())["skills"][0]
+    skill_dir = tmp_path / "tampered-skill"
+    skill_dir.mkdir()
+    for name in MODULE.SIGNATURE_FILES:
+        shutil.copy2(skills_root / skill_name / name, skill_dir / name)
+    (skill_dir / "release-manifest.json").write_text('{"tampered":true}\n')
+    metadata = json.loads((skill_dir / "release-signature.json").read_text())
+    fake_home = tmp_path / "home"
+    monkeypatch.setattr(MODULE.Path, "home", lambda: fake_home)
+    monkeypatch.setattr(MODULE.sys, "platform", platform)
+    monkeypatch.setenv("XDG_DATA_HOME", str(fake_home / ".local/share"))
+
+    assert MODULE.verify_ed25519(skill_dir, metadata) == "发布清单 Ed25519 验签失败"
+
+    trash = fake_home / ".Trash" if platform == "darwin" else fake_home / ".local/share/Trash/files"
+    retained = list(trash.iterdir())
+    assert len(retained) == 1
+    assert (retained[0] / "allowed_signers").read_text().startswith("publisher ")
+    if platform != "darwin":
+        assert (trash.parent / "info" / (retained[0].name + ".trashinfo")).is_file()
 
 
 def test_gate_result_can_be_persisted_for_admin_dashboard(tmp_path):
