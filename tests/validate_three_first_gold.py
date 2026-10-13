@@ -55,7 +55,7 @@ def main() -> None:
     source = MAIN.read_text(encoding="utf-8")
     visible_tools = set(
         re.findall(
-            r"@knowledge_mcp\.tool\(\)\s*\ndef\s+(three_first_[a-z0-9_]+)\s*\(",
+            r"@knowledge_mcp\.tool\(\)\s*\n(?:async\s+)?def\s+(three_first_[a-z0-9_]+)\s*\(",
             source,
         )
     )

@@ -21,13 +21,13 @@ def test_current_suite_templates_complete_initial_baseline() -> None:
     result = MODULE.validate_templates(
         ROOT,
         expected_office_count=29,
-        expected_source_count=4,
+        expected_source_count=5,
     )
 
     assert result["status"] == "pass"
     assert result["office_template_count"] == 29
-    assert result["source_template_count"] == 4
-    assert len(result["templates"]) == 33
+    assert result["source_template_count"] == 5
+    assert len(result["templates"]) == 34
 
 
 def test_discovery_rejects_legacy_template_even_when_other_template_is_valid(
