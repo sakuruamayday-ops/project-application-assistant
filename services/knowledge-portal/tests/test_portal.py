@@ -8,6 +8,7 @@ import os
 import re
 import sqlite3
 import subprocess
+import threading
 import time
 import uuid
 import zipfile
@@ -19,6 +20,8 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
+from mcp.server.fastmcp.exceptions import ToolError
 
 from app.device_security import (
     activation_canonical_value,
@@ -11000,6 +11003,137 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
     assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1, 1]
 
 
+def test_slow_mcp_search_keeps_health_and_account_requests_responsive(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    original_search = module.public_search_knowledge
+    expected = original_search('产业链', 1)
+    entered = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    search_threads = []
+
+    def slow_search(query, limit):
+        search_threads.append(threading.get_ident())
+        entered.set()
+        try:
+            assert release.wait(5), 'test did not release search'
+            return original_search(query, limit)
+        finally:
+            finished.set()
+
+    async def exercise():
+        async with AsyncClient(transport=ASGITransport(app=module.app), base_url='http://testserver') as client:
+            setup = await client.post('/setup', data={
+                'setup_key': 'setup-secret', 'username': 'owner', 'password': 'test-password-concurrency',
+            })
+            assert setup.status_code == 303
+            with closing(module.database()) as connection:
+                user_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+            token = module.ensure_personal_access_token(user_id)
+            monkeypatch.setattr(module, 'public_search_knowledge', slow_search)
+            task = asyncio.create_task(module.knowledge_mcp._tool_manager.call_tool(
+                'knowledge_search', {'query': '产业链', 'limit': 1},
+            ))
+            try:
+                assert await asyncio.to_thread(entered.wait, 3)
+                assert not finished.is_set(), 'MCP search ran on the request event loop'
+                health, account, denied = await asyncio.wait_for(asyncio.gather(
+                    client.get('/health'),
+                    client.get('/v1/me', headers={'Authorization': f'Bearer {token}'}),
+                    client.get('/v1/me'),
+                ), timeout=2)
+                assert health.status_code == 200 and health.json()['status'] == 'ok'
+                assert account.status_code == 200 and account.json()['username'] == 'owner'
+                assert denied.status_code == 401
+                assert not finished.is_set()
+            finally:
+                release.set()
+            assert await task == expected
+            assert len(search_threads) == 1
+            assert search_threads[0] != threading.get_ident()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize('tool_name,operation,arguments', [
+    ('knowledge_case_pack', 'query_case_packs', {'query': '产业链', 'limit': 2}),
+    ('recognition_search', 'execute_recognition_search', {'query': '工业机器人小巨人', 'limit': 2, 'offset': 7, 'result_group': 'pending'}),
+    ('enterprise_identity_lineage_lookup', 'lookup_identity_lineage', {'query': '示例企业', 'limit': 2}),
+])
+def test_mcp_index_connections_belong_to_query_worker(tmp_path, monkeypatch, tool_name, operation, arguments):
+    module = load_app(tmp_path)
+    callback_threads = []
+    calls = []
+    expected = {'result': 'fixture-index-read'}
+
+    def search(connection, *args, **kwargs):
+        assert connection.execute('SELECT 1').fetchone()[0] == 1
+        callback_threads.append(threading.get_ident())
+        calls.append((args, kwargs))
+        return expected
+
+    monkeypatch.setattr(module, operation, search)
+    result = asyncio.run(module.knowledge_mcp._tool_manager.call_tool(tool_name, arguments))
+    assert result == expected
+    assert callback_threads[0] != threading.get_ident()
+    assert len(calls) == 1
+    if tool_name == 'enterprise_identity_lineage_lookup':
+        assert calls[0][0] == ('示例企业', 2)
+    else:
+        assert all(calls[0][1][key] == value for key, value in arguments.items())
+
+
+def test_threaded_mcp_search_preserves_validation_and_execution_errors(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    calls = []
+
+    def rejected_search(query, limit):
+        calls.append((query, limit))
+        raise sqlite3.OperationalError('fixture query failed')
+
+    monkeypatch.setattr(module, 'public_search_knowledge', rejected_search)
+    with pytest.raises(ToolError, match='query'):
+        asyncio.run(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': {}}))
+    assert calls == []
+    with pytest.raises(ToolError, match='fixture query failed') as failure:
+        asyncio.run(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': 'fixture', 'limit': 1}))
+    assert isinstance(failure.value.__cause__, sqlite3.OperationalError)
+    assert calls == [('fixture', 1)]
+
+
+def test_threaded_mcp_search_cancellation_stops_waiting_without_blocking_loop(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    entered = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+
+    def slow_search(query, limit):
+        del query, limit
+        entered.set()
+        try:
+            assert release.wait(5), 'test did not release search'
+            return {'results': []}
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(module, 'public_search_knowledge', slow_search)
+
+    async def exercise():
+        task = asyncio.create_task(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': 'fixture'}))
+        try:
+            assert await asyncio.to_thread(entered.wait, 3)
+            assert not finished.is_set()
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert not finished.is_set()
+        finally:
+            release.set()
+            assert await asyncio.to_thread(finished.wait, 3)
+
+    asyncio.run(exercise())
+
+
 def test_mcp_middleware_forwards_disconnect_after_replaying_body(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     request_body = b'{"jsonrpc":"2.0","id":1,"method":"ping"}'
@@ -12195,7 +12329,7 @@ def test_recognition_paging_parameters_reach_all_service_entries(tmp_path, monke
     monkeypatch.setattr(module, 'execute_recognition_search', search)
     payload = module.RecognitionSearchRequest(query='工业机器人有哪些小巨人', offset=2, result_group=result_group, limit=2)
     module.recognition_search_api(payload, None)
-    module.recognition_search_tool(query=payload.query, offset=2, result_group=result_group, limit=2)
+    asyncio.run(module.recognition_search_tool(query=payload.query, offset=2, result_group=result_group, limit=2))
     module.execute_assistant_tool('recognition_search', payload.model_dump())
     assert len(calls) == 3
     assert all(x['offset'] == 2 and x['result_group'] == result_group and x['limit'] == 2 for x in calls)

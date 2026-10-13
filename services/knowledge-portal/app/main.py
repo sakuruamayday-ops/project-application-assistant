@@ -21681,9 +21681,9 @@ def download_latest_workbuddy_platform_skills(
 
 
 @knowledge_mcp.tool()
-def knowledge_search(query: str, limit: int = 8) -> dict[str, object]:
+async def knowledge_search(query: str, limit: int = 8) -> dict[str, object]:
     """检索团队知识库，返回命中文档编号、标题、摘要、资料类别和来源。"""
-    return public_search_knowledge(query, limit)
+    return await asyncio.to_thread(public_search_knowledge, query, limit)
 
 
 @knowledge_mcp.tool()
@@ -21693,7 +21693,7 @@ def knowledge_document(document_id: int) -> dict[str, object]:
 
 
 @knowledge_mcp.tool()
-def knowledge_case_pack(
+async def knowledge_case_pack(
     project_id: str = "",
     query: str = "",
     year: int | None = None,
@@ -21703,21 +21703,24 @@ def knowledge_case_pack(
     limit: int = 5,
 ) -> dict[str, object]:
     """按项目、年度、行业、企业规模或章节返回成套案例及附件关系。"""
-    with closing(content_database()) as connection:
-        return query_case_packs(
-            connection,
-            project_id=project_id,
-            query=query,
-            year=year,
-            industry=industry,
-            enterprise_scale=enterprise_scale,
-            section=section,
-            limit=limit,
-        )
+    def search():
+        with closing(content_database()) as connection:
+            return query_case_packs(
+                connection,
+                project_id=project_id,
+                query=query,
+                year=year,
+                industry=industry,
+                enterprise_scale=enterprise_scale,
+                section=section,
+                limit=limit,
+            )
+
+    return await asyncio.to_thread(search)
 
 
 @knowledge_mcp.tool()
-def public_list_search(
+async def public_list_search(
     enterprise_name: str = "",
     project_name: str = "",
     year: int | None = None,
@@ -21727,7 +21730,8 @@ def public_list_search(
     limit: int = 20,
 ) -> dict[str, object]:
     """按企业、项目、年度、批次或地区查询政府公示与认定名单实体。"""
-    return search_public_list_entities(
+    return await asyncio.to_thread(
+        search_public_list_entities,
         enterprise_name=enterprise_name,
         project_name=project_name,
         year=year,
@@ -21739,7 +21743,7 @@ def public_list_search(
 
 
 @knowledge_mcp.tool()
-def authoritative_list_search(
+async def authoritative_list_search(
     list_type: str,
     enterprise_name: str = "",
     product_name: str = "",
@@ -21760,7 +21764,8 @@ def authoritative_list_search(
     不支持all或高新技术企业。查询企业全部项目使用public_list_search，不传project_name；
     高新等其他项目使用public_list_search并传project_name。全量名单必须翻页至has_more=false。
     """
-    return search_authoritative_list_facts(
+    return await asyncio.to_thread(
+        search_authoritative_list_facts,
         list_type=list_type,
         enterprise_name=enterprise_name,
         product_name=product_name,
@@ -21778,7 +21783,7 @@ def authoritative_list_search(
 
 
 @knowledge_mcp.tool()
-def policy_search(
+async def policy_search(
     query: str = "",
     project_name: str = "",
     region: str = "",
@@ -21788,19 +21793,20 @@ def policy_search(
     limit: int = 8,
 ) -> dict[str, object]:
     """按标准项目、地区、文件阶段、有效性和年度查询政策文档。"""
-    return search_policy_documents(
+    return await asyncio.to_thread(
+        search_policy_documents,
         query, project_name, region, document_stage, validity_status, year, limit
     )
 
 
 @knowledge_mcp.tool()
-def project_catalog_match(
+async def project_catalog_match(
     regions: list[str] | None = None,
     keywords: list[str] | None = None,
     limit: int = 20,
 ) -> dict[str, object]:
     """按地区和企业关键词匹配理论候选项目，不替代当期政策核验。"""
-    return match_project_catalog(regions, keywords, limit)
+    return await asyncio.to_thread(match_project_catalog, regions, keywords, limit)
 
 
 def three_first_directory_diff(
@@ -21836,7 +21842,7 @@ def three_first_product_match(
 
 
 @knowledge_mcp.tool()
-def three_first_analysis(
+async def three_first_analysis(
     query: str,
     enterprise_name: str = "",
     product_name: str = "",
@@ -21849,7 +21855,8 @@ def three_first_analysis(
     regions: list[str] | None = None,
 ) -> dict[str, object]:
     """统一分析首台套、首版次和首批次；自动组合知识检索、名单、目录差异与产品匹配。"""
-    return analyze_three_first(
+    return await asyncio.to_thread(
+        analyze_three_first,
         query,
         enterprise_name,
         product_name,
@@ -21864,7 +21871,7 @@ def three_first_analysis(
 
 
 @knowledge_mcp.tool(name="recognition_search")
-def recognition_search_tool(
+async def recognition_search_tool(
     query: str,
     projects: list[str] | None = None,
     subject_terms: list[str] | None = None,
@@ -21881,33 +21888,39 @@ def recognition_search_tool(
     result_group=exact、related或pending，从offset=0开始并使用返回的next_offset，
     保持项目、主题、地区和年度条件不变。分页参数单独传递，不拼入query。
     """
-    with closing(content_database()) as connection:
-        return execute_recognition_search(
-            connection,
-            query=query,
-            projects=projects or [],
-            subject_terms=subject_terms or [],
-            regions=regions or [],
-            years=years or [],
-            status=status,
-            limit=limit,
-            offset=offset,
-            result_group=result_group,
-        )
+    def search():
+        with closing(content_database()) as connection:
+            return execute_recognition_search(
+                connection,
+                query=query,
+                projects=projects or [],
+                subject_terms=subject_terms or [],
+                regions=regions or [],
+                years=years or [],
+                status=status,
+                limit=limit,
+                offset=offset,
+                result_group=result_group,
+            )
+
+    return await asyncio.to_thread(search)
 
 
 @knowledge_mcp.tool(name="enterprise_identity_lineage_lookup")
-def enterprise_identity_lineage_lookup_tool(
+async def enterprise_identity_lineage_lookup_tool(
     query: str,
     limit: int = 20,
 ) -> dict[str, object]:
     """按现名、曾用名或统一社会信用代码反查主体，并展示冲突路径。"""
-    with closing(content_database()) as connection:
-        return lookup_identity_lineage(connection, query, limit)
+    def search():
+        with closing(content_database()) as connection:
+            return lookup_identity_lineage(connection, query, limit)
+
+    return await asyncio.to_thread(search)
 
 
 @knowledge_mcp.tool(name="enterprise_lifecycle_decision")
-def enterprise_lifecycle_decision_tool(
+async def enterprise_lifecycle_decision_tool(
     query: str,
     enterprise_facts: list[dict[str, object]],
     project_context: dict[str, object],
@@ -21916,7 +21929,8 @@ def enterprise_lifecycle_decision_tool(
     deliverable: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """对一个或多个项目执行确定性生命周期决策；多项目必须放在project_context.projects中，返回逐项目覆盖台账。"""
-    return enterprise_lifecycle_decision(
+    return await asyncio.to_thread(
+        enterprise_lifecycle_decision,
         query,
         enterprise_facts=enterprise_facts,
         project_context=project_context,
