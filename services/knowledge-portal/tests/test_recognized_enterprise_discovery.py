@@ -23,6 +23,15 @@ def test_innovative_sme_routes_to_existing_unified_recognition_queries():
     assert result['query_plan']['projects'] == ['创新型中小企业']
 
 
+def test_manufacturing_champion_full_names_use_existing_unified_queries():
+    for name in ('制造业单项冠军', '制造业单项冠军企业', '国家级制造业单项冠军企业'):
+        assert resolve_projects([name]) == [('unified', '单项冠军', name)]
+        connection = sqlite3.connect(':memory:')
+        connection.row_factory = sqlite3.Row
+        result = recognition_search(connection, query='查询制造业单项冠军企业', projects=[name], subject_terms=['水表'])
+        assert result['query_plan']['projects'] == [name]
+
+
 def test_three_first_subject_discovery_separates_product_and_recognition_evidence():
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
