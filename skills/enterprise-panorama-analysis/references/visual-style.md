@@ -7,4 +7,4 @@
 | A 标准销售版 | `version-a-sales.md` | `assets/sales-style.css` | 无，主人固定授权 |
 | B GCIP深度顾问版 | `version-b-advisory.md` | `assets/report-style.css` | 使用统一金色品牌水印 |
 
-两种视觉不得混用。版本A不出现GCIP仪表盘或品牌水印；版本B使用金色、棕金与米金体系，不套用蓝灰销售版页脚和淡蓝表头。
+两种视觉不得混用。版本A不出现GCIP仪表盘或品牌水印；版本B使用金色、棕金与米金体系，不套用A版橙色封面、原章节图标和灰白表格。

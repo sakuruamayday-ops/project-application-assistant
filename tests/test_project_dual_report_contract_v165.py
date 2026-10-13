@@ -1,5 +1,8 @@
 import json
 import runpy
+import tempfile
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -211,3 +214,168 @@ def test_customer_body_does_not_require_internal_delivery_assertions() -> None:
     profiles = contract["delivery_profiles"]
     assert profiles["enterprise-panorama-standard"]["branding_contracts"]
     assert profiles["enterprise-panorama-standard"]["required_artifacts"]
+
+
+@contextmanager
+def sales_html_case():
+    # Own the actual generation inputs and output, including failed attempts.
+    # Move them to Trash rather than pytest's permanent temporary-file cleanup.
+    folder = Path(tempfile.mkdtemp(prefix="sales-master-test-"))
+    try:
+        yield folder, runpy.run_path(str(SKILLS / "enterprise-panorama-analysis/scripts/build_sales_html.py"))
+    finally:
+        trash = Path.home() / ".Trash"
+        trash.mkdir(exist_ok=True)
+        folder.rename(trash / f"{folder.name}-{uuid.uuid4()}")
+
+
+def sales_input():
+    return {
+        "company": {"name": "合成模板验证有限公司", "paid_in_capital": "已提供工商公开原文"},
+        "report_date": "合成报告日期", "data_as_of": "合成资料时点",
+        "sections": {
+            "03": {"paragraphs": [{"text": "已验证说明", "status": "low"},
+                                    {"text": "待核说明", "status": "medium"},
+                                    {"text": "风险说明", "status": "high"}]},
+            "12": {"tables": [{"type": "summary-risks", "rows": [["—", "合成核验", "待来源支持", {"text": "待核", "severity": "pending"}]]}]},
+        },
+        "sources": [{"name": "合成测试来源", "url": "https://example.gov.cn/test", "queried_at": "合成时点"}],
+    }
+
+
+def sales_generate(module, folder, data, output="report.html"):
+    source = folder / "input.json"
+    source.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    destination = folder / output
+    return module["build_sales_html"](source, destination), destination
+
+
+def test_sales_html_preserves_fixed_master_dom_and_actual_state_components():
+    from lxml import html
+    with sales_html_case() as (folder, module):
+        result, destination = sales_generate(module, folder, sales_input())
+        document = html.fromstring(destination.read_text())
+        assert result["status"] == "pass" and result["format"] == "html"
+        assert document.xpath('//section[@data-section]/@data-section') == [f"{n:02}" for n in range(1, 14)]
+        assert "经营数据与财务概况" in document.xpath('//section[@data-section="07"]/h1')[0].text_content()
+        rows = document.xpath('//table[@class="basic-info"]/tbody/tr')
+        assert len(rows) == 15 and all(len(row.xpath('./td')) == 2 for row in rows)
+        assert [row.xpath('./td')[0].text_content() for row in rows] == [
+            "企业名称", "曾用名", "统一社会信用代码", "成立日期", "注册资本", "实缴资本", "法定代表人", "企业类型", "登记状态", "注册地址", "经营范围", "纳税人资质", "所属行业", "登记机关", "官网",
+        ]
+        icons = document.xpath('//span[@class="section-icon-slot"]/img')
+        assert len(icons) == 13 and all(node.get('src').startswith('data:image/png;base64,') for node in icons)
+        assert 'width:20.500000pt;height:18.500000pt' in icons[0].get('style')
+        assert len({node.get('style') for node in icons}) > 1
+        for level in ('low', 'medium', 'high'):
+            assert document.xpath(f'//span[@class="risk {level}"]')
+        assert document.xpath('//span[@class="severity pending"]')
+        assert document.xpath('//div[@class="assessment-level"]')[0].text_content() == '待核'
+        assert len(document.xpath('//div[contains(@class,"comparison-card")]')) == 2
+        assert not document.xpath('//script')
+        text = document.find('body').text_content()
+        assert '浙江巨能' not in text and '913307010928162928' not in text and 'B+' not in text
+        assert '报告机构：共创知识产权' in text and '主要数据来源' in text
+        css = document.xpath('//style')[0].text
+        assert '.risk::before' in css and 'border-radius: 50%' in css
+        assert 'table-layout: auto' in css and 'width: 65%' in css
+        assert '.basic-info td:first-child { font-weight: 700' not in css
+
+
+def test_sales_html_escapes_business_text_and_keeps_template_tokens_literal():
+    from lxml import html
+    with sales_html_case() as (folder, module):
+        data = sales_input()
+        literal = '<script>raw()</script> {{BODY_13}} {{STYLE}} {{CALLOUT_INFO}} & 引号"'
+        data['sections']['03']['paragraphs'].append(literal)
+        data['sections']['03']['callouts'] = [{'kind': kind, 'title': '合成说明', 'text': '只展示固定原组件'} for kind in ('warning', 'success', 'info', 'danger')]
+        _, destination = sales_generate(module, folder, data)
+        document = html.fromstring(destination.read_text())
+        assert literal in document.find('body').text_content()
+        assert len(document.xpath('//section[@data-section]')) == 13
+        assert not document.xpath('//script') and len(document.xpath('//style')) == 1
+        images = document.xpath('//div[contains(@class,"callout")]/img')
+        assert len(images) == 4 and all(node.get('src').startswith('data:image/png;base64,') for node in images)
+        for patch in ({'html': '<div>custom DOM</div>'}, {'sections': {'01': {'css': 'body{}'}}}):
+            invalid = {**data, **patch}
+            try:
+                sales_generate(module, folder, invalid, 'invalid.html')
+            except ValueError:
+                pass
+            else:
+                raise AssertionError('layout input must be rejected')
+            assert not (folder / 'invalid.html').exists()
+
+
+def test_sales_html_rejects_actual_color_words_without_promoting_business_status():
+    with sales_html_case() as (folder, module):
+        for value in ('政府公示名单同名主体已命中（绿）', '第三方平台单源，待官方核验（黄）', '知识产权公开记录空白（红）', '单源待核(⻩)', '待核（ ⻩ ）'):
+            data = sales_input()
+            data['sections']['03']['paragraphs'] = [value]
+            try:
+                sales_generate(module, folder, data, 'invalid.html')
+            except ValueError as error:
+                assert '{text,status}' in str(error)
+            else:
+                raise AssertionError('plain color markers must not render')
+            assert not (folder / 'invalid.html').exists()
+        data['sections']['03']['paragraphs'] = ['绿色制造、黄色涂层、红外技术是普通业务文字。']
+        _, destination = sales_generate(module, folder, data)
+        assert '绿色制造、黄色涂层、红外技术' in destination.read_text()
+
+
+def test_sales_html_financial_missing_and_public_capital_do_not_share_a_false_restriction():
+    from lxml import html
+    with sales_html_case() as (folder, module):
+        data = sales_input()
+        _, destination = sales_generate(module, folder, data, 'pending.html')
+        document = html.fromstring(destination.read_text())
+        body = document.xpath('//section[@data-section="07"]')[0].text_content()
+        assert '请企业提供' in body and '0万元' not in body and '0元' not in body
+        data['sections']['07'] = {'tables': [
+            {'type': 'operating-metrics', 'source_kind': 'customer-file', 'rows': [['营收', '用户提供数值', '客户财务资料']]},
+            {'type': 'paid-capital', 'source_kind': 'government-source', 'rows': [['本企业股东', '已核认缴', '已核实缴', '待核比例', '公开原文日期']]},
+        ]}
+        sales_generate(module, folder, data, 'provided.html')
+        data['sections']['07']['tables'][0]['source_kind'] = 'third-party-estimate'
+        try:
+            sales_generate(module, folder, data, 'invalid.html')
+        except ValueError as error:
+            assert '用户提供' in str(error)
+        else:
+            raise AssertionError('estimated financial metrics must not render')
+        assert not (folder / 'invalid.html').exists()
+        missing = sales_input()
+        _, destination = sales_generate(module, folder, missing, 'pending-after-provided.html')
+        assert '用户提供数值' not in destination.read_text()
+
+
+def test_sales_html_new_file_cli_and_cross_platform_font_uris():
+    from pathlib import PurePosixPath, PureWindowsPath
+    import subprocess
+    import sys
+    with sales_html_case() as (folder, module):
+        source = folder / 'input.json'
+        source.write_text(json.dumps(sales_input(), ensure_ascii=False))
+        output = folder / 'report.html'
+        argv = [sys.executable, '-B', str(SKILLS / 'enterprise-panorama-analysis/scripts/build_sales_html.py'), '--input', str(source), '--output', str(output)]
+        first = subprocess.run(argv, text=True, capture_output=True)
+        assert first.returncode == 0 and json.loads(first.stdout)['status'] == 'pass'
+        original = output.read_bytes()
+        second = subprocess.run(argv, text=True, capture_output=True)
+        assert second.returncode == 2 and json.loads(second.stdout)['status'] == 'fail'
+        assert output.read_bytes() == original
+        invalid = sales_input()
+        invalid['sections']['03']['paragraphs'] = ['单源待核（⻩）']
+        source.write_text(json.dumps(invalid, ensure_ascii=False))
+        bad = subprocess.run(argv[:-1] + [str(folder / 'bad.html')], text=True, capture_output=True)
+        assert bad.returncode == 2 and json.loads(bad.stdout)['status'] == 'fail'
+        assert not (folder / 'bad.html').exists()
+        assert '%20' in module['font_uri'](PurePosixPath('/签名字体/a b.otf'))
+        uri = module['font_uri'](PureWindowsPath("C:/签名 素材/a'quote.otf"))
+        assert uri.startswith('file:///C:/') and '%20' in uri and '%27' in uri and '\\' not in uri
+        registry = json.loads((SKILLS / 'client-runtime-operations.json').read_text())
+        operation = next(item for item in registry['operations'] if item['id'] == 'enterprise-panorama-analysis.build-sales-html')
+        assert operation['parameters']['output']['extensions'] == ['.html']
+        assert operation['network'] == 'none' and operation['sandbox_mode'] == 'workspace-write'
+        assert all((SKILLS / path).is_file() for path in operation['files'])

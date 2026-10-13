@@ -734,6 +734,81 @@
           "parameter": "reportType"
         }
       ]
+    },
+    {
+      "id": "enterprise-panorama-analysis.build-sales-html",
+      "skill": "enterprise-panorama-analysis",
+      "description": "将已核验业务数据回填标准销售版固定HTML母版，保留原封面、13章图标、工商两列表和既有表格类型；核验状态由risk圆点绘制，风险严重程度沿severity标签，不接受模型重写HTML/CSS。仅生成新HTML中间源，后续仍执行客户端专业及PDF交付检查。",
+      "script": "enterprise-panorama-analysis/scripts/build_sales_html.py",
+      "files": [
+        "enterprise-panorama-analysis/assets/sales-master-template.html",
+        "enterprise-panorama-analysis/assets/sales-style.css",
+        "enterprise-panorama-analysis/assets/icons/section-01.png",
+        "enterprise-panorama-analysis/assets/icons/section-02.png",
+        "enterprise-panorama-analysis/assets/icons/section-03.png",
+        "enterprise-panorama-analysis/assets/icons/section-04.png",
+        "enterprise-panorama-analysis/assets/icons/section-05.png",
+        "enterprise-panorama-analysis/assets/icons/section-06.png",
+        "enterprise-panorama-analysis/assets/icons/section-07.png",
+        "enterprise-panorama-analysis/assets/icons/section-08.png",
+        "enterprise-panorama-analysis/assets/icons/section-09.png",
+        "enterprise-panorama-analysis/assets/icons/section-10.png",
+        "enterprise-panorama-analysis/assets/icons/section-11.png",
+        "enterprise-panorama-analysis/assets/icons/section-12.png",
+        "enterprise-panorama-analysis/assets/icons/section-13.png",
+        "enterprise-panorama-analysis/assets/fonts/NotoSansCJKsc-Regular.otf",
+        "enterprise-panorama-analysis/assets/fonts/NotoSansCJKsc-Bold.otf",
+        "enterprise-panorama-analysis/assets/fonts/DejaVuSans.ttf",
+        "enterprise-panorama-analysis/assets/fonts/DejaVuSans-Bold.ttf",
+        "enterprise-panorama-analysis/assets/icons/callout-warning.png",
+        "enterprise-panorama-analysis/assets/icons/callout-success.png",
+        "enterprise-panorama-analysis/assets/icons/callout-danger.png",
+        "enterprise-panorama-analysis/assets/icons/callout-info.png",
+        "enterprise-panorama-analysis/assets/icons/callout-negative.png"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
+      "stdout_json_schema_version": "gongchuang-project-report-operation/v1",
+      "parameters": {
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [
+            ".json"
+          ],
+          "max_bytes": 16777216
+        },
+        "output": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [
+            ".html"
+          ]
+        }
+      },
+      "argv": [
+        {
+          "literal": "--input"
+        },
+        {
+          "parameter": "input"
+        },
+        {
+          "literal": "--output"
+        },
+        {
+          "parameter": "output"
+        }
+      ]
     }
   ]
 }

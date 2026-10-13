@@ -2,6 +2,8 @@
 """Render the owner-approved unwatermarked white-background sales report."""
 
 import argparse
+import re
+import unicodedata
 from pathlib import Path
 
 import pymupdf as fitz
@@ -10,7 +12,7 @@ from render_html_report import render_pdf_bytes
 
 
 AUTHOR = "共创知识产权"
-VISIBLE_BYLINES = ("报告人：共创知识产权", "报告人: 共创知识产权")
+VISIBLE_BYLINE = re.compile(r"报告(?:人\s*[:：]\s*共创知识产权|机构\s*[:：]\s*共创知识产权(?=\s|$))")
 
 
 def main() -> None:
@@ -22,12 +24,12 @@ def main() -> None:
 
     if not args.html.is_file():
         raise FileNotFoundError(args.html)
-    html = args.html.read_text(encoding="utf-8")
-    if not any(byline in html for byline in VISIBLE_BYLINES):
-        raise ValueError("版本A必须在页面中显示：报告人：共创知识产权")
-
     raw_pdf = render_pdf_bytes(args.html)
     document = fitz.open(stream=raw_pdf, filetype="pdf")
+    visible_text = unicodedata.normalize("NFKC", document[0].get_text("text"))
+    if not VISIBLE_BYLINE.search(visible_text):
+        document.close()
+        raise ValueError("版本A必须在首页显示：报告机构：共创知识产权或报告人：共创知识产权")
     metadata = document.metadata or {}
     metadata.update({
         "title": args.title,
