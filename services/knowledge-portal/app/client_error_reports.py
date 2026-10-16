@@ -15,6 +15,43 @@ def redact(value: str) -> str:
     return value
 
 
+def feedback_category(diagnostic: dict) -> Literal["bug", "other"]:
+    """Separate automatic upgrade stops using current-turn events, not claimed failure classifications."""
+    if diagnostic.get("code") != "GC-AUTO-FAILURE":
+        return "bug"
+    context = json.loads(diagnostic.get("conversation_context") or "{}")
+    if not isinstance(context, dict) or not isinstance(context.get("failed_turn"), int):
+        return "bug"
+    events = context.get("events")
+    if not isinstance(events, list) or context.get("omitted_event_count", 0) != 0:
+        return "bug"
+    upgrade = False
+    for event in events:
+        if not isinstance(event, dict) or not isinstance(event.get("data"), dict):
+            continue
+        kind, data = event.get("type"), event["data"]
+        message = data.get("message")
+        tool_failed = (kind == "tool/ptc-dispatch" and data.get("isError") is True
+                       or kind == "tool/result" and isinstance(message, dict) and message.get("isError") is True)
+        source = data.get("source")
+        delivery = source.get("delivery") if isinstance(source, dict) and source.get("kind") == "plugin:gongchuang-policy-gate" else None
+        turn = delivery.get("turn") if kind == "user/message" and isinstance(delivery, dict) else data.get("turn")
+        if turn != context["failed_turn"]:
+            if turn is None and tool_failed:
+                return "bug"
+            continue
+        if tool_failed or isinstance(delivery, dict) and delivery.get("phase") == "failed":
+            return "bug"
+        if kind == "turn/end":
+            reason = data.get("reason")
+            error = reason.get("error") if isinstance(reason, dict) else None
+            if not (isinstance(reason, dict) and reason.get("kind") == "error"
+                    and isinstance(error, dict) and error.get("code") == "GC-ACCOUNT-UPGRADE"):
+                return "bug"
+            upgrade = True
+    return "other" if upgrade else "bug"
+
+
 class ClientErrorReport(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     request_id: UUID

@@ -4,8 +4,10 @@ import base64
 import json
 import re
 import tracemalloc
+import pytest
 from fastapi.testclient import TestClient
 from test_portal import load_app
+from app.client_error_reports import feedback_category
 
 
 def report():
@@ -20,6 +22,101 @@ def setup(tmp_path):
     assert login.status_code == 200, login.text
     headers={'Authorization':'Bearer '+login.json()['access_token'], module.DEVICE_ID_HEADER:'gcd_'+'a'*48}
     return module, client, headers
+
+
+def upgrade_context():
+    return {'failed_turn': 2, 'omitted_event_count': 0, 'events': [
+        {'type': 'tool/result', 'data': {'turn': 1, 'message': {'isError': True,
+            'content': [{'type': 'text', 'text': 'Request timed out'}]}}},
+        {'type': 'turn/end', 'data': {'turn': 1, 'reason': {'kind': 'error', 'error': {'code': 'TIMEOUT'}}}},
+        {'type': 'turn/start', 'data': {'turn': 2}},
+        {'type': 'turn/end', 'data': {'turn': 2, 'reason': {'kind': 'error', 'error': {
+            'code': 'GC-ACCOUNT-UPGRADE', 'message': '最低支持版本为 V0.7.0，请前往团队门户升级',
+        }}}},
+    ]}
+
+
+@pytest.mark.parametrize('version,with_analysis', [('0.6.3', False), ('0.6.5', True)])
+def test_upgrade_classification_uses_current_events_in_old_and_new_clients(version, with_analysis):
+    context = upgrade_context()
+    if with_analysis:
+        context['failure_analysis'] = {'turn': 2, 'failures': [{'category': 'precondition',
+            'stage': 'client-upgrade', 'code': 'GC-ACCOUNT-UPGRADE', 'status': 'expected-block'}]}
+    diagnostic = {**report(), 'code': 'GC-AUTO-FAILURE', 'client_version': version,
+                  'conversation_context': json.dumps(context)}
+    assert feedback_category(diagnostic) == 'other'
+
+
+@pytest.mark.parametrize('kind', ['tool/result', 'tool/ptc-dispatch', 'delivery-failed', 'unattributed-tool'])
+def test_upgrade_does_not_hide_a_real_current_failure_or_trust_claimed_expected_status(kind):
+    context = upgrade_context()
+    context['failure_analysis'] = {'turn': 2, 'failures': [], 'primary_failure': {
+        'category': 'precondition', 'stage': 'client-upgrade', 'status': 'expected-block'}}
+    if kind == 'delivery-failed':
+        event = {'type': 'user/message', 'data': {'source': {'kind': 'plugin:gongchuang-policy-gate',
+            'delivery': {'turn': 2, 'phase': 'failed'}}}}
+    elif kind == 'tool/ptc-dispatch':
+        event = {'type': kind, 'data': {'turn': 2, 'isError': True,
+            'content': [{'type': 'text', 'text': 'Request timed out'}]}}
+    else:
+        event = {'type': 'tool/result', 'data': {'turn': 2, 'message': {'isError': True,
+            'content': [{'type': 'text', 'text': 'Request timed out'}]}}}
+        if kind == 'unattributed-tool':
+            event['data'].pop('turn')
+    context['events'].insert(-1, event)
+    assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': json.dumps(context)}) == 'bug'
+
+
+@pytest.mark.parametrize('code', ['GC-REPORT-WORKBENCH', 'GC-REPORT-CONVERSATION', 'GC-ACCOUNT-UPGRADE'])
+def test_manual_reports_and_outer_upgrade_code_are_not_automatically_reclassified(code):
+    assert feedback_category({'code': code, 'conversation_context': json.dumps(upgrade_context())}) == 'bug'
+
+
+@pytest.mark.parametrize('code', [None, 'GC-ACCOUNT-TIMEOUT', 'GC-ACCOUNT-UPGRADE-FAILED'])
+def test_upgrade_text_or_client_analysis_without_the_exact_terminal_code_remains_a_bug(code):
+    context = upgrade_context()
+    context['events'][-1]['data']['reason']['error'] = {
+        'code': code, 'message': 'GC-ACCOUNT-UPGRADE: 最低支持版本为 V0.7.0',
+    }
+    context['failure_analysis'] = {'turn': 2, 'failures': [{'code': 'GC-ACCOUNT-UPGRADE',
+        'stage': 'client-upgrade', 'category': 'precondition', 'status': 'expected-block'}]}
+    assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': json.dumps(context)}) == 'bug'
+
+
+def test_uncertain_or_cropped_context_is_not_reclassified_as_an_upgrade_stop():
+    context = upgrade_context()
+    context['omitted_event_count'] = 1
+    assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': json.dumps(context)}) == 'bug'
+    context.pop('failed_turn')
+    assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': json.dumps(context)}) == 'bug'
+    assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': '[]'}) == 'bug'
+
+
+def test_expected_upgrade_intake_keeps_pending_diagnostics_idempotence_and_attachments(tmp_path):
+    module, client, headers = setup(tmp_path)
+    context = upgrade_context()
+    fid = str(uuid4())
+    context['diagnostic_files'] = [{'file_id': fid, 'name': 'synthetic.txt', 'size': 3, 'status': 'pending'}]
+    payload = {**report(), 'code': 'GC-AUTO-FAILURE', 'module': 'conversation', 'client_version': '0.6.3',
+               'conversation_context': json.dumps(context)}
+    response = client.post('/v1/client-error-reports', json=payload, headers=headers)
+    assert response.status_code == 200, response.text
+    receipt = response.json()
+    assert client.post('/v1/client-error-reports', json=payload, headers=headers).json() == receipt
+    with closing(module.database()) as db:
+        row = db.execute('SELECT category,status,resolved_at,subject FROM feedback_messages WHERE id=?', (receipt['report_id'],)).fetchone()
+        assert tuple(row) == ('other', 'pending', None, '客户端升级拦截 · GC-ACCOUNT-UPGRADE')
+        assert db.execute('SELECT COUNT(*) FROM client_error_reports').fetchone()[0] == 1
+        stored = json.loads(db.execute('SELECT diagnostic_json FROM client_error_reports WHERE feedback_id=?', (receipt['report_id'],)).fetchone()[0])
+        assert stored['request_id'] == payload['request_id']
+        assert stored['code'] == 'GC-AUTO-FAILURE'
+        assert json.loads(stored['conversation_context']) == context
+    chunk = dict(file_id=fid, name='synthetic.txt', size=3, offset=0, data=base64.b64encode(b'abc').decode())
+    assert client.post(f"/v1/client-error-reports/{receipt['report_id']}/files", json=chunk, headers=headers).json() == {'next_offset': 3, 'complete': True}
+    client.post('/login', data=dict(username='owner', password='synthetic-password-123'))
+    assert '客户端升级拦截 · GC-ACCOUNT-UPGRADE' in client.get('/feedback').text
+    assert client.get(f"/admin/feedback/{receipt['report_id']}/diagnostic").json() == stored
+    assert client.get(f"/admin/feedback/{receipt['report_id']}/diagnostic-files/{fid}").content == b'abc'
 
 
 def test_real_auth_idempotence_redaction_and_admin_export(tmp_path):

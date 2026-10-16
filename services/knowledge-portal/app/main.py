@@ -57,7 +57,7 @@ from starlette.background import BackgroundTask
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit
+from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit, feedback_category
 from app.client_diagnostic_jobs import DiagnosticChunk, initialize as initialize_diagnostics, receive_chunk, file_path as diagnostic_file_path
 
 from app.assistant_runtime import (
@@ -13497,6 +13497,8 @@ def client_error_report_submit(
     if str(user["client_binding_auth_method"] or "") != "client_password":
         raise HTTPException(status_code=403, detail="请使用客户端登录后提交")
     diagnostic = report.diagnostic()
+    category = feedback_category(diagnostic)
+    subject = "客户端升级拦截 · GC-ACCOUNT-UPGRADE" if category == "other" else "客户端错误 · " + report.code
     now = isoformat(utc_now())
     with closing(database()) as connection:
         initialize_diagnostics(connection)
@@ -13514,8 +13516,8 @@ def client_error_report_submit(
         if recent >= 30:
             raise HTTPException(status_code=429, detail="上报次数过多，请保留草稿稍后重试")
         cursor = connection.execute(
-            "INSERT INTO feedback_messages(user_id,category,subject,content,page_url,status,created_at,updated_at) VALUES (?,'bug',?,?,'','pending',?,?)",
-            (int(user["id"]), "客户端错误 · " + report.code, diagnostic["steps"] or diagnostic["summary"], now, now),
+            "INSERT INTO feedback_messages(user_id,category,subject,content,page_url,status,created_at,updated_at) VALUES (?,?,?,?,'','pending',?,?)",
+            (int(user["id"]), category, subject, diagnostic["steps"] or diagnostic["summary"], now, now),
         )
         report_id = cursor.lastrowid
         connection.execute(
