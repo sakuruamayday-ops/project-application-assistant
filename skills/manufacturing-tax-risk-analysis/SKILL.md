@@ -144,7 +144,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 #### 用户明确要 Word 时
 
-1. 保留当前任务及 `manufacturing-tax-risk-report` 画像，对同一 HTML 正文执行 chat 专业预校验。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；政策原文未核验的报告转成 Word 后仍是草稿，不因换格式升级为正式结论。
+1. 保留当前任务及 `manufacturing-tax-risk-report` 画像，对同一 HTML 正文执行专业预校验，显式传入 `deliveryMode="chat"`、`candidateArtifactPath=同一 HTML 的绝对路径`、`artifactFormat="docx"`、`deliveryProfileId="manufacturing-tax-risk-report"`，不让模型重抄 body。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；政策原文未核验的报告转成 Word 后仍是草稿，不因换格式升级为正式结论。
 2. 调用已验签 `evidence-ledger.create-docx-from-file`，`input` 使用同一工作区 HTML 的绝对路径，`output` 使用尚不存在的 `.docx` 路径。该操作直接复制 HTML 正文和表格，不把财务正文交给模型重写成 Markdown，不反向抄录数值，也不修改原 HTML。
 3. 调用已验签 `evidence-ledger.apply-office-branding-gold`，`artifact` 使用该 DOCX 路径。该固定操作使用共享金色资产写入页眉和居中水印；随后继续对同一税务画像执行 artifact 专业校验、文件打开和品牌检查。只交付本次实际生成并通过检查的 Word，不能省略画像或用旧文件回执替代。
 
