@@ -65,3 +65,27 @@ def test_applies_signed_branding_to_xlsx(tmp_path: Path) -> None:
     assert XLSX_MARKER in workbook_xml
     branded = load_workbook(artifact)
     assert IDENTITY in (branded.active.oddHeader.right.text or "")
+
+
+def test_gold_word_uses_shared_gold_image_and_keeps_body(tmp_path: Path) -> None:
+    artifact = tmp_path / "tax-draft.docx"
+    document = Document()
+    document.add_paragraph("GC-QA 草稿：政策原文未核验，收入 1,234.56 万元。")
+    document.save(artifact)
+    for _ in range(2):
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), str(artifact), "--variant", "gold"],
+            check=True, capture_output=True, text=True,
+        )
+        assert json.loads(completed.stdout)["status"] == "passed"
+    assert Document(artifact).paragraphs[0].text == "GC-QA 草稿：政策原文未核验，收入 1,234.56 万元。"
+    assets = SCRIPT.parents[2] / "_runtime/gongchuang-branding/assets"
+    gold_images = {p.read_bytes() for p in assets.glob("brand-gold-*.png")}
+    with zipfile.ZipFile(artifact) as package:
+        images = [package.read(name) for name in package.namelist() if name.startswith("word/media/")]
+        assert images and all(image in gold_images for image in images)
+        headers = [
+            package.read(name).decode("utf-8") for name in package.namelist()
+            if name.startswith("word/header") and name.endswith(".xml")
+        ]
+    assert headers and all(header.count(DOCX_WATERMARK) == 2 for header in headers)

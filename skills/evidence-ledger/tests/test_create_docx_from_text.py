@@ -85,3 +85,86 @@ def test_exports_markdown_emphasis_without_changing_literal_symbols(tmp_path: Pa
     assert not numbered.runs[0].bold
     assert generated.paragraphs[-1].text == '来源：国家数据'
     assert generated.paragraphs[-1].hyperlinks[0].url == 'https://data.stats.gov.cn/'
+
+
+def test_html_file_keeps_literal_body_and_native_table_cells(tmp_path: Path) -> None:
+    source = tmp_path / "same-report.html"
+    source.write_text(
+        '<!doctype html><html><head><style>not report text</style></head><body>'
+        '<h1>政策原文未核验的草稿</h1><p>原文 **字符** A|B；金额 1,234.56 万元。</p>'
+        '<table><thead><tr><th>来源</th><th>缺项</th></tr></thead>'
+        '<tbody><tr><td>年度表 A|B</td><td>**待核验**</td></tr></tbody></table>'
+        '<p>https://example.gov.cn/source?id=1&amp;year=2025</p>'
+        '</body></html>', encoding="utf-8",
+    )
+    original = source.read_bytes()
+    output = tmp_path / "same-report.docx"
+    completed = subprocess.run(
+        [sys.executable, str(SCRIPT), "--input-file", str(source), str(output)],
+        check=True, capture_output=True, text=True,
+    )
+    assert json.loads(completed.stdout)["status"] == "passed"
+    assert completed.stdout.count("\n") == 1
+    document = Document(output)
+    paragraphs = [p.text for p in document.paragraphs]
+    assert "政策原文未核验的草稿" in paragraphs
+    assert "原文 **字符** A|B；金额 1,234.56 万元。" in paragraphs
+    assert "https://example.gov.cn/source?id=1&year=2025" in paragraphs
+    assert "not report text" not in "\n".join(paragraphs)
+    assert [[c.text for c in row.cells] for row in document.tables[0].rows] == [
+        ["来源", "缺项"], ["年度表 A|B", "**待核验**"],
+    ]
+    assert source.read_bytes() == original
+
+
+def test_html_headers_footers_and_chapter_titles_keep_their_word_roles(tmp_path: Path) -> None:
+    source = tmp_path / "report-with-page-furniture.html"
+    source.write_text(
+        '<html><body><div class="gongchuang-document-header">共创研究院</div>'
+        '<div class="gongchuang-cover-signature">封面署名</div><h1>分析草稿</h1>'
+        '<section><div class="gongchuang-document-header">共创研究院</div>'
+        '<header class="page-header"><span>01</span><b>现金流</b></header>'
+        '<h2>经营收现需要核验</h2><p>2025 年度金额 1,234.56 万元，资料尚未取得。</p>'
+        '<footer class="page-footer">财务分析｜报告署名</footer></section>'
+        '<footer class="page-footer">财务分析｜报告署名</footer></body></html>', encoding="utf-8",
+    )
+    output = tmp_path / "report.docx"
+    subprocess.run([sys.executable, str(SCRIPT), "--input-file", str(source), str(output)],
+                   check=True, capture_output=True, text=True)
+    document = Document(output)
+    body = [p.text for p in document.paragraphs]
+    assert body == ["分析草稿", "01 现金流", "经营收现需要核验", "2025 年度金额 1,234.56 万元，资料尚未取得。"]
+    section = document.sections[0]
+    assert [p.text for p in section.header.paragraphs if p.text] == ["共创研究院"]
+    assert [p.text for p in section.footer.paragraphs if p.text] == ["财务分析｜报告署名"]
+    assert [p.text for p in section.first_page_footer.paragraphs if p.text] == ["封面署名"]
+    assert section.different_first_page_header_footer
+    for paragraph in document.paragraphs[:3]:
+        assert paragraph.paragraph_format.keep_with_next
+        assert paragraph.paragraph_format.keep_together
+
+
+def test_existing_template_chapter_headers_and_report_end_remain_in_body(tmp_path: Path) -> None:
+    from lxml import html
+
+    skills = SCRIPT.parents[2]
+    tax = html.document_fromstring((skills / "manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html").read_bytes())
+    sales = html.document_fromstring((skills / "enterprise-panorama-analysis/assets/sales-master-template.html").read_bytes())
+    chapter_headers = tax.xpath("//header[not(@class)]")[:2]
+    report_end = sales.xpath('//footer[@class="report-end"]')[0]
+    end_text = [p.text_content().replace("{{REPORT_DATE}}", "2026-10-17") for p in report_end.xpath("./p")]
+    fragments = [html.tostring(node, encoding="unicode", with_tail=False) for node in chapter_headers]
+    fragments.append(html.tostring(report_end, encoding="unicode", with_tail=False).replace("{{REPORT_DATE}}", "2026-10-17"))
+    source = tmp_path / "template-body-semantics.html"
+    source.write_text("<html><body>" + "".join(fragments) + "</body></html>", encoding="utf-8")
+    output = tmp_path / "template-body-semantics.docx"
+    subprocess.run([sys.executable, str(SCRIPT), "--input-file", str(source), str(output)],
+                   check=True, capture_output=True, text=True)
+    document = Document(output)
+    body = [p.text for p in document.paragraphs]
+    assert body[:2] == [node.text_content() for node in chapter_headers]
+    assert body[-3:] == end_text
+    assert "未核验事项保留待核" in body[-2]
+    assert body[-1] == "报告日期：2026-10-17"
+    assert not any(p.text for p in document.sections[0].header.paragraphs)
+    assert not any(p.text for p in document.sections[0].footer.paragraphs)

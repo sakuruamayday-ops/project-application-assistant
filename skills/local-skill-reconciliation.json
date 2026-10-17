@@ -587,6 +587,13 @@
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
       "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
+    },
+    "vibehub": {
+      "status": "external_capability",
+      "source": "user-installed local skill",
+      "owner": "development-host",
+      "package_policy": "exclude_from_suite",
+      "reason": "宿主开发需求转译和术语辅助技能，不属于企业业务技能全集，不随通用套件或独立客户端发布。"
     }
   }
 }

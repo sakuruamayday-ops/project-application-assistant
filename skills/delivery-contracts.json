@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.7.5",
+  "rule_version": "1.7.6",
   "skill_roles": {
     "agriculture-and-rural-projects": {
       "role": "primary_business",
@@ -1025,6 +1025,14 @@
           "validation_gate": "delivery_gate.py"
         },
         {
+          "role": "tax_report_docx",
+          "formats": [
+            "docx"
+          ],
+          "requires_sha256": true,
+          "validation_gate": "delivery_gate.py"
+        },
+        {
           "role": "editable_html",
           "formats": [
             "html"
@@ -1054,7 +1062,8 @@
           "mode": "required",
           "variant": "gold",
           "artifact_roles": [
-            "tax_report_pdf"
+            "tax_report_pdf",
+            "tax_report_docx"
           ]
         }
       ]

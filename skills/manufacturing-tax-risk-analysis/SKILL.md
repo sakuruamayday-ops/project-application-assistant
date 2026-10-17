@@ -1,6 +1,6 @@
 ---
 name: manufacturing-tax-risk-analysis
-description: 基于制造企业近三年审计报告、财务报表及税务资料，完成三表复算、财务健康分析、金税四期与智慧税务风险筛查、订单和往来穿透、研发及所得税核验，并生成带金色居中水印的专业顾问版 PDF。用于用户提出制造企业金税四期分析、税务风险体检、审计报告财务分析、账票税款货一致性检查、税务整改方案或同类金色顾问报告时。
+description: 基于制造企业近三年审计报告、财务报表及税务资料，完成三表复算、财务健康分析、金税四期与智慧税务风险筛查、订单和往来穿透、研发及所得税核验，默认生成带金色居中水印的专业顾问版 PDF；用户明确要求时交付同正文的可编辑 Word。用于用户提出制造企业金税四期分析、税务风险体检、审计报告财务分析、账票税款货一致性检查、税务整改方案或同类金色顾问报告时。
 ---
 
 # 制造企业金税财务体检
@@ -27,7 +27,7 @@ description: 基于制造企业近三年审计报告、财务报表及税务资�
 - 读取既有 PDF：使用宿主 PDF 能力。
 - 扫描审计报告：使用宿主 OCR 能力，保留 Markdown、结构化结果和原始输出。
 - 三表分析：调用 `financial-verification`，按其三表联读、指标复算和现金流规则形成共享财务事实。
-- 正式交付：使用宿主 PDF 排版能力与包内金色顾问模板。
+- 正式交付：默认使用宿主 PDF 排版能力与包内金色顾问模板；用户明确要 Word 时复用下述原生 DOCX 与金色品牌操作。
 - 事实性和政策性断言：执行防幻觉自检。
 - 查询现行政策：使用联网检索；后端不可用时改用官方域名限定搜索。
 
@@ -138,7 +138,25 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 `references/report-data.example.json` 仅供测试与人工理解，不是运行前置资料。首次生成不得读取或复制该示例；字段规范已经足够时直接生成。只有生成器真实返回某个字段结构错误，且错误信息仍不足以修正时，才定向读取与该字段直接相关的示例片段，避免把整份示例反复带入上下文。
 
-### 7. 生成金色顾问版 PDF
+### 7. 生成金色顾问版成品
+
+默认执行下方 PDF 流程。只有用户明确要求 Word、DOCX 或可编辑 Word 时，才改走同正文 Word；只要 Word 时不附加 PDF。用户要求修改既有报告并转成 Word 时，直接复用当前已确认的 HTML，不重写正文、不重算数字，也不重新生成一份不同的报告输入。
+
+#### 用户明确要 Word 时
+
+1. 保留当前任务及 `manufacturing-tax-risk-report` 画像，对同一 HTML 正文执行专业预校验，显式传入 `deliveryMode="chat"`、`candidateArtifactPath=同一 HTML 的绝对路径`、`artifactFormat="docx"`、`deliveryProfileId="manufacturing-tax-risk-report"`，不让模型重抄 body。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；政策原文未核验的报告转成 Word 后仍是草稿，不因换格式升级为正式结论。
+2. 调用已验签 `evidence-ledger.create-docx-from-file`，`input` 使用同一工作区 HTML 的绝对路径，`output` 使用尚不存在的 `.docx` 路径。该操作直接复制 HTML 正文和表格，不把财务正文交给模型重写成 Markdown，不反向抄录数值，也不修改原 HTML。
+3. 调用已验签 `evidence-ledger.apply-office-branding-gold`，`artifact` 使用该 DOCX 路径。该固定操作使用共享金色资产写入页眉和居中水印；随后继续对同一税务画像执行 artifact 专业校验、文件打开和品牌检查。只交付本次实际生成并通过检查的 Word，不能省略画像或用旧文件回执替代。
+
+其他宿主没有上述操作时，从当前 Skill 目录执行同一现有脚本：
+
+```bash
+python3 ../evidence-ledger/scripts/create_docx_from_text.py --input-file /abs/report.html /abs/report.docx
+python3 ../evidence-ledger/scripts/apply_office_branding.py /abs/report.docx --variant gold
+python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.docx
+```
+
+#### 默认 PDF
 
 1. 固定使用 `assets/gold-advisor.css` 与包内生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
    生成器已从共享品牌运行时向每个固定页面写入金色水印、品牌抬头及封面署名，作者也在 HTML 元数据中声明。品牌不由模型拼写或另行决定。
@@ -155,7 +173,7 @@ node scripts/render_pdf_stdout.js /abs/report.html \
 
 ### 8. 交付闸门
 
-共创客户端由上述统一工具完成检查。其他宿主从当前 Skill 目录执行共享交付闸门。`REPORT_PAGES` 使用本次生成器 JSON 返回的 `pages` 数值，不能固定为17：
+共创客户端由上述对应格式的工具完成检查。Word 使用上方原生 DOCX 与品牌检查，不套用 PDF 页数；其他宿主生成 PDF 后，从当前 Skill 目录执行共享交付闸门。`REPORT_PAGES` 使用本次生成器 JSON 返回的 `pages` 数值，不能固定为17：
 
 ```bash
 python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py \
@@ -170,7 +188,7 @@ python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py \
 
 ## 交付要求
 
-- 默认只交付 PDF。HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件保留在本地供计算、修订和证据复用；用户明确需要可编辑数据或源文件时才追加交付。
+- 默认只交付 PDF；用户明确只要 Word 时只交付同正文 DOCX，明确两种格式时才同时交付。HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件保留在本地供计算、修订和证据复用；用户明确需要可编辑数据或源文件时才追加交付。
 - 说明数据缺口和 OCR 不确定性。
 - 不承诺不存在其他税务风险，不替代税务鉴证或法律意见。
 - 任务结束询问是否归档报告，并询问是否把本次结构继续沉淀为行业模板。

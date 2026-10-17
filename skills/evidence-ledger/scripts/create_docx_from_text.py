@@ -14,7 +14,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from docx.opc.constants import RELATIONSHIP_TYPE
-from docx.shared import Cm, Pt
+from docx.shared import Cm, Pt, RGBColor
 from markdown_it import MarkdownIt
 
 
@@ -124,6 +124,10 @@ def table_cells(line: str) -> list[str]:
 
 def add_table(document: Document, lines: list[str]) -> None:
     rows = [table_cells(line) for line in lines if not TABLE_DIVIDER.match(line)]
+    add_table_rows(document, rows)
+
+
+def add_table_rows(document: Document, rows: list[list[str]], *, markdown: bool = True) -> None:
     if not rows:
         return
     width = max(len(row) for row in rows)
@@ -157,8 +161,13 @@ def add_table(document: Document, lines: list[str]) -> None:
             paragraph.paragraph_format.space_before = Pt(0)
             paragraph.paragraph_format.space_after = Pt(0)
             paragraph.paragraph_format.line_spacing = 1.0
+            if not markdown and row_index == 0:
+                paragraph.paragraph_format.keep_with_next = True
             value = row[column_index] if column_index < len(row) else ""
-            add_inline(paragraph, value, size=9.5, bold=row_index == 0)
+            if markdown:
+                add_inline(paragraph, value, size=9.5, bold=row_index == 0)
+            else:
+                set_run_font(paragraph.add_run(value), size=9.5, bold=row_index == 0)
 
 
 def add_paragraph(document: Document, line: str, *, first_content: bool) -> None:
@@ -199,7 +208,109 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
     add_inline(paragraph, prefix + text, size=10.5)
 
 
-def build_document(content: str, output: Path) -> dict[str, object]:
+def add_html_body(document: Document, content: str) -> None:
+    """Copy an existing HTML report's body text and tables without rewriting them."""
+    from lxml import html
+
+    root = html.document_fromstring(content, parser=html.HTMLParser(no_network=True))
+    body = root.find("body")
+    if body is None:
+        raise ValueError("HTML 正文不存在")
+    ignored = {"script", "style", "img", "noscript", "template"}
+    blocks = {
+        "body", "section", "div", "article", "header", "footer", "aside",
+        "p", "ul", "ol", "li", "blockquote", "dl", "dt", "dd", "table",
+        "h1", "h2", "h3", "h4", "h5", "h6",
+    }
+
+    def text(node) -> str:
+        if not isinstance(node.tag, str) or node.tag.lower() in ignored:
+            return ""
+        value = node.text or ""
+        for child in node:
+            value += "\n" if child.tag == "br" else text(child)
+            value += child.tail or ""
+        return value
+
+    def paragraph(value: str, level: int = 0, *, keep_next: bool = False) -> None:
+        value = value.strip()
+        if not value:
+            return
+        item = document.add_heading(level=min(level, 3)) if level else document.add_paragraph()
+        item.paragraph_format.space_after = Pt(3)
+        item.paragraph_format.line_spacing = 1.0 if level else 1.25
+        item.paragraph_format.keep_with_next = bool(level) or keep_next
+        item.paragraph_format.keep_together = True
+        run = item.add_run(value)
+        set_run_font(run, size={1: 15, 2: 12.5}.get(level, 11.5) if level else 10.5, bold=bool(level))
+        if level:
+            run.font.color.rgb = RGBColor(0x3C, 0x2A, 0x1F)
+
+    def page_furniture(value: str, kind: str) -> None:
+        value = value.strip()
+        if not value:
+            return
+        section = document.sections[0]
+        if kind == "cover-signature":
+            section.different_first_page_header_footer = True
+            container = section.first_page_footer
+        else:
+            container = section.header if kind == "header" else section.footer
+        if any(item.text == value for item in container.paragraphs):
+            return
+        item = next((item for item in container.paragraphs if not item.text), None)
+        if item is None:
+            item = container.add_paragraph()
+        item.style = "Header" if kind == "header" else "Footer"
+        item.alignment = WD_ALIGN_PARAGRAPH.RIGHT if kind == "header" else WD_ALIGN_PARAGRAPH.CENTER
+        item.paragraph_format.space_before = Pt(0)
+        item.paragraph_format.space_after = Pt(0)
+        run = item.add_run(value)
+        set_run_font(run, size=9)
+        run.font.color.rgb = RGBColor(0x8A, 0x6A, 0x2F)
+
+    def append(node) -> None:
+        if not isinstance(node.tag, str) or node.tag.lower() in ignored:
+            return
+        tag = node.tag.lower()
+        classes = set(node.get("class", "").split())
+        if "gongchuang-document-header" in classes:
+            page_furniture(text(node), "header")
+            return
+        if "gongchuang-cover-signature" in classes:
+            page_furniture(text(node), "cover-signature")
+            return
+        if tag == "footer" and "page-footer" in classes:
+            page_furniture(text(node), "footer")
+            return
+        if tag == "header" and "page-header" in classes:
+            paragraph(" ".join(value.strip() for value in node.itertext() if value.strip()), 1)
+            return
+        if tag == "table":
+            rows = [
+                [text(cell).strip() for cell in row if cell.tag in {"th", "td"}]
+                for row in node.xpath("./tr | ./thead/tr | ./tbody/tr | ./tfoot/tr")
+            ]
+            add_table_rows(document, rows, markdown=False)
+            return
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            paragraph(text(node), int(tag[1]))
+            return
+        pending = node.text or ""
+        for child in node:
+            if isinstance(child.tag, str) and child.tag.lower() in blocks:
+                paragraph(pending, keep_next=bool(classes & {"card-top", "risk-level", "eyebrow"}))
+                pending = ""
+                append(child)
+            else:
+                pending += "\n" if child.tag == "br" else text(child)
+            pending += child.tail or ""
+        paragraph(pending, keep_next=bool(classes & {"card-top", "risk-level", "eyebrow"}))
+
+    append(body)
+
+
+def build_document(content: str, output: Path, *, html_input: bool = False) -> dict[str, object]:
     output = output.resolve()
     if output.exists():
         raise FileExistsError(
@@ -214,7 +325,9 @@ def build_document(content: str, output: Path) -> dict[str, object]:
     document.core_properties.author = "共创研究院"
     document.core_properties.subject = "共创专业交付"
 
-    lines = content.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if html_input:
+        add_html_body(document, content)
+    lines = [] if html_input else content.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     index = 0
     first_content = True
     while index < len(lines):
@@ -259,7 +372,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("content")
     parser.add_argument("output", type=Path)
-    parser.add_argument("--input-file", action="store_true", help="Read content from a UTF-8 Markdown or text file")
+    parser.add_argument("--input-file", action="store_true", help="Read content from a UTF-8 Markdown, text or HTML report")
     args = parser.parse_args()
     content = args.content
     if args.input_file:
@@ -267,7 +380,8 @@ def main() -> int:
         if source.stat().st_size > 1024 * 1024:
             raise ValueError("Word 正文文件超过 1 MiB，请按独立交付文件拆分")
         content = source.read_text(encoding="utf-8-sig")
-    print(json.dumps(build_document(content, args.output), ensure_ascii=False))
+    html_input = args.input_file and source.suffix.lower() == ".html"
+    print(json.dumps(build_document(content, args.output, html_input=html_input), ensure_ascii=False))
     return 0
 
 

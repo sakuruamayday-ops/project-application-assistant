@@ -140,12 +140,12 @@ def _docx_density(document: Document) -> float:
     return min(1.0, text_len / 12000.0 + cells / 160.0)
 
 
-def apply_docx_watermark(path: str | Path) -> Path:
+def apply_docx_watermark(path: str | Path, *, variant: str | None = None) -> Path:
     """Add one centered, translucent watermark to each distinct Word header."""
     path = Path(path)
     document = Document(path)
     config = load_config()
-    style = choose_style(_docx_density(document), 1.0, target="docx")
+    style = choose_style(_docx_density(document), 1.0, target="docx", variant=variant)
     asset = style["asset_path"]
     processed_parts: set[str] = set()
     fixed_width = int(
