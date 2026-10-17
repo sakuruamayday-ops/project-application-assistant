@@ -419,6 +419,112 @@ class PortableReportTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("placeholder policy is not allowed", result.stderr)
 
+    def test_explicit_word_keeps_tax_html_content_tables_and_draft_status(self):
+        from docx import Document
+        from docx.oxml.ns import qn
+        from lxml import html
+        from zipfile import ZipFile
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            metrics = self.generate_metrics(root)
+            data = json.loads((self.tax / "references/report-data.example.json").read_text(encoding="utf-8"))
+            data["policies"] = []
+            data["missing_documents"].append("GC-QA 银行流水尚未取得，保持待核验")
+            report_input = root / "report-data.json"
+            report_input.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            source = root / "report.html"
+            subprocess.run([
+                sys.executable, str(self.tax / "scripts/generate_report_html.py"),
+                str(report_input), str(source), "--metrics-json", str(metrics),
+            ], check=True, capture_output=True, text=True)
+            original_html = source.read_bytes()
+            original_metrics = metrics.read_bytes()
+            output = root / "report.docx"
+            operations = {
+                operation["id"]: operation for operation in json.loads(
+                    (self.skills / "client-runtime-operations.json").read_text(encoding="utf-8")
+                )["operations"]
+            }
+            for operation_id, parameters in [
+                ("evidence-ledger.create-docx-from-file", {"input": source, "output": output}),
+                ("evidence-ledger.apply-office-branding-gold", {"artifact": output}),
+            ]:
+                operation = operations[operation_id]
+                argv = [item["literal"] if "literal" in item else str(parameters[item["parameter"]])
+                        for item in operation["argv"]]
+                result = subprocess.run([
+                    sys.executable, str(self.skills / operation["script"]), *argv,
+                ], check=True, capture_output=True, text=True)
+                self.assertEqual(json.loads(result.stdout)["status"], "passed")
+
+            document = Document(output)
+            source_body = html.document_fromstring(original_html).find("body")
+            self.assertIsNotNone(source_body)
+            expected_headers = []
+            expected_footers = []
+            expected_cover_signatures = []
+            furniture = source_body.xpath(
+                './/*[(self::footer and contains(concat(" ",normalize-space(@class)," ")," page-footer "))'
+                ' or contains(concat(" ",normalize-space(@class)," ")," gongchuang-document-header ")'
+                ' or contains(concat(" ",normalize-space(@class)," ")," gongchuang-cover-signature ")]'
+            )
+            for node in furniture:
+                value = "".join(node.itertext()).strip()
+                if "gongchuang-cover-signature" in node.get("class", "").split():
+                    expected_cover_signatures.append(value)
+                elif node.tag == "footer":
+                    expected_footers.append(value)
+                else:
+                    expected_headers.append(value)
+                node.drop_tree()
+            expected_text = "".join("".join(source_body.itertext()).split())
+            actual_text = "".join("".join(
+                node.text or "" for node in document.element.body.iter(qn("w:t"))
+            ).split())
+            self.assertEqual(actual_text, expected_text)
+            word_section = document.sections[0]
+            self.assertEqual([p.text for p in word_section.header.paragraphs if p.text], list(dict.fromkeys(expected_headers)))
+            self.assertEqual([p.text for p in word_section.footer.paragraphs if p.text], list(dict.fromkeys(expected_footers)))
+            self.assertEqual([p.text for p in word_section.first_page_footer.paragraphs if p.text], list(dict.fromkeys(expected_cover_signatures)))
+            self.assertTrue(word_section.different_first_page_header_footer)
+            self.assertIn("草稿：政策原文未核验", actual_text)
+            self.assertIn("GC-QA银行流水尚未取得，保持待核验", actual_text)
+            expected_tables = [
+                [["".join(cell.itertext()).strip() for cell in row if cell.tag in {"th", "td"}]
+                 for row in table.xpath("./tr | ./thead/tr | ./tbody/tr | ./tfoot/tr")]
+                for table in source_body.xpath(".//table")
+            ]
+            self.assertEqual(
+                [[[cell.text for cell in row.cells] for row in table.rows] for table in document.tables],
+                expected_tables,
+            )
+            chapter_titles = [p for p in document.paragraphs if p.text.startswith("01 ")]
+            self.assertEqual([p.text for p in chapter_titles], ["01 执行摘要"])
+            self.assertTrue(chapter_titles[0].paragraph_format.keep_with_next)
+            self.assertTrue(chapter_titles[0].paragraph_format.keep_together)
+            self.assertTrue(all(table.rows[0]._tr.xpath("./w:trPr/w:tblHeader") for table in document.tables))
+            profile = json.loads((self.skills / "delivery-contracts.json").read_text())["delivery_profiles"]["manufacturing-tax-risk-report"]
+            word_role = next(item for item in profile["required_artifacts"] if item["role"] == "tax_report_docx")
+            self.assertEqual(word_role["formats"], ["docx"])
+            self.assertTrue(any(rule.get("variant") == "gold" and "tax_report_docx" in rule["artifact_roles"]
+                                for rule in profile["branding_contracts"]))
+            for section in profile["required_sections"]:
+                self.assertIn(section, actual_text)
+            for table in profile["required_tables"]:
+                self.assertIn(table["id"], actual_text)
+            verified = subprocess.run([
+                sys.executable, str(self.runtime / "scripts/delivery_gate.py"), str(output),
+            ], check=True, capture_output=True, text=True)
+            self.assertEqual(json.loads(verified.stdout)["status"], "passed")
+            gold_assets = {p.read_bytes() for p in (self.runtime / "assets").glob("brand-gold-*.png")}
+            with ZipFile(output) as package:
+                images = [package.read(name) for name in package.namelist() if name.startswith("word/media/")]
+            self.assertTrue(images)
+            self.assertTrue(all(image in gold_assets for image in images))
+            self.assertEqual(source.read_bytes(), original_html)
+            self.assertEqual(metrics.read_bytes(), original_metrics)
+
     def test_portable_scripts_do_not_contain_machine_paths(self):
         forbidden = ("/Users/", "/Volumes/", ".agents/skills")
         paths = [

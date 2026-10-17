@@ -226,7 +226,7 @@
     {
       "id": "evidence-ledger.create-docx-from-file",
       "skill": "evidence-ledger",
-      "description": "从工作区 UTF-8 Markdown 或文本正文生成原生 DOCX，适用于超过短文本接口8192字符的完整报告。input为不超过1MiB的正文文件，output为新的docx路径；专业成品仍须校验。",
+      "description": "从工作区 UTF-8 Markdown、文本或已确认的HTML正文生成原生 DOCX；HTML直接保留正文和表格，不重算数字或改写来源。input不超过1MiB，output为新的docx路径；专业成品仍须保留原画像和校验。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
@@ -241,7 +241,7 @@
       "passing_exit_codes": [0],
       "stdout_json_schema_version": "gongchuang-docx-generation-operation/v1",
       "parameters": {
-        "input": {"type": "workspace-input-file", "required": true, "extensions": [".md", ".txt"], "max_bytes": 1048576},
+        "input": {"type": "workspace-input-file", "required": true, "extensions": [".md", ".txt", ".html"], "max_bytes": 1048576},
         "output": {"type": "workspace-output-file", "required": true, "extensions": [".docx"]}
       },
       "argv": [{"literal": "--input-file"}, {"parameter": "input"}, {"parameter": "output"}]
@@ -295,6 +295,48 @@
           "parameter": "artifact"
         }
       ]
+    },
+    {
+      "id": "evidence-ledger.apply-office-branding-gold",
+      "skill": "evidence-ledger",
+      "description": "在用户明确要求的税务Word报告正文和表格保存后，使用已验签共享运行时的金色资产写入统一品牌页眉和居中水印；首次artifact校验前执行，保留原税务画像及草稿状态。",
+      "script": "evidence-ledger/scripts/apply_office_branding.py",
+      "files": [
+        "_runtime/gongchuang-branding/scripts/office_watermark.py",
+        "_runtime/gongchuang-branding/scripts/brand_config.py",
+        "_runtime/gongchuang-branding/scripts/delivery_gate.py",
+        "_runtime/gongchuang-branding/references/brand_config.json",
+        "_runtime/gongchuang-branding/assets/brand-gold-07.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-10.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-12.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-16.png",
+        "_runtime/gongchuang-branding/assets/brand-red-07.png",
+        "_runtime/gongchuang-branding/assets/brand-red-10.png",
+        "_runtime/gongchuang-branding/assets/brand-red-12.png",
+        "_runtime/gongchuang-branding/assets/brand-red-16.png",
+        "_runtime/gongchuang-branding/assets/brand-white-10.png",
+        "_runtime/gongchuang-branding/assets/brand-white-16.png"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
+      "stdout_json_schema_version": "gongchuang-office-branding-operation/v1",
+      "parameters": {
+        "artifact": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".docx"],
+          "max_bytes": 134217728
+        }
+      },
+      "argv": [{"parameter": "artifact"}, {"literal": "--variant"}, {"literal": "gold"}]
     },
     {
       "id": "high-tech-enterprise-application-drafting.audit-application",

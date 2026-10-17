@@ -1025,6 +1025,14 @@
           "validation_gate": "delivery_gate.py"
         },
         {
+          "role": "tax_report_docx",
+          "formats": [
+            "docx"
+          ],
+          "requires_sha256": true,
+          "validation_gate": "delivery_gate.py"
+        },
+        {
           "role": "editable_html",
           "formats": [
             "html"
@@ -1054,7 +1062,8 @@
           "mode": "required",
           "variant": "gold",
           "artifact_roles": [
-            "tax_report_pdf"
+            "tax_report_pdf",
+            "tax_report_docx"
           ]
         }
       ]
