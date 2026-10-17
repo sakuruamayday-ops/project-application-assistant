@@ -459,6 +459,9 @@
     "verified-platform-score",
     "pending-platform-evaluation",
     "python-docx",
-    "markdown-it-py"
+    "markdown-it-py",
+    "gongchuang-document-header",
+    "gongchuang-cover-signature",
+    "manufacturing-tax-risk-report"
   ]
 }
