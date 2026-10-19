@@ -326,6 +326,7 @@ def test_tax_word_request_requires_word_and_its_gold_branding_without_extra_pdf(
 
 @pytest.mark.parametrize("query", [
     "不要Word，只要PDF", "不是Word，是PDF", "只要PDF", "财税报告不要Word",
+    "之前说PDF和Word，这次只要PDF",
 ])
 def test_tax_negated_word_keeps_the_pdf_delivery(query):
     contract, deliverable = _tax_report_delivery(query)
@@ -335,6 +336,7 @@ def test_tax_negated_word_keeps_the_pdf_delivery(query):
 
 @pytest.mark.parametrize("query", [
     "把这份PDF转换成Word", "PDF转DOCX", "原PDF内容不变，给我Word", "生成可编辑稿",
+    "Word和PDF都可以，最终只要Word",
 ])
 def test_tax_conversion_selects_only_the_requested_word_target(query):
     contract, deliverable = _tax_report_delivery(query, "docx")
@@ -342,8 +344,9 @@ def test_tax_conversion_selects_only_the_requested_word_target(query):
     assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is True
 
 
-def test_tax_explicit_pdf_and_word_requires_both_reports_and_both_brand_audits():
-    contract, deliverable = _tax_report_delivery("财税报告同时生成PDF和Word")
+@pytest.mark.parametrize("query", ["财税报告同时生成PDF和Word", "只要PDF和Word"])
+def test_tax_explicit_pdf_and_word_requires_both_reports_and_both_brand_audits(query):
+    contract, deliverable = _tax_report_delivery(query)
     word_contract, word_delivery = _tax_report_delivery("财税报告生成Word", "docx")
     assert len(contract["required_artifacts"]) == 5
     assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is False

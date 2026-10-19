@@ -194,6 +194,14 @@ def _tax_report_roles(query: str) -> set[str]:
     )
     word = re.search(r"(?<![a-z])(?:word|docx)(?![a-z])|可编辑(?:稿|版|文档)", requested, re.IGNORECASE)
     pdf = re.search(r"(?<![a-z])pdf(?![a-z])", requested, re.IGNORECASE)
+    exclusive = re.findall(
+        r"(?:只要|仅要|只需)\s*(pdf|word|docx)(?![a-z])"
+        r"(?!\s*(?:和|及|与|、|/|\+|以及)\s*(?:pdf|word|docx))",
+        requested,
+        re.IGNORECASE,
+    )
+    if exclusive:
+        return {"tax_report_pdf" if exclusive[-1].lower() == "pdf" else "tax_report_docx"}
     if word and pdf and re.search(
         r"(?:pdf|word|docx)\s*(?:和|及|与|、|/|\+|以及)\s*(?:pdf|word|docx)|两种(?:格式|报告)|都要|各一份",
         requested,
