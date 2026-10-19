@@ -185,6 +185,33 @@ def infer_task_type(query: str, deliverable: Mapping[str, object]) -> str:
     return "general-response"
 
 
+def _tax_report_roles(query: str) -> set[str]:
+    requested = re.sub(
+        r"(?:不要|不需要|无需|不用|不生成|不导出|不是)\s*(?:pdf|word|docx)(?:格式|文件|版)?",
+        "",
+        query,
+        flags=re.IGNORECASE,
+    )
+    word = re.search(r"(?<![a-z])(?:word|docx)(?![a-z])|可编辑(?:稿|版|文档)", requested, re.IGNORECASE)
+    pdf = re.search(r"(?<![a-z])pdf(?![a-z])", requested, re.IGNORECASE)
+    if word and pdf and re.search(
+        r"(?:pdf|word|docx)\s*(?:和|及|与|、|/|\+|以及)\s*(?:pdf|word|docx)|两种(?:格式|报告)|都要|各一份",
+        requested,
+        re.IGNORECASE,
+    ):
+        return {"tax_report_docx", "tax_report_pdf"}
+    targets = re.findall(
+        r"(?:转(?:换)?(?:成|为)?|改成|改为|导出(?:为)?|输出为|生成|只要|仅要|只需|给我|需要)\s*(pdf|word|docx)",
+        requested,
+        re.IGNORECASE,
+    )
+    if targets:
+        return {"tax_report_pdf" if targets[-1].lower() == "pdf" else "tax_report_docx"}
+    if word and not pdf:
+        return {"tax_report_docx"}
+    return {"tax_report_pdf"}
+
+
 def build_delivery_contract(
     query: str,
     deliverable: Mapping[str, object] | None,
@@ -247,6 +274,25 @@ def build_delivery_contract(
     if not isinstance(branding_contracts, list):
         single_branding = profile.get("branding")
         branding_contracts = [single_branding] if isinstance(single_branding, Mapping) else []
+    required_artifacts = list(profile.get("required_artifacts") or [])
+    branding_contracts = [dict(item) for item in branding_contracts if isinstance(item, Mapping)]
+    if profile_id == "manufacturing-tax-risk-report":
+        report_roles = {"tax_report_pdf", "tax_report_docx"}
+        selected_roles = _tax_report_roles(query)
+        required_artifacts = [
+            item for item in required_artifacts
+            if not isinstance(item, Mapping)
+            or item.get("role") not in report_roles - selected_roles
+        ]
+        branding_contracts = [
+            {**item, "artifact_roles": [
+                role for role in _strings(item.get("artifact_roles"))
+                if role not in report_roles - selected_roles
+            ]}
+            for item in branding_contracts
+        ]
+        profile = {**profile, "required_artifacts": required_artifacts,
+                   "branding_contracts": branding_contracts}
     return {
         "schema_version": 2,
         "task_type": task_type,
@@ -261,10 +307,8 @@ def build_delivery_contract(
         "requires_source_trace": bool(profile.get("requires_source_trace")),
         "requires_evidence_ledger": bool(profile.get("requires_evidence_ledger")),
         "required_tables": list(profile.get("required_tables") or []),
-        "required_artifacts": list(profile.get("required_artifacts") or []),
-        "branding_contracts": [
-            dict(item) for item in branding_contracts if isinstance(item, Mapping)
-        ],
+        "required_artifacts": required_artifacts,
+        "branding_contracts": branding_contracts,
         "skill_template": dict(skill_template),
         "completion_policy": "missing-required-item-means-needs-revision",
     }
@@ -670,10 +714,15 @@ def validate_delivery_contract(
         review = payload.get("four_question_review")
         if not isinstance(review, Mapping):
             review = {}
+        profile = contract.get("delivery_profile_spec")
+        advisory = isinstance(profile, Mapping) and "four-question-review" in _strings(
+            profile.get("advisory_requirements")
+        )
+        review_issues: list[dict[str, object]] = []
         for key in FOUR_QUESTION_KEYS:
             answer = str(review.get(key) or "").strip()
             if not answer:
-                failures.append(
+                review_issues.append(
                     {
                         "code": "missing-four-question-answer",
                         "item": key,
@@ -684,7 +733,7 @@ def validate_delivery_contract(
                 FOUR_QUESTION_LABELS[key],
                 f"{FOUR_QUESTION_LABELS[key]}是什么？",
             }:
-                failures.append(
+                review_issues.append(
                     {
                         "code": "empty-four-question-answer",
                         "item": key,
@@ -694,6 +743,11 @@ def validate_delivery_contract(
                         ),
                     }
                 )
+
+        if advisory:
+            warnings.extend(str(issue["message"]) for issue in review_issues)
+        else:
+            failures.extend(review_issues)
 
     status = "passed" if not failures else "needs-revision"
     audit = {

@@ -559,3 +559,59 @@ def test_release_lease_checkpoint_is_owner_scoped_and_secret(tmp_path) -> None:
             transaction_sha256="a" * 64,
             create=False,
         )
+
+
+@pytest.mark.parametrize("with_local_sync", [False, True])
+def test_website_preflight_only_binds_local_sync_when_explicit(
+    tmp_path, monkeypatch, capsys, with_local_sync
+) -> None:
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    import json
+
+    paths = {name: tmp_path / name for name in ("generic.zip", "client.zip", "gate.json", "notes.md", "public.md")}
+    for path in paths.values():
+        path.write_text("fixture", encoding="utf-8")
+    validation = {
+        "short_version": "1.7.7", "semantic_version": "1.7.7", "tag": "V1.7.7",
+        "skill_total": 51, "product_slug": "gongchuang-research-institute-skills",
+        "artifacts": {"generic": {"sha256": MODULE.sha256(paths["generic.zip"])}},
+        "public_namespace": {"status": "passed"},
+    }
+    argv = ["controlled_release.py", "--version", "1.7.7",
+            "--generic-package", str(paths["generic.zip"]),
+            "--client-update-package", str(paths["client.zip"]),
+            "--gate-report", str(paths["gate.json"]),
+            "--release-notes", str(paths["notes.md"]),
+            "--public-release-notes", str(paths["public.md"])]
+    if with_local_sync:
+        argv += ["--local-release-sync-script", str(tmp_path / "explicit-local-sync.py")]
+    monkeypatch.setattr(MODULE.sys, "argv", argv)
+    source_checks = []
+    monkeypatch.setattr(MODULE, "validate_clean_default_branch", lambda repository: source_checks.append(repository) or "a" * 40)
+    monkeypatch.setattr(MODULE, "validate_inputs", lambda *args: validation)
+    monkeypatch.setattr(MODULE, "validate_public_release_notes", lambda path, tag: path)
+    monkeypatch.setattr(MODULE, "load_skill_update_feed_module", lambda root: SimpleNamespace(
+        validate_skill_update_archive=lambda path, version: {"archive_sha256": "b" * 64, "public_key_sha256": "c" * 64}))
+    monkeypatch.setattr(MODULE, "require_public_namespace", lambda **kwargs: {"status": "passed"})
+    monkeypatch.setattr(MODULE, "recoverable_workspace", lambda prefix: nullcontext(tmp_path))
+    monkeypatch.setattr(MODULE, "prepare_ascii_assets", lambda *args: [paths["generic.zip"], paths["client.zip"]])
+    monkeypatch.setattr(MODULE, "generic_publisher_fingerprint", lambda path: "SHA256:publisher")
+    sync_validations = []
+    monkeypatch.setattr(MODULE, "validate_local_release_sync", lambda path: sync_validations.append(path) or (path, "d" * 64))
+    signed = []
+    def sign_transaction(**kwargs):
+        signed.append(kwargs["manifest"])
+        return [], {"manifest_sha256": "e" * 64, "signature_status": "verified"}
+    monkeypatch.setattr(MODULE, "prepare_release_transaction_assets", sign_transaction)
+    monkeypatch.setattr(MODULE, "run_local_release_sync", lambda *args, **kwargs: pytest.fail("preflight must not run local synchronization"))
+    MODULE.main()
+    receipt = json.loads(capsys.readouterr().out)
+    expected = {"github", "portal", "installation", "client_update"}
+    if with_local_sync:
+        expected.add("local_sync")
+    assert set(receipt["release_transaction"]["participants"]) == expected
+    assert set(signed[0]["participants"]) == expected
+    assert len(source_checks) == 1
+    assert len(sync_validations) == int(with_local_sync)
+    assert receipt["status"] == "preflight-pass"

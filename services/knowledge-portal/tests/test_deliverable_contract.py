@@ -1,4 +1,7 @@
+import pytest
+
 from app.deliverable_contract import (
+    FOUR_QUESTION_LABELS,
     build_delivery_contract,
     validate_delivery_contract,
 )
@@ -234,7 +237,7 @@ def test_panorama_standard_profile_accepts_default_word_same_hash_proof():
     assert audit["completion_allowed"] is True
 
 
-def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
+def _tax_report_delivery(query="生成金税四期分析报告", report_format="pdf"):
     digest = "b" * 64
     base = {
         "task_type": "analysis-report",
@@ -246,10 +249,10 @@ def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
             "prohibited_claims": [],
         },
     }
-    contract = build_delivery_contract("生成金税四期分析报告", base)
+    contract = build_delivery_contract(query, base)
     sources, evidence = _trace()
     formats = {
-        "tax_report_pdf": ("pdf", "delivery_gate.py"),
+        f"tax_report_{report_format}": (report_format, "delivery_gate.py"),
         "editable_html": ("html", "generate_report_html.py"),
         "metrics_json": ("json", "calculate_metrics.py"),
         "enterprise_financial_facts": (
@@ -276,7 +279,7 @@ def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
         ],
         "branding_audits": [
             {
-                "artifact_role": "tax_report_pdf",
+                "artifact_role": f"tax_report_{report_format}",
                 "status": "passed",
                 "variant": "gold",
                 "pages": 17,
@@ -286,6 +289,12 @@ def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
             }
         ],
     }
+    return contract, deliverable
+
+
+def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
+    contract, deliverable = _tax_report_delivery()
+    assert len(contract["required_artifacts"]) == 4
     audit = validate_delivery_contract(deliverable, contract)
 
     assert contract["delivery_profile"] == "manufacturing-tax-risk-report"
@@ -298,6 +307,64 @@ def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
         item["code"] == "branding-audit-not-passed"
         for item in blocked["failures"]
     )
+
+
+def test_tax_word_request_requires_word_and_its_gold_branding_without_extra_pdf():
+    contract, deliverable = _tax_report_delivery(
+        "调整下文件格式，转化为Word形式导出，只要Word不要PDF", "docx"
+    )
+    assert len(contract["required_artifacts"]) == 4
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is True
+    deliverable["branding_audits"][0]["variant"] = "red"
+    audit = validate_delivery_contract(deliverable, contract)
+    assert any(issue["code"] == "branding-audit-not-passed" and issue["item"] == "tax_report_docx"
+               for issue in audit["failures"])
+    pdf_contract, pdf_delivery = _tax_report_delivery()
+    assert validate_delivery_contract(pdf_delivery, contract)["completion_allowed"] is False
+    assert validate_delivery_contract(deliverable, pdf_contract)["completion_allowed"] is False
+
+
+@pytest.mark.parametrize("query", [
+    "不要Word，只要PDF", "不是Word，是PDF", "只要PDF", "财税报告不要Word",
+])
+def test_tax_negated_word_keeps_the_pdf_delivery(query):
+    contract, deliverable = _tax_report_delivery(query)
+    assert len(contract["required_artifacts"]) == 4
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is True
+
+
+@pytest.mark.parametrize("query", [
+    "把这份PDF转换成Word", "PDF转DOCX", "原PDF内容不变，给我Word", "生成可编辑稿",
+])
+def test_tax_conversion_selects_only_the_requested_word_target(query):
+    contract, deliverable = _tax_report_delivery(query, "docx")
+    assert len(contract["required_artifacts"]) == 4
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is True
+
+
+def test_tax_explicit_pdf_and_word_requires_both_reports_and_both_brand_audits():
+    contract, deliverable = _tax_report_delivery("财税报告同时生成PDF和Word")
+    word_contract, word_delivery = _tax_report_delivery("财税报告生成Word", "docx")
+    assert len(contract["required_artifacts"]) == 5
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is False
+    deliverable["artifacts"].append(word_delivery["artifacts"][0])
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is False
+    deliverable["branding_audits"].extend(word_delivery["branding_audits"])
+    assert validate_delivery_contract(deliverable, contract)["completion_allowed"] is True
+    assert len(word_contract["required_artifacts"]) == 4
+
+
+def test_tax_four_question_review_is_advisory_without_a_blocking_repair():
+    contract, deliverable = _tax_report_delivery()
+    deliverable.pop("four_question_review")
+    audit = validate_delivery_contract(deliverable, contract)
+    assert audit["completion_allowed"] is True
+    assert len(audit["warnings"]) == 4
+    assert audit["repair_plan"]["status"] == "not-needed"
+    deliverable["four_question_review"] = {"least_certain": FOUR_QUESTION_LABELS["least_certain"]}
+    audit = validate_delivery_contract(deliverable, contract)
+    assert audit["completion_allowed"] is True
+    assert len(audit["warnings"]) == 4
 
 
 def test_sme_pre_and_post_profiles_bind_current_tables_and_validators():

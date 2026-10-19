@@ -430,7 +430,7 @@ def build_release_transaction_manifest(
     validation: dict[str, object],
     release_assets: list[Path],
     publisher_fingerprint: str,
-    local_sync_script_sha256: str,
+    local_sync_script_sha256: str = "",
     client_update: dict[str, object] | None = None,
 ) -> dict[str, object]:
     asset_hashes = {
@@ -461,7 +461,9 @@ def build_release_transaction_manifest(
                 else "atomic-install-and-three-way-signature-audit-pass"
             ),
         },
-        "local_sync": {
+    }
+    if local_sync_script_sha256:
+        participants["local_sync"] = {
             "mode": "formal-release-immediate",
             "required_version": validation["short_version"],
             "generic_package_sha256": package_hashes.get("generic", ""),
@@ -471,8 +473,7 @@ def build_release_transaction_manifest(
                 if "generic" in package_hashes
                 else "not-applicable-platform-hotfix"
             ),
-        },
-    }
+        }
     if client_update is not None:
         participants["client_update"] = {
             "release_version": validation["short_version"],
@@ -1440,8 +1441,7 @@ def main() -> None:
     parser.add_argument(
         "--local-release-sync-script",
         type=Path,
-        default=DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT,
-        help="正式发布成为GitHub Latest后立即执行的本机同步程序",
+        help="仅显式要求本机技能及知识索引同步时提供；官网发布默认不执行本机同步",
     )
     parser.add_argument(
         "--client-skill-update-url",
@@ -1608,7 +1608,7 @@ def main() -> None:
                 validate_local_release_sync(
                     arguments.local_release_sync_script
                 )[1]
-                if "generic" in packages
+                if "generic" in packages and arguments.local_release_sync_script is not None
                 else ""
             ),
             client_update=client_update_validation,
@@ -1884,16 +1884,11 @@ def main() -> None:
                     "target_commit": commit,
                 },
             )
-            if "generic" in packages:
+            if "local_sync" in transaction_manifest["participants"]:
                 local_sync_result = run_local_release_sync(
                     arguments.local_release_sync_script,
                     expected_version=str(validation["short_version"]),
                 )
-            else:
-                local_sync_result = {
-                    "status": "not-applicable-platform-hotfix",
-                    "mode": "formal-release-immediate",
-                }
             if client_update_package is not None and client_update_validation is not None:
                 published_update = publish_client_skill_update(
                     str(validation["short_version"]),
@@ -1921,7 +1916,7 @@ def main() -> None:
                     "github": "published",
                     "portal": portal_result.get("release_state"),
                     "installation": installation_acceptance.get("status"),
-                    "local_sync": local_sync_result,
+                    **({"local_sync": local_sync_result} if local_sync_result is not None else {}),
                     "client_update": client_update_result,
                 },
             )
@@ -1937,7 +1932,8 @@ def main() -> None:
                             and client_update_package is not None
                             else (
                                 "github-published-local-sync-pending"
-                                if github_published and local_sync_result is None
+                                if github_published and "local_sync" in transaction_manifest["participants"]
+                                and local_sync_result is None
                                 else (
                                     "portal-published-github-pending"
                                     if portal_result is not None
@@ -1970,7 +1966,7 @@ def main() -> None:
                     "status": "published",
                     "release_url": release_url,
                     "isolated_skill_acceptance": installation_acceptance,
-                    "local_sync": local_sync_result,
+                    **({"local_sync": local_sync_result} if local_sync_result is not None else {}),
                     "client_update": client_update_result,
                     "portal": portal_result,
                     "release_transaction": completed,

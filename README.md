@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.7.6.md"><img src="https://img.shields.io/badge/Release-V1.7.6-C9A760?style=for-the-badge" alt="Release V1.7.6"></a>
+  <a href="docs/releases/V1.7.7.md"><img src="https://img.shields.io/badge/Release-V1.7.7-C9A760?style=for-the-badge" alt="Release V1.7.7"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -51,7 +51,7 @@
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-V1.7.6 支持将已确认的同一份HTML报告正文转为可编辑Word，保留表格、数字、来源、品牌及草稿状态，并修复财税报告打印分页裁切。默认报告仍只交付PDF，明确要求Word才追加；高新和专精申请书保留各自回填入口。客户端与技能分别版本化和验收，正式下载由团队网站提供，完整范围见[V1.7.6更新说明](docs/releases/V1.7.6.md)。
+V1.7.7 修复财税报告PDF与Word被同时要求的问题，按用户请求选择报告格式，默认PDF仍保留四份底稿；四问遵守画像声明，仅提示而不阻断交付。官网发布与发布者本机技能、知识索引同步分离，保留签名、隔离安装及正式发布事务。客户端与技能分别版本化和验收，完整范围见[V1.7.7更新说明](docs/releases/V1.7.7.md)。
 
 ### 当前版本功能简介
 
