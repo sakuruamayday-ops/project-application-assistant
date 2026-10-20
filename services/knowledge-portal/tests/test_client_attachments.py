@@ -167,12 +167,27 @@ def test_body_chunk_and_declared_size_limits(tmp_path):
     assert upload(client, headers, aid, b'original-file').json()['complete'] is True
 
 
-def test_large_original_metadata_accepts_streaming_first_chunk_without_report_cap(tmp_path):
-    _, client, headers = setup(tmp_path)
-    payload = attachment(size_bytes=256 * 1024**2 + 1, filename='large-original.bin')
-    aid = create(client, headers, payload)['attachment_id']
-    assert upload(client, headers, aid, b'first').json() == {'next_offset': 5, 'complete': False}
-    assert create(client, headers, payload) == {'attachment_id': aid, 'next_offset': 5, 'complete': False}
+def test_original_metadata_accepts_100_mib_and_rejects_one_byte_more_without_large_files(tmp_path):
+    module, client, headers = setup(tmp_path)
+    payload = attachment(size_bytes=100 * 1024**2, filename='boundary-original.bin')
+    receipt = create(client, headers, payload)
+    assert receipt == {'attachment_id': receipt['attachment_id'], 'next_offset': 0, 'complete': False}
+    rejected = client.post('/v1/client-attachments', headers=headers,
+        json=attachment(size_bytes=100 * 1024**2 + 1, filename='too-large-original.bin'))
+    assert rejected.status_code == 422
+    assert not client_reports.file_path(module.DATA_DIR / 'client-attachments', receipt['attachment_id']).exists()
+    with closing(module.database()) as connection:
+        assert connection.execute('SELECT COUNT(*) FROM client_attachments').fetchone()[0] == 1
+
+
+def test_prior_oversized_pending_registration_refuses_more_content(tmp_path):
+    module, client, headers = setup(tmp_path)
+    aid = create(client, headers, attachment())['attachment_id']
+    with closing(module.database()) as connection:
+        connection.execute('UPDATE client_attachments SET size_bytes=? WHERE id=?', (100 * 1024**2 + 1, aid))
+        connection.commit()
+    assert upload(client, headers, aid, b'first').status_code == 422
+    assert not client_reports.file_path(module.DATA_DIR / 'client-attachments', aid).exists()
 
 
 def test_attachment_storage_reserve_retry_and_symlink_rejection(tmp_path, monkeypatch):

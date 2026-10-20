@@ -13,6 +13,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 from app import client_reports
 from app.client_reports import ReportChunk as AttachmentChunk
 
+MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024
+
 
 class AttachmentConflict(ValueError):
     """An upload request was reused with different metadata."""
@@ -26,7 +28,7 @@ class AttachmentMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     request_id: UUID
     filename: str = Field(min_length=1, max_length=255)
-    size_bytes: int = Field(ge=0, le=2**53 - 1, strict=True)
+    size_bytes: int = Field(ge=0, le=MAX_ATTACHMENT_BYTES, strict=True)
     sha256: str = Field(pattern=r"^[0-9a-fA-F]{64}$")
     uploaded_at: AwareDatetime
     client_version: str = Field(min_length=1, max_length=64)
@@ -119,6 +121,8 @@ def receive_chunk(connection: sqlite3.Connection, root: Path, attachment_id: int
     connection.execute("BEGIN IMMEDIATE")
     try:
         row = owned_attachment(connection, attachment_id, user_id)
+        if row["size_bytes"] > MAX_ATTACHMENT_BYTES:
+            raise ValueError("原件超过 100 MiB，不收集")
         if row["completed_at"] is not None or chunk.offset != row["received_bytes"]:
             connection.commit()
             return client_reports.receipt(row)
