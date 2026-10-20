@@ -43,7 +43,7 @@ from urllib.parse import quote, urlparse
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
-from fastapi import Cookie, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
+from fastapi import Cookie, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -59,6 +59,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit, feedback_category
 from app.client_diagnostic_jobs import DiagnosticChunk, initialize as initialize_diagnostics, receive_chunk, file_path as diagnostic_file_path
+from app import client_attachments, client_reports
 
 from app.assistant_runtime import (
     assistant_tool_schemas,
@@ -8486,6 +8487,8 @@ def init_database() -> None:
             DROP TABLE IF EXISTS oauth_clients;
             """
         )
+        client_reports.initialize(connection)
+        client_attachments.initialize(connection)
         if init_kindle_database is not None:
             init_kindle_database(connection, DATA_DIR)
         connection.commit()
@@ -13489,6 +13492,141 @@ def portal_page_response(
     return response
 
 
+def require_client_file_upload(
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_api_user)],
+) -> sqlite3.Row | dict[str, object]:
+    if str(user["client_binding_auth_method"] or "") != "client_password":
+        raise HTTPException(status_code=403, detail="请使用客户端登录后上传文件")
+    version = str(user["client_installed_version"] or "")
+    if (not SEMANTIC_VERSION_PATTERN.fullmatch(version)
+        or compare_semantic_versions(version, "0.7.6") < 0
+        or compare_semantic_versions(version, MINIMUM_SUPPORTED_CLIENT_VERSION) < 0):
+        raise HTTPException(status_code=409, detail="请升级到当前支持的客户端后上传文件")
+    return user
+
+
+@app.post("/v1/client-reports")
+def client_report_create(
+    report: client_reports.ReportMetadata,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_client_file_upload)],
+):
+    if not SEMANTIC_VERSION_PATTERN.fullmatch(report.client_version) or compare_semantic_versions(report.client_version, "0.7.6") < 0:
+        raise HTTPException(status_code=409, detail="仅收集 V0.7.6 起生成的业务分析定稿")
+    try:
+        with closing(database()) as connection:
+            return client_reports.create_report(connection, int(user["id"]), report)
+    except client_reports.ReportConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@app.post("/v1/client-reports/{report_id}/content")
+def client_report_upload(
+    report_id: int,
+    chunk: client_reports.ReportChunk,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_client_file_upload)],
+):
+    try:
+        with closing(database()) as connection:
+            return client_reports.receive_chunk(connection, DATA_DIR / "client-reports", report_id, int(user["id"]), chunk)
+    except client_reports.ReportNotFound as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get("/client-reports", response_class=HTMLResponse)
+def client_reports_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    with closing(database()) as connection:
+        reports = client_reports.list_reports(connection, user_id=None if user["is_admin"] else int(user["id"]), offset=offset)
+    return templates.TemplateResponse(request, "client_reports.html", {
+        "user": user, "reports": reports, "offset": offset,
+    }, headers={"Cache-Control": "private, no-store"})
+
+
+@app.get("/client-reports/{report_id}/download")
+def client_report_download(
+    report_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    try:
+        with closing(database()) as connection:
+            row, path = client_reports.completed_file(connection, DATA_DIR / "client-reports", report_id, None if user["is_admin"] else int(user["id"]))
+    except client_reports.ReportNotFound as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return FileResponse(path, filename=row["filename"], media_type="application/octet-stream", headers={
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Gongchuang-Report-Sha256": row["sha256"],
+    })
+
+
+@app.post("/v1/client-attachments")
+def client_attachment_create(
+    attachment: client_attachments.AttachmentMetadata,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_client_file_upload)],
+):
+    if not SEMANTIC_VERSION_PATTERN.fullmatch(attachment.client_version) or compare_semantic_versions(attachment.client_version, "0.7.6") < 0:
+        raise HTTPException(status_code=409, detail="仅收集 V0.7.6 起由用户上传的原始附件")
+    try:
+        with closing(database()) as connection:
+            return client_attachments.create_attachment(connection, DATA_DIR / "client-attachments", int(user["id"]), attachment)
+    except client_attachments.AttachmentConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/v1/client-attachments/{attachment_id}/content")
+def client_attachment_upload(
+    attachment_id: int,
+    chunk: client_attachments.AttachmentChunk,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_client_file_upload)],
+):
+    try:
+        with closing(database()) as connection:
+            return client_attachments.receive_chunk(connection, DATA_DIR / "client-attachments", attachment_id, int(user["id"]), chunk)
+    except client_attachments.AttachmentNotFound as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get("/client-attachments", response_class=HTMLResponse)
+def client_attachments_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    require_admin(user)
+    with closing(database()) as connection:
+        attachments = client_attachments.list_attachments(connection, offset=offset)
+    return templates.TemplateResponse(request, "client_attachments.html", {
+        "user": user, "attachments": attachments, "offset": offset,
+    }, headers={"Cache-Control": "private, no-store"})
+
+
+@app.get("/client-attachments/{attachment_id}/download")
+def client_attachment_download(
+    attachment_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    require_admin(user)
+    try:
+        with closing(database()) as connection:
+            row, path = client_attachments.completed_file(connection, DATA_DIR / "client-attachments", attachment_id)
+    except client_attachments.AttachmentNotFound as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return FileResponse(path, filename=row["filename"], media_type="application/octet-stream", headers={
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Gongchuang-Attachment-Sha256": row["sha256"],
+    })
+
+
 @app.post("/v1/client-error-reports")
 def client_error_report_submit(
     report: ClientErrorReport,
@@ -15107,162 +15245,11 @@ def assistant_answer_stream(
 
 @app.post("/assistant/answer")
 def assistant_answer(
-    request: Request,
-    question: Annotated[str, Form(min_length=2, max_length=500)],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
-    stream: Annotated[str | None, Form()] = None,
-    user_api_base: Annotated[str | None, Form(max_length=500)] = None,
-    user_api_key: Annotated[str | None, Form(max_length=500)] = None,
-    user_api_model: Annotated[str | None, Form(max_length=200)] = None,
 ):
     validate_csrf(user, csrf_token)
-    admin_unlimited = bool(user["is_admin"])
-    guide = quick_guide_answer(
-        question,
-        str(request.base_url),
-        len(skill_catalog_payload()["skills"]),
-    )
-    if guide:
-        answer, skill_name = guide
-        daily_limit = None if admin_unlimited else assistant_limit_for_user(int(user["id"]))
-        remaining = (
-            None
-            if admin_unlimited
-            else max(0, int(daily_limit) - assistant_usage_today(int(user["id"])))
-        )
-        if stream == "true":
-            return StreamingResponse(
-                assistant_guide_stream(
-                    answer, skill_name, remaining, daily_limit, unlimited=admin_unlimited
-                ),
-                media_type="text/event-stream",
-                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-            )
-        return JSONResponse(
-            {
-                "answer": answer,
-                "mode": "usage-guide",
-                "sources": [],
-                "skills": [skill_name],
-                "quota": assistant_quota_payload(
-                    remaining, daily_limit, False, unlimited=admin_unlimited
-                ),
-            }
-        )
-    model_config = validate_user_model_config(
-        user_api_base,
-        user_api_key,
-        user_api_model,
-        user_id=int(user["id"]),
-    )
-    if model_config or admin_unlimited:
-        usage_id = create_unmetered_assistant_usage(
-            int(user["id"]),
-            question,
-            provider_mode="user-api" if model_config else "admin-unlimited",
-        )
-        daily_limit = None if admin_unlimited else assistant_limit_for_user(int(user["id"]))
-        remaining = (
-            None
-            if admin_unlimited
-            else max(0, int(daily_limit) - assistant_usage_today(int(user["id"])))
-        )
-    else:
-        usage_id, remaining, daily_limit = reserve_assistant_usage(int(user["id"]), question)
-    if stream == "true":
-        return StreamingResponse(
-            assistant_answer_stream(
-                question,
-                usage_id,
-                remaining,
-                daily_limit,
-                model_config=model_config,
-                quota_counted=not bool(model_config) and not admin_unlimited,
-                unlimited=admin_unlimited,
-            ),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-        )
-    started = time.perf_counter()
-    trace: dict[str, object] = {"skills": [], "tools": [], "fallback_reason": None}
-
-    def capture_progress(stage: str, message: str, details: dict[str, object]) -> None:
-        del message
-        record_assistant_trace(trace, stage, details)
-
-    try:
-        search_result = search_knowledge(question, 5)
-        clarification = str(search_result.get("clarification") or "")
-        if clarification:
-            complete_assistant_usage(
-                usage_id,
-                "completed",
-                answer_mode="clarification",
-                routed_skills=["project-matching"],
-                tool_calls=[],
-                source_count=0,
-                duration_ms=round((time.perf_counter() - started) * 1000),
-            )
-            return JSONResponse(
-                {
-                    "answer": clarification,
-                    "mode": "clarification",
-                    "sources": [],
-                    "skills": ["project-matching"],
-                    "quota": assistant_quota_payload(
-                        remaining,
-                        daily_limit,
-                        not bool(model_config) and not admin_unlimited,
-                        unlimited=admin_unlimited,
-                    ),
-                }
-            )
-        knowledge_results = assistant_search_results(search_result)
-        answer, mode, sources, skills = answer_with_knowledge_then_web(
-            question,
-            knowledge_results,
-            progress=capture_progress,
-            model_config=model_config,
-        )
-        answer, deadline_reminders = append_deadline_reminders(question, answer, sources)
-        complete_assistant_usage(
-            usage_id,
-            "completed",
-            answer_mode=mode,
-            routed_skills=skills,
-            tool_calls=list(trace["tools"]),
-            source_count=len(sources),
-            duration_ms=round((time.perf_counter() - started) * 1000),
-            fallback_reason=str(trace["fallback_reason"] or "") or None,
-        )
-        return JSONResponse(
-            {
-                "answer": answer,
-                "mode": mode,
-                "sources": sources,
-                "skills": skills,
-                "deadline_reminders": deadline_reminders,
-                "quota": assistant_quota_payload(
-                    remaining,
-                    daily_limit,
-                    not bool(model_config) and not admin_unlimited,
-                    unlimited=admin_unlimited,
-                ),
-            }
-        )
-    except Exception as error:
-        complete_assistant_usage(
-            usage_id,
-            "failed",
-            routed_skills=list(trace["skills"]),
-            tool_calls=list(trace["tools"]),
-            duration_ms=round((time.perf_counter() - started) * 1000),
-            fallback_reason=str(trace["fallback_reason"] or "") or None,
-            error_type=type(error).__name__,
-            error_message=redacted_log_detail(error),
-        )
-        raise
+    raise HTTPException(status_code=410, detail="网页答疑已停用，请在共创客户端中完成分析。")
 
 
 @app.get("/admin/health/{section}", response_class=HTMLResponse)
@@ -20139,11 +20126,10 @@ def enterprise_identity_lineage_api(
 
 @app.post("/v1/enterprise-lifecycle/decide")
 def enterprise_lifecycle_decision_api(
-    payload: EnterpriseLifecycleDecisionRequest,
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
     del user
-    return enterprise_lifecycle_decision(**payload.model_dump())
+    raise HTTPException(status_code=410, detail="服务器业务分析已停用，请在共创客户端中完成分析。")
 
 
 @app.get("/v1/admin/project-aliases")
@@ -20954,7 +20940,8 @@ def windows_desktop_update_response(asset_name: str):
         f"Gongchuang-Enterprise-Assistant-"
         f"{release_version}-win-x64.exe"
     )
-    if asset_name not in {WINDOWS_SELF_UPDATE_MANIFEST_NAME, installer_name}:
+    blockmap_name = installer_name + ".blockmap"
+    if asset_name not in {WINDOWS_SELF_UPDATE_MANIFEST_NAME, installer_name, blockmap_name}:
         raise HTTPException(status_code=404, detail="更新文件不存在")
     downloads = release.get("downloads")
     windows_downloads = downloads.get("windows") if isinstance(downloads, dict) else None
@@ -20975,6 +20962,13 @@ def windows_desktop_update_response(asset_name: str):
         installer_path.relative_to(release_root)
     except ValueError:
         raise HTTPException(status_code=503, detail="Windows 自动更新正式安装包路径无效") from None
+    if asset_name == blockmap_name:
+        blockmap_path = installer_path.with_name(blockmap_name)
+        if blockmap_path.is_symlink() or not blockmap_path.is_file():
+            raise HTTPException(status_code=404, detail="更新文件不存在")
+        return FileResponse(blockmap_path, media_type="application/octet-stream", headers={
+            "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff",
+        })
     if asset_name == installer_name:
         return FileResponse(
             path=installer_path,
@@ -21921,7 +21915,6 @@ async def enterprise_identity_lineage_lookup_tool(
     return await asyncio.to_thread(search)
 
 
-@knowledge_mcp.tool(name="enterprise_lifecycle_decision")
 async def enterprise_lifecycle_decision_tool(
     query: str,
     enterprise_facts: list[dict[str, object]],

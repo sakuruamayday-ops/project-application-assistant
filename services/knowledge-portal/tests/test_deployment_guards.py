@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import os
+import shlex
 import subprocess
 import sys
+import tarfile
 from pathlib import Path
 
 
@@ -163,6 +166,68 @@ def test_deploy_carries_client_skill_update_publisher():
     # app/ 提供验签实现，独立脚本是受控发布从本机调用的远端入口；二者缺一都会让更新源停在旧版。
     assert "    app references templates static installers deploy" in source_archive
     assert "scripts/publish_client_skill_update.py" in source_archive
+
+
+def test_deployment_source_archive_runs_report_collector_entrypoint(tmp_path):
+    service_dir = SCRIPT_DIR.parent
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
+    start = deploy_script.index("COPYFILE_DISABLE=1 tar --no-xattrs")
+    end = deploy_script.index("| python3", start)
+    arguments = shlex.split(deploy_script[start:end].replace("\\\n", ""))
+    assert arguments.pop(0) == "COPYFILE_DISABLE=1"
+    directories = {
+        "${service_dir}": str(service_dir),
+        "${repository_dir}": str(service_dir.parents[1]),
+    }
+    command = [directories.get(argument, argument) for argument in arguments]
+    archive_path = tmp_path / "application-source.tar"
+    with archive_path.open("wb") as output:
+        subprocess.run(
+            command,
+            cwd=service_dir,
+            env={**os.environ, "COPYFILE_DISABLE": "1"},
+            check=True,
+            stdout=output,
+            stderr=subprocess.PIPE,
+            timeout=60,
+        )
+
+    candidate = tmp_path / "candidate"
+    with tarfile.open(archive_path) as archive:
+        for relative in (
+            "app/client_reports.py",
+            "app/client_attachments.py",
+            "scripts/client_reports.py",
+            "templates/client_reports.html",
+            "templates/client_attachments.html",
+        ):
+            content = archive.extractfile(relative)
+            assert content is not None
+            assert content.read() == (service_dir / relative).read_bytes()
+        archive.extractall(
+            candidate,
+            members=[
+                member
+                for member in archive.getmembers()
+                if member.name == "app"
+                or member.name.startswith("app/")
+                or member.name == "scripts/client_reports.py"
+            ],
+            filter="data",
+        )
+
+    result = subprocess.run(
+        [sys.executable, str(candidate / "scripts/client_reports.py"), "--help"],
+        cwd=candidate,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert "acknowledge" in result.stdout
+    assert "cleanup" in result.stdout
 
 
 def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():

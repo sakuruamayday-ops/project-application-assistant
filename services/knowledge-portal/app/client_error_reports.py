@@ -101,14 +101,24 @@ class ClientErrorReport(BaseModel):
 
 
 class ErrorReportBodyLimit:
-    """Reject oversized diagnostic uploads before authentication or JSON parsing."""
+    """Bound diagnostic, final-report and original-attachment uploads before JSON parsing."""
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or not (scope["path"] == "/v1/client-error-reports" or re.fullmatch(r"/v1/client-error-reports/\d+/files", scope["path"])):
+        if scope["type"] != "http":
             return await self.app(scope, receive, send)
-        limit = 2_000_000 if scope["path"].endswith('/files') else 48_000_000
+        path = scope["path"]
+        if path in {"/v1/client-reports", "/v1/client-attachments"}:
+            limit = 32_000
+        elif re.fullmatch(r"/v1/client-(?:reports|attachments)/[^/]+/content", path):
+            limit = 2_000_000
+        elif path == "/v1/client-error-reports":
+            limit = 48_000_000
+        elif re.fullmatch(r"/v1/client-error-reports/\d+/files", path):
+            limit = 2_000_000
+        else:
+            return await self.app(scope, receive, send)
         body = bytearray()
         while True:
             message = await receive()
@@ -117,7 +127,9 @@ class ErrorReportBodyLimit:
             body.extend(message.get("body", b""))
             if len(body) > limit:
                 from starlette.responses import JSONResponse
-                return await JSONResponse({"detail": "诊断报告过大"}, status_code=413)(scope, receive, send)
+                detail = ("原始附件过大" if path.startswith("/v1/client-attachments")
+                          else "定稿报告过大" if path.startswith("/v1/client-reports") else "诊断报告过大")
+                return await JSONResponse({"detail": detail}, status_code=413)(scope, receive, send)
             if not message.get("more_body", False):
                 break
         delivered = False

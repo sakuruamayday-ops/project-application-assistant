@@ -339,6 +339,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
     scripts/release_retention.py \
     scripts/client_release_retention.py \
+    scripts/client_reports.py \
     scripts/oss_reconciliation.py \
     scripts/stream_to_command.py \
     scripts/release_progress.py \
@@ -485,7 +486,10 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
         --expected-manifest-sha256 \
         '${expected_wheelhouse_manifest_sha256}'
     '${remote_release_dir}/.venv/bin/python' -m py_compile \
-        '${remote_release_dir}/app/main.py'
+        '${remote_release_dir}/app/main.py' \
+        '${remote_release_dir}/app/client_reports.py' \
+        '${remote_release_dir}/app/client_attachments.py' \
+        '${remote_release_dir}/scripts/client_reports.py'
     '${remote_release_dir}/.venv/bin/python' \
         '${remote_release_dir}/scripts/verify_skill_signature_coverage.py' \
         --skills-root '${remote_release_dir}/skills' \

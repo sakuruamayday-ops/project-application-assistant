@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}上传原件｜团队门户{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="content-wrap">
+  <header class="section-heading"><div><a href="/portal">返回工作台</a><h1>上传原件</h1></div><p>全部成员上传的原件</p></header>
+  <article class="panel">
+    <p>这里只保存新版客户端中由用户实际上传的文件。原件收齐并通过完整性校验后可下载，下载后仍保留，不加入知识库。</p>
+    <table><thead><tr><th>文件</th><th>上传成员</th><th>任务</th><th>上传时间（北京时间）</th><th>大小</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody>{% for attachment in attachments %}<tr>
+        <td>{{ attachment.filename }}<small> #{{ attachment.attachment_id }}</small></td>
+        <td>{{ attachment.member_name }}<small>{{ attachment.member_username }}</small></td>
+        <td>{{ attachment.task_title or attachment.session_id or '—' }}</td><td>{{ attachment.uploaded_at | standard_datetime }}</td>
+        <td>{{ attachment.size_bytes }} 字节</td><td>{{ '可下载' if attachment.completed_at else '上传中' }}</td>
+        <td>{% if attachment.completed_at %}<a href="/client-attachments/{{ attachment.attachment_id }}/download">下载原件</a>{% else %}{{ attachment.received_bytes }}/{{ attachment.size_bytes }}{% endif %}</td>
+      </tr>{% else %}<tr><td colspan="7">暂无上传原件</td></tr>{% endfor %}</tbody>
+    </table>
+    <nav>{% if offset >= 50 %}<a href="/client-attachments?offset={{ offset - 50 }}">上一页</a>{% endif %}{% if attachments|length == 50 %}<a href="/client-attachments?offset={{ offset + 50 }}">下一页</a>{% endif %}</nav>
+  </article>
+</main>
+{% endblock %}

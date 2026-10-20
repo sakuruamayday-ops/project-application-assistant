@@ -237,7 +237,11 @@ def resolve_release_paths(request: dict[str, Any]) -> tuple[Path, Path, Path]:
         raise RuntimeError("新应用release名称与部署编号不一致")
     for relative in (
         "app/main.py",
+        "app/client_reports.py",
+        "app/client_attachments.py",
+        "templates/client_attachments.html",
         ".venv/bin/python",
+        "scripts/client_reports.py",
         "scripts/migrate_first_public_release.py",
         "scripts/verify_authenticated_portal.py",
     ):

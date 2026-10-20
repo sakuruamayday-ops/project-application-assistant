@@ -33,7 +33,11 @@ def make_request(tmp_path: Path, *, release_mode: str = "code"):
     release.mkdir()
     for relative in (
         "app/main.py",
+        "app/client_reports.py",
+        "app/client_attachments.py",
+        "templates/client_attachments.html",
         ".venv/bin/python",
+        "scripts/client_reports.py",
         "scripts/migrate_first_public_release.py",
         "scripts/verify_authenticated_portal.py",
         "scripts/refresh_index_from_oss.py",
@@ -101,6 +105,27 @@ def install_success_fakes(monkeypatch, module, expected_build):
     monkeypatch.setattr(module, "restore_previous_build", lambda _build: None)
     monkeypatch.setattr(module, "configure_index_verifier", lambda _env: "test.timer")
     return commands
+
+
+@pytest.mark.parametrize("relative", [
+    "app/client_reports.py", "scripts/client_reports.py",
+    "app/client_attachments.py", "templates/client_attachments.html",
+])
+def test_missing_file_storage_entrypoint_rejects_release_before_switch(
+    tmp_path, monkeypatch, relative
+):
+    module, request, request_path, state_path, runtime, release, previous = make_request(
+        tmp_path
+    )
+    commands = install_success_fakes(monkeypatch, module, request["expected_build"])
+    (release / relative).rename(tmp_path / "preserved-missing-entrypoint.py")
+
+    with pytest.raises(RuntimeError, match="新应用release缺少入口"):
+        module.execute(request_path, state_path)
+
+    assert (runtime / "current").resolve() == previous
+    assert not state_path.exists()
+    assert commands == []
 
 
 def test_server_transaction_completes_and_records_phase_history(tmp_path, monkeypatch):

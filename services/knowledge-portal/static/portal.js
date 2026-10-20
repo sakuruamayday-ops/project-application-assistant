@@ -1,4 +1,4 @@
-const USER_API_SESSION_STORAGE_KEY = "gongchuang-user-model-api";
+const LEGACY_ASSISTANT_STORAGE_KEYS = ["gongchuang-user-model-api", "gongchuang-cockpit-question"];
 const PORTAL_DIAGNOSTIC_CODE = /^GC-(?:REQ|SVC|CLIENT)-[A-Z0-9-]+$/;
 
 function portalPublicError(message, diagnosticCode = "GC-CLIENT-REQUEST") {
@@ -21,12 +21,10 @@ function portalErrorText(error, fallback) {
     : `${fallback}（诊断码：GC-CLIENT-NETWORK）`;
 }
 
-if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
-  try {
-    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
-  } catch {
-    // Storage can be unavailable in hardened browser profiles.
-  }
+try {
+  LEGACY_ASSISTANT_STORAGE_KEYS.forEach(key => sessionStorage.removeItem(key));
+} catch {
+  // Remove retired browser-only model configuration without reading its credential values.
 }
 
 const RISK_CONTROL_SELECTOR = ".text-danger,.text-button.danger,.button.danger,.button.danger-outline,.account-logout-button";
@@ -54,7 +52,6 @@ const FLOW_FRAME_SELECTOR = [
   ".panel",
   ".download-card",
   ".cockpit-radar",
-  ".assistant-console",
   ".health-grid > a",
   ".detail-grid article",
   ".detail-card-link",
@@ -64,8 +61,6 @@ const FLOW_FRAME_SELECTOR = [
   ".table-wrap",
   ".credential-batch-bar",
   ".quick-prompts button",
-  ".assistant-progress",
-  ".assistant-result",
   ".external-link-grid a",
   ".notice",
   ".token-reveal",
@@ -335,7 +330,7 @@ document.addEventListener("submit", (event) => {
   }
   if (form.dataset.clearSensitiveStorage !== undefined) {
     try {
-      sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
+      LEGACY_ASSISTANT_STORAGE_KEYS.forEach(key => sessionStorage.removeItem(key));
     } catch {
       // Storage can be unavailable in hardened browser profiles.
     }
@@ -897,29 +892,6 @@ document.addEventListener("click", async (event) => {
     });
     return;
   }
-  const questionButton = event.target.closest("[data-question]");
-  if (questionButton) {
-    const question = document.querySelector('#assistant-form textarea[name="question"]');
-    const cockpitPage = document.querySelector(".portal-page.page-cockpit");
-    const releaseForm = questionButton.closest(".release-modal-card");
-    if (releaseForm) {
-      dismissReleaseDialog();
-      await fetch(releaseForm.action, {method: "POST", body: new FormData(releaseForm)});
-    }
-    if (question && (cockpitPage || singlePage)) {
-      question.value = questionButton.dataset.question;
-      if (singlePage) {
-        scrollToPortalSection(document.getElementById("cockpit"), "smooth");
-        activateSectionLink("cockpit");
-        history.replaceState(null, "", "/portal#cockpit");
-      }
-      document.querySelector("#assistant-form")?.requestSubmit();
-    } else {
-      sessionStorage.setItem("gongchuang-cockpit-question", questionButton.dataset.question);
-      window.location.href = "/cockpit";
-    }
-    return;
-  }
   const button = event.target.closest(
     "[data-copy-target], [data-copy-config], [data-copy-value], [data-copy-device-id]"
   );
@@ -951,117 +923,6 @@ document.addEventListener("click", async (event) => {
     window.prompt("请复制以下内容", value);
   }
 });
-
-const pendingCockpitQuestion = sessionStorage.getItem("gongchuang-cockpit-question");
-const cockpitQuestion = document.querySelector('.page-cockpit #assistant-form textarea[name="question"]');
-if (pendingCockpitQuestion && cockpitQuestion) {
-  cockpitQuestion.value = pendingCockpitQuestion;
-  sessionStorage.removeItem("gongchuang-cockpit-question");
-  cockpitQuestion.focus();
-}
-
-document.querySelector("#assistant-form")?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const submit = form.querySelector('button[type="submit"]');
-  const result = document.querySelector("#assistant-result");
-  const answer = document.querySelector("#assistant-answer");
-  const mode = document.querySelector("#assistant-result-mode");
-  const skills = document.querySelector("#assistant-skills");
-  const sources = document.querySelector("#assistant-sources");
-  const quota = document.querySelector("#assistant-quota");
-  const progress = document.querySelector("#assistant-progress");
-  const progressList = document.querySelector("#assistant-progress-list");
-  const elements = {answer, mode, skills, sources, quota, progressList, result};
-  submit.disabled = true;
-  submit.textContent = "推导中…";
-  result.hidden = true;
-  progress.hidden = false;
-  progressList.replaceChildren();
-  try {
-    const body = new FormData(form);
-    if (!document.querySelector("#user-api-enabled")?.checked) {
-      body.delete("user_api_base");
-      body.delete("user_api_key");
-      body.delete("user_api_model");
-    }
-    const response = await fetch("/assistant/answer", {method: "POST", body});
-    if (!response.ok) {
-      const payload = await response.json();
-      throw portalResponseError(payload, "答疑失败。");
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    while (true) {
-      const {value, done} = await reader.read();
-      buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
-      const blocks = buffer.split("\n\n");
-      buffer = blocks.pop() || "";
-      for (const block of blocks) {
-        if (!block.trim()) continue;
-        let eventName = "message";
-        const dataLines = [];
-        block.split("\n").forEach((line) => {
-          if (line.startsWith("event:")) eventName = line.slice(6).trim();
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        });
-        if (!dataLines.length) continue;
-        const payload = JSON.parse(dataLines.join("\n"));
-        if (eventName === "progress") appendAssistantProgress(progressList, payload);
-        if (eventName === "result") renderAssistantResult(payload, elements);
-        if (eventName === "error") throw portalResponseError(payload, "答疑失败。");
-      }
-      if (done) break;
-    }
-  } catch (error) {
-    answer.textContent = portalErrorText(error, "答疑失败。");
-    mode.textContent = "需要检查";
-    skills.replaceChildren();
-    sources.replaceChildren();
-    result.hidden = false;
-  } finally {
-    submit.disabled = false;
-    submit.textContent = "开始答疑";
-  }
-});
-
-const userApiForm = document.querySelector("#assistant-form");
-if (userApiForm) {
-  const apiBase = userApiForm.querySelector('[name="user_api_base"]');
-  const apiKey = userApiForm.querySelector('[name="user_api_key"]');
-  const apiModel = userApiForm.querySelector('[name="user_api_model"]');
-  const enabled = document.querySelector("#user-api-enabled");
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(USER_API_SESSION_STORAGE_KEY) || "null");
-    if (saved) {
-      apiBase.value = saved.apiBase || "";
-      apiKey.value = saved.apiKey || "";
-      apiModel.value = saved.apiModel || "";
-      enabled.checked = Boolean(saved.enabled);
-    }
-  } catch {
-    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
-  }
-  document.querySelector("#save-user-api")?.addEventListener("click", () => {
-    sessionStorage.setItem(USER_API_SESSION_STORAGE_KEY, JSON.stringify({
-      apiBase: apiBase.value.trim(),
-      apiKey: apiKey.value.trim(),
-      apiModel: apiModel.value.trim(),
-      enabled: enabled.checked,
-    }));
-    const button = document.querySelector("#save-user-api");
-    button.textContent = "已保存";
-    window.setTimeout(() => { button.textContent = "保存到本标签页会话"; }, 1500);
-  });
-  document.querySelector("#clear-user-api")?.addEventListener("click", () => {
-    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
-    apiBase.value = "";
-    apiKey.value = "";
-    apiModel.value = "";
-    enabled.checked = false;
-  });
-}
 
 const ROUTE_SECTIONS = {
   "/portal": "overview",

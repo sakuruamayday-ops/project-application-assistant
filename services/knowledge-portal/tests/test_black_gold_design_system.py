@@ -91,7 +91,8 @@ def test_workspace_keeps_the_sidebar_fixed_without_page_motion_or_wheel_navigati
     for declaration in ("animation: none !important;", "transform: none !important;", "filter: none !important;"):
         assert declaration in workspace_rule.group(1)
     assert 'scrollToPortalSection(section, "smooth")' in portal_js
-    assert 'if (question && (cockpitPage || singlePage))' in portal_js
+    assert 'if (question && (cockpitPage || singlePage))' not in portal_js
+    assert '/assistant/answer' not in portal_js
     assert "if (targetUrl.search) return;" in portal_js
     assert 'closest(".section-block")' in portal_js
     assert "page-is-leaving" not in portal_js

@@ -1571,6 +1571,8 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
         "releaseNotes: '# 更新说明\\n\\n- 修复附件卡\\n- 恢复模型刷新'\n"
     )
     (release_root / "latest.yml").write_text(manifest, encoding="utf-8")
+    blockmap_path = release_root / (installer_name + ".blockmap")
+    blockmap_path.write_bytes(b"synthetic-blockmap")
 
     with TestClient(module.app) as client:
         client.post(
@@ -1601,6 +1603,15 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
         assert update_manifest.text == manifest
         assert update_installer.content == portal_installer.content == installer_path.read_bytes()
         assert update_installer.headers["x-gongchuang-artifact-sha256"] == module.sha256_file(installer_path)
+        blockmap_url = f"/client-updates/v0.2/{installer_name}.blockmap"
+        assert client.get(blockmap_url).content == b"synthetic-blockmap"
+        assert client.get("/client-updates/v0.2/Gongchuang-Enterprise-Assistant-0.0.1-win-x64.exe.blockmap").status_code == 404
+        other_blockmap = release_root / "private.blockmap"
+        other_blockmap.write_bytes(b"private")
+        assert client.get("/client-updates/v0.2/private.blockmap").status_code == 404
+        blockmap_path.rename(release_root / "saved.blockmap")
+        blockmap_path.symlink_to(other_blockmap)
+        assert client.get(blockmap_url).status_code == 404
 
         (release_root / "latest.yml").write_text(
             manifest.replace(sha512, "A" * len(sha512)),
@@ -3251,13 +3262,11 @@ def test_setup_login_and_device_token(tmp_path):
         assert "data-copy-agent-bootstrap" not in access_page.text
         assert 'data-skill-open="first-run-configuration"' in access_page.text
         cockpit_page = client.get("/cockpit")
-        assert "驾驶舱智能看板" in cockpit_page.text
-        assert "免费知识检索" in cockpit_page.text
-        assert "管理员不限次数" in cockpit_page.text
-        assert "实时推导轨迹" in cockpit_page.text
-        assert ">如何使用<" in cockpit_page.text
-        assert ">导入 API / MCP<" in cockpit_page.text
-        assert ">导入企查查 MCP<" in cockpit_page.text
+        assert "知识服务态势" in cockpit_page.text
+        assert "下载共创客户端" in cockpit_page.text
+        assert 'id="assistant-form"' not in cockpit_page.text
+        assert "user_api_key" not in cockpit_page.text
+        assert "实时推导轨迹" not in cockpit_page.text
         user = module.session_user(response.cookies[module.SESSION_COOKIE])[0]
 
         feedback = client.post(
@@ -3292,57 +3301,10 @@ def test_setup_login_and_device_token(tmp_path):
         assert update_feedback.status_code == 303
         assert "已加入项目简称召回" in client.get("/feedback").text
 
-        assistant = client.post(
-            "/assistant/answer",
-            data={"question": "小巨人", "csrf_token": user["csrf_token"]},
-        )
-        assert assistant.status_code == 200
-        assert assistant.json()["mode"] == "policy-guardrail"
-        assert "2026" in assistant.json()["answer"]
-        assert "小巨人" in assistant.json()["sources"][0]["title"]
-        assert "project-matching" in assistant.json()["skills"]
-        assert assistant.json()["quota"] == {
-            "remaining": None,
-            "limit": None,
-            "counted": False,
-            "unlimited": True,
-        }
-
-        usage_guide = client.post(
-            "/assistant/answer",
-            data={
-                "question": "企业全生命周期助手如何导入我的Agent？",
-                "csrf_token": user["csrf_token"],
-            },
-        )
-        assert usage_guide.status_code == 200
-        assert usage_guide.json()["mode"] == "usage-guide"
-        assert "共创客户端" in usage_guide.json()["answer"]
-        assert "其他 Agent" in usage_guide.json()["answer"]
-        assert usage_guide.json()["sources"] == []
-
-        api_guide = client.post(
-            "/assistant/answer",
-            data={
-                "question": "企业全生命周期助手自带的API和MCP如何导入Agent？",
-                "csrf_token": user["csrf_token"],
-            },
-        )
-        assert api_guide.status_code == 200
-        assert "不再设置独立“API 与用户”标签" in api_guide.json()["answer"]
-        assert "Skills 中心的“安装与连接”" in api_guide.json()["answer"]
-        assert "真实返回成功" in api_guide.json()["answer"]
-
-        qcc_guide = client.post(
-            "/assistant/answer",
-            data={
-                "question": "企查查MCP如何导入Agent？",
-                "csrf_token": user["csrf_token"],
-            },
-        )
-        assert qcc_guide.status_code == 200
-        assert "https://agent.qcc.com" in qcc_guide.json()["answer"]
-        assert "QCC_API_KEY" in qcc_guide.json()["answer"]
+        for question in ("小巨人", "企业全生命周期助手如何导入我的Agent？", "企业全生命周期助手自带的API和MCP如何导入Agent？", "企查查MCP如何导入Agent？"):
+            retired_answer = client.post("/assistant/answer", data={"question": question, "csrf_token": user["csrf_token"]})
+            assert retired_answer.status_code == 410
+        assert module.assistant_usage_today(user["id"]) == 0
 
         token_page = client.post(
             "/device-tokens",
@@ -4875,172 +4837,49 @@ def test_document_metadata_derivation_uses_project_region_stage_and_validity():
     assert metadata["document_stage"] == "认定名单"
     assert metadata["validity_status"] == "active_candidate"
 
-def test_assistant_daily_limit_and_stream_progress(tmp_path):
-    module = load_app(tmp_path)
-    with TestClient(module.app) as client:
-        setup = client.post(
-            "/setup",
-            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
-            follow_redirects=False,
-        )
-        assert setup.status_code == 303
-        login = client.post(
-            "/login",
-            data={"username": "owner", "password": "correct-horse-battery"},
-            follow_redirects=False,
-        )
-        client.cookies.update(login.cookies)
-        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
-
-        guide = client.post(
-            "/assistant/answer",
-            data={
-                "question": "企业全生命周期助手如何导入我的Agent？",
-                "csrf_token": user["csrf_token"],
-                "stream": "true",
-            },
-        )
-        assert guide.status_code == 200
-        assert "event: progress" in guide.text
-        assert '"counted": false' in guide.text
-        assert '"unlimited": true' in guide.text
-        assert module.assistant_usage_today(user["id"]) == 0
-
-        stale_usage_id, _, _ = module.reserve_assistant_usage(user["id"], "模拟服务重启中的问答")
-        assert module.assistant_usage_today(user["id"]) == 1
-        module.init_database()
-        assert module.assistant_usage_today(user["id"]) == 0
-        with closing(module.database()) as connection:
-            assert connection.execute(
-                "SELECT status FROM assistant_usage WHERE id = ?", (stale_usage_id,)
-            ).fetchone()["status"] == "failed"
-
-        for used in range(1, 7):
-            response = client.post(
-                "/assistant/answer",
-                data={
-                    "question": f"小巨人项目条件第{used}次查询",
-                    "csrf_token": user["csrf_token"],
-                    "stream": "true",
-                },
-            )
-            assert response.status_code == 200
-            assert response.headers["content-type"].startswith("text/event-stream")
-            assert "event: progress" in response.text
-            assert "event: result" in response.text
-            assert "正在检索团队知识库" in response.text
-            assert '"unlimited": true' in response.text
-            assert '"counted": false' in response.text
-
-        assert module.assistant_usage_today(user["id"]) == 0
-
-        assistant_health = client.get("/admin/health/assistant")
-        assert assistant_health.status_code == 200
-        assert "用户每日额度" in assistant_health.text
-        assert "近7日真实问题样本" in assistant_health.text
-        assert "小巨人项目条件第1次查询" in assistant_health.text
-
-        raised_limit = client.post(
-            f"/admin/users/{user['id']}/assistant-limit",
-            data={"daily_limit": "8", "csrf_token": user["csrf_token"]},
-            follow_redirects=False,
-        )
-        assert raised_limit.status_code == 303
-        assert module.assistant_limit_for_user(user["id"]) == 8
-        sixth = client.post(
-            "/assistant/answer",
-            data={"question": "额度调整后的第六次问答", "csrf_token": user["csrf_token"], "stream": "true"},
-        )
-        assert sixth.status_code == 200
-        assert '"unlimited": true' in sixth.text
-        assert '"counted": false' in sixth.text
-
-        reset_limit = client.post(
-            f"/admin/users/{user['id']}/assistant-limit",
-            data={"daily_limit": "", "csrf_token": user["csrf_token"]},
-            follow_redirects=False,
-        )
-        assert reset_limit.status_code == 303
-        assert module.assistant_limit_for_user(user["id"]) == 5
-        with closing(module.database()) as connection:
-            rows = connection.execute(
-                "SELECT status, COUNT(*) AS total FROM assistant_usage GROUP BY status"
-            ).fetchall()
-            latest = connection.execute(
-                "SELECT answer_mode, routed_skills, source_count, duration_ms, fallback_reason FROM assistant_usage ORDER BY id DESC LIMIT 1"
-            ).fetchone()
-        assert {row["status"]: row["total"] for row in rows} == {"completed": 7, "failed": 1}
-        assert latest["answer_mode"] == "knowledge-search"
-        assert json.loads(latest["routed_skills"])
-        assert latest["duration_ms"] is not None
-        assert latest["fallback_reason"] == "model_unconfigured"
+def test_retired_assistant_preserves_auth_csrf_and_existing_history(tmp_path, monkeypatch):
+    from test_client_reports import setup
+    module, client, _ = setup(tmp_path)
+    def forbidden(*args, **kwargs):
+        raise AssertionError("retired website answering must not execute")
+    monkeypatch.setattr(module, "answer_with_knowledge_then_web", forbidden)
+    monkeypatch.setattr(module, "quick_guide_answer", forbidden)
+    assert client.post("/assistant/answer", data={"csrf_token": "none"}, follow_redirects=False).status_code == 303
+    client.post("/login", data={"username": "owner", "password": "synthetic-password-123"})
+    user = module.session_user(client.cookies[module.SESSION_COOKIE])[0]
+    old_id, _, _ = module.reserve_assistant_usage(user["id"], "历史问答样例")
+    module.complete_assistant_usage(old_id, "completed")
+    assert client.post("/assistant/answer", data={"csrf_token": "wrong"}).status_code == 403
+    for extra in ({}, {"question": "业务分析"}, {"question": "如何使用", "stream": "true"}):
+        response = client.post("/assistant/answer", data={"csrf_token": user["csrf_token"], **extra})
+        assert response.status_code == 410
+        assert "客户端" in response.json()["detail"]
+    with closing(module.database()) as connection:
+        rows = connection.execute("SELECT id,status FROM assistant_usage").fetchall()
+    assert [tuple(row) for row in rows] == [(old_id, "completed")]
+    assert client.get("/admin/health/assistant").status_code == 200
+    assert "历史问答样例" in client.get("/admin/health/assistant").text
 
 
-def test_user_supplied_model_api_is_unmetered_and_not_persisted(tmp_path, monkeypatch):
-    module = load_app(tmp_path)
-    monkeypatch.setattr(
-        module,
-        "USER_AI_ALLOWED_HOSTS",
-        frozenset({"model.example.com"}),
-    )
-    monkeypatch.setattr(
-        module,
-        "public_model_addresses",
-        lambda hostname, port=443: ("203.0.113.10",),
-    )
-    monkeypatch.setattr(
-        module,
-        "request_assistant_model",
-        lambda messages, model_config=None: {"content": "自带API回答", "tool_calls": []},
-    )
-    with TestClient(module.app) as client:
-        client.post(
-            "/setup",
-            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
-        )
-        login = client.post(
-            "/login",
-            data={"username": "owner", "password": "correct-horse-battery"},
-            follow_redirects=False,
-        )
-        client.cookies.update(login.cookies)
-        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
-        for index in range(5):
-            usage_id, _, _ = module.reserve_assistant_usage(user["id"], f"计费问题{index}")
-            module.complete_assistant_usage(usage_id, "completed")
-        assert module.assistant_usage_today(user["id"]) == 5
-
-        response = client.post(
-            "/assistant/answer",
-            data={
-                "question": "使用自带API继续问答",
-                "csrf_token": user["csrf_token"],
-                "user_api_base": "https://model.example.com",
-                "user_api_key": "user-secret-key",
-                "user_api_model": "example-chat",
-            },
-        )
-        assert response.status_code == 200
-        assert response.json()["answer"] == "自带API回答"
-        assert response.json()["quota"]["counted"] is False
-        assert module.assistant_usage_today(user["id"]) == 5
-        with closing(module.database()) as connection:
-            latest = connection.execute(
-                "SELECT provider_mode,quota_counted,error_message FROM assistant_usage ORDER BY id DESC LIMIT 1"
-            ).fetchone()
-            serialized_database = " ".join(
-                str(value)
-                for row in connection.execute("SELECT * FROM assistant_usage").fetchall()
-                for value in row
-                if value is not None
-            )
-        assert latest["provider_mode"] == "user-api"
-        assert latest["quota_counted"] == 0
-        assert "user-secret-key" not in serialized_database
-
-        cockpit = client.get("/cockpit")
-        assert "使用我自己的大模型 API" in cockpit.text
-        assert "服务端不保存 API Key" in cockpit.text
+def test_retired_assistant_rejects_byok_without_provider_calls_or_secret_storage(tmp_path, monkeypatch):
+    from test_client_reports import setup
+    module, client, _ = setup(tmp_path)
+    def forbidden(*args, **kwargs):
+        raise AssertionError("retired BYOK entry must not execute")
+    monkeypatch.setattr(module, "request_assistant_model", forbidden)
+    monkeypatch.setattr(module, "validate_user_model_config", forbidden)
+    client.post("/login", data={"username": "owner", "password": "synthetic-password-123"})
+    user = module.session_user(client.cookies[module.SESSION_COOKIE])[0]
+    response = client.post("/assistant/answer", data={"csrf_token": user["csrf_token"],
+        "question": "使用自带API继续问答", "stream": "true", "user_api_base": "https://model.example.test",
+        "user_api_key": "synthetic-secret-must-not-survive", "user_api_model": "synthetic-model"})
+    assert response.status_code == 410
+    with closing(module.database()) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM assistant_usage").fetchone()[0] == 0
+    cockpit = client.get("/cockpit")
+    assert cockpit.status_code == 200 and "知识服务态势" in cockpit.text
+    for removed in ('id="assistant-form"', "user_api_key", "使用我自己的大模型 API", "data-question"):
+        assert removed not in cockpit.text
 
 
 def test_setup_password_requires_nine_characters(tmp_path):
@@ -10913,7 +10752,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         assert "authoritative_list_search" in tool_names
         assert "three_first_analysis" in tool_names
         assert "recognition_search" in tool_names
-        assert "enterprise_lifecycle_decision" in tool_names
+        assert "enterprise_lifecycle_decision" not in tool_names
         assert "three_first_directory_diff" not in tool_names
         assert "three_first_product_match" not in tool_names
         response = mcp_request(
@@ -11610,11 +11449,11 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
     )
     assert re.search(r"\s(?:on[a-z]+|style)\s*=", template_source, re.I) is None
     assert ".style." not in portal_script
-    assert "USER_API_SESSION_STORAGE_KEY" in portal_script
-    assert "sessionStorage.setItem(USER_API_SESSION_STORAGE_KEY" in portal_script
-    assert "sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY" in portal_script
-    assert "localStorage.setItem(USER_API_SESSION_STORAGE_KEY" not in portal_script
-    assert "localStorage.getItem(USER_API_SESSION_STORAGE_KEY" not in portal_script
+    assert "LEGACY_ASSISTANT_STORAGE_KEYS" in portal_script
+    assert "sessionStorage.removeItem(key)" in portal_script
+    assert "sessionStorage.setItem" not in portal_script
+    assert "sessionStorage.getItem" not in portal_script
+    assert "/assistant/answer" not in portal_script
     assert "data-clear-sensitive-storage-on-load" in template_source
     assert template_source.count("data-clear-sensitive-storage") >= 4
 
