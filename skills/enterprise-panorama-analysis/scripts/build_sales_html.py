@@ -166,7 +166,7 @@ def section(number: str, data: dict, company: dict) -> str:
                      + "</tbody></table>")
         parts.append('<p class="scope-note">企业主体核验以本次来源为限，待核字段请企业提供相应资料后判断。</p>')
     if number == "07":
-        parts.append('<p class="scope-note">本章为共同事实底稿的经营与财务部分；只填写用户提供的经营、财务资料，不估算营收、利润、研发费、产能或未分配利润。</p>')
+        parts.append('<p class="scope-note">只填写用户提供的经营、财务资料，不估算营收、利润、研发费、产能或未分配利润。</p>')
     paragraphs = data.get("paragraphs", [])
     notes = data.get("notes", [])
     tables = data.get("tables", [])
