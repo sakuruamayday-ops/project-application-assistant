@@ -142,7 +142,7 @@ def test_html_preserves_complete_rd_rows_numbers_and_bracketed_source_values(tmp
         assert [cell.text_content() for cell in actual.xpath("./td")] == expected
 
 
-@pytest.mark.parametrize("columns,rows", [(["不存在的表头"], [["内容"]]),
+@pytest.mark.parametrize("columns,rows", [
     (["序号", "评分维度", "满分", "预计", "评分规则", "证据", "补强"], [["错列"]])])
 def test_invalid_html_table_keeps_final_path_available(tmp_path, report_modules, columns, rows):
     generator, _ = report_modules
@@ -173,7 +173,7 @@ def test_html_values_are_text_not_executable_markup_and_existing_file_is_retaine
 def test_cli_returns_one_explicit_json_failure_without_creating_an_artifact(tmp_path, invalid):
     data = case_fixture(tmp_path, "high-tech-enterprise")
     if invalid == "table-width":
-        data["table_content"] = [{"columns": ["不存在的表头"], "rows": [["内容"]]}]
+        data["table_content"] = [{"columns": ["指标"], "rows": [["内容", "错列"]]}]
     input_path = tmp_path / "facts.json"
     input_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     output = tmp_path / ("report.docx" if invalid == "word-report" else "report.html")
@@ -183,8 +183,45 @@ def test_cli_returns_one_explicit_json_failure_without_creating_an_artifact(tmp_
     assert result.returncode == 2
     assert payload["schema_version"] == "gongchuang-project-report-operation/v1"
     assert payload["status"] == "fail" and payload["errors"]
-    assert "HTML" in payload["errors"][0] if invalid == "word-report" else "表头" in payload["errors"][0]
+    assert "HTML" in payload["errors"][0] if invalid == "word-report" else "列数" in payload["errors"][0]
+    if invalid == "table-width":
+        assert payload["input_rejection"] == {"code": "report-table-shape", "fields": ["table_content.rows"]}
     assert not output.exists()
     operation = next(op for op in json.loads((ROOT / "skills/client-runtime-operations.json").read_text())["operations"]
                      if op["id"] == "project-feasibility.generate-report")
     assert 2 in operation["result_exit_codes"] and 2 not in operation["passing_exit_codes"]
+
+
+def test_bom_missing_sources_and_extra_table_deliver_a_visible_draft(tmp_path, report_modules):
+    generator, _ = report_modules
+    data = {"project_id": "high-tech-enterprise", "enterprise": "合成测试企业",
+            "table_content": {"columns": ["补充业务事实"], "rows": [["独立保留的事实"]]}}
+    input_path = tmp_path / "bom-facts.json"
+    input_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8-sig")
+    output = tmp_path / "draft.html"
+    result = generator.generate_report(input_path, output, "preassessment")
+    document = html.fromstring(output.read_text(encoding="utf-8"))
+    assert result["status"] == "pass" and result["report_stage"] == "draft"
+    assert result["source_count"] == 0 and result["warnings"]
+    assert "初稿说明与待补事项" in document.text_content()
+    assert "独立保留的事实" in document.text_content()
+    assert "尚未提供可核验的客户资料" in document.text_content()
+    assert "申报核心对象尚未明确" in document.text_content()
+    assert "project_object" not in document.text_content()
+    assert "暂无法判断" in document.text_content()
+    assert "materials" not in data and "_input_warnings" not in data
+
+
+def test_evidence_and_table_header_aliases_preserve_the_master(tmp_path, report_modules):
+    generator, filler = report_modules
+    data = case_fixture(tmp_path, "high-tech-enterprise")
+    data["conditions"] = [{"item": "独立输入的条件", "state": "待补强"}]
+    data["table_content"] = {"columns": ["序号", "评分维度", "满分值", "预计得分", "评分依据", "证据", "补强建议"],
+                             "rows": [["1", "合成维度", "10", "待核", "官方规则", "合成来源", "补足资料"]]}
+    normalized = filler.validate_case_fixture(data)
+    assert normalized["conditions"][0]["state"] == "存在差距"
+    assert data["conditions"][0]["state"] == "待补强"
+    result, document = generate(generator, tmp_path, data, "feasibility")
+    assert "合成维度" in document.text_content()
+    assert "补充分析" not in document.text_content()
+    assert not result["warnings"]

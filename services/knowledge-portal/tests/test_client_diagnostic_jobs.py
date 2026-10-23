@@ -6,7 +6,22 @@ from uuid import uuid4
 
 import pytest
 
-from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors, _turn_outcome, _failure_analysis
+from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors, _turn_outcome, _failure_analysis, _analysis_lines
+
+
+def test_review_preserves_file_protection_without_treating_it_as_a_runtime_failure():
+    protection = {'event_seq': 2, 'tool': 'gongchuang_skill_operation', 'stage': 'tool-execution',
+                  'category': 'protection', 'status': 'expected-block', 'observed_reason': 'FileExistsError: synthetic output'}
+    analysis = _failure_analysis({'failed_turn': 1, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'completed', 'delivery_result': 'unknown', 'failures': [protection],
+        'first_failure': protection, 'primary_failure': None,
+    }})
+    assert analysis['failures'][0]['category'] == 'protection'
+    assert analysis['failures'][0]['status'] == 'expected-block'
+    assert analysis['primary_failure'] is None
+    rendered = '\n'.join(_analysis_lines(analysis))
+    assert '文件保护提示' in rendered
+    assert 'FileExistsError: synthetic output' in rendered
 
 
 def test_review_extracts_failed_tool_text_not_successful_content():

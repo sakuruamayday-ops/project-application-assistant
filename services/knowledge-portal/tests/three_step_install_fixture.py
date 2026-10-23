@@ -156,7 +156,7 @@ def run_live_portal(portal) -> Iterator[str]:
     listener.bind(("127.0.0.1", 0))
     listener.listen(128)
     port = int(listener.getsockname()[1])
-    allowed_hosts = portal.knowledge_mcp.settings.transport_security.allowed_hosts
+    allowed_hosts = portal.knowledge_mcp_transport_security.allowed_hosts
     allowed_hosts.append(f"127.0.0.1:{port}")
     server = uvicorn.Server(
         uvicorn.Config(

@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 
 from app.device_security import (
     activation_canonical_value,
@@ -10870,7 +10870,7 @@ def test_slow_mcp_search_keeps_health_and_account_requests_responsive(tmp_path, 
                 user_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
             token = module.ensure_personal_access_token(user_id)
             monkeypatch.setattr(module, 'public_search_knowledge', slow_search)
-            task = asyncio.create_task(module.knowledge_mcp._tool_manager.call_tool(
+            task = asyncio.create_task(module.knowledge_mcp.call_tool(
                 'knowledge_search', {'query': '产业链', 'limit': 1},
             ))
             try:
@@ -10887,7 +10887,7 @@ def test_slow_mcp_search_keeps_health_and_account_requests_responsive(tmp_path, 
                 assert not finished.is_set()
             finally:
                 release.set()
-            assert await task == expected
+            assert (await task).structured_content == expected
             assert len(search_threads) == 1
             assert search_threads[0] != threading.get_ident()
 
@@ -10912,8 +10912,8 @@ def test_mcp_index_connections_belong_to_query_worker(tmp_path, monkeypatch, too
         return expected
 
     monkeypatch.setattr(module, operation, search)
-    result = asyncio.run(module.knowledge_mcp._tool_manager.call_tool(tool_name, arguments))
-    assert result == expected
+    result = asyncio.run(module.knowledge_mcp.call_tool(tool_name, arguments))
+    assert result.structured_content == expected
     assert callback_threads[0] != threading.get_ident()
     assert len(calls) == 1
     if tool_name == 'enterprise_identity_lineage_lookup':
@@ -10932,10 +10932,11 @@ def test_threaded_mcp_search_preserves_validation_and_execution_errors(tmp_path,
 
     monkeypatch.setattr(module, 'public_search_knowledge', rejected_search)
     with pytest.raises(ToolError, match='query'):
-        asyncio.run(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': {}}))
+        asyncio.run(module.knowledge_mcp.call_tool('knowledge_search', {'query': {}}))
     assert calls == []
-    with pytest.raises(ToolError, match='fixture query failed') as failure:
-        asyncio.run(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': 'fixture', 'limit': 1}))
+    with pytest.raises(ToolError, match='Error executing tool knowledge_search') as failure:
+        asyncio.run(module.knowledge_mcp.call_tool('knowledge_search', {'query': 'fixture', 'limit': 1}))
+    assert 'fixture query failed' not in str(failure.value)
     assert isinstance(failure.value.__cause__, sqlite3.OperationalError)
     assert calls == [('fixture', 1)]
 
@@ -10958,7 +10959,7 @@ def test_threaded_mcp_search_cancellation_stops_waiting_without_blocking_loop(tm
     monkeypatch.setattr(module, 'public_search_knowledge', slow_search)
 
     async def exercise():
-        task = asyncio.create_task(module.knowledge_mcp._tool_manager.call_tool('knowledge_search', {'query': 'fixture'}))
+        task = asyncio.create_task(module.knowledge_mcp.call_tool('knowledge_search', {'query': 'fixture'}))
         try:
             assert await asyncio.to_thread(entered.wait, 3)
             assert not finished.is_set()

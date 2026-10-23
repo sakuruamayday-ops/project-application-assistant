@@ -338,13 +338,13 @@ def test_sales_html_financial_missing_and_public_capital_do_not_share_a_false_re
         ]}
         sales_generate(module, folder, data, 'provided.html')
         data['sections']['07']['tables'][0]['source_kind'] = 'third-party-estimate'
-        try:
-            sales_generate(module, folder, data, 'invalid.html')
-        except ValueError as error:
-            assert '用户提供' in str(error)
-        else:
-            raise AssertionError('estimated financial metrics must not render')
-        assert not (folder / 'invalid.html').exists()
+        _, pending = sales_generate(module, folder, data, 'financial-gap.html')
+        assert '用户提供数值' not in pending.read_text()
+        assert '仅采用用户提供的财务资料' in pending.read_text()
+        data['sections']['07']['tables'][0] = {'type': 'operating-metrics', 'source_kind': 'government-source',
+                                              'rows': [['参保人数', '48人', '合成官方年报']]}
+        _, public = sales_generate(module, folder, data, 'public-operation.html')
+        assert '48人' in public.read_text()
         missing = sales_input()
         _, destination = sales_generate(module, folder, missing, 'pending-after-provided.html')
         assert '用户提供数值' not in destination.read_text()

@@ -15,6 +15,13 @@ def test_provincial_sme_full_name_routes_to_authoritative_table():
         assert resolve_projects([name]) == [("provincial_specialized_sme", "", name)]
 
 
+def test_pinzi_zhejiang_manufacturing_alias_keeps_the_recognition_filter():
+    for name in ("品字标浙江制造", "品字标 浙江制造", "浙江制造品字标", "品字标浙江制造认证"):
+        assert resolve_projects([name]) == [("unified", "品字标", name)]
+    plan = build_recognition_query_plan("查品字标浙江制造企业", subject_terms=["机械"])
+    assert "品字标浙江制造" in plan["projects"]
+
+
 def test_innovative_sme_routes_to_existing_unified_recognition_queries():
     assert resolve_projects(['创新型中小企业']) == [('unified', '创新型中小企业', '创新型中小企业')]
     connection = sqlite3.connect(':memory:')

@@ -107,8 +107,23 @@ def table(kind: str, rows: list, *, source_kind: str | None = None) -> str:
     caption, headers = TABLES[kind]
     if not isinstance(rows, list):
         raise ValueError("表格 rows 必须是数组")
-    if kind == "operating-metrics" and rows and source_kind != "customer-file":
-        raise ValueError("经营、财务数据只填写用户提供资料；source_kind 必须是 customer-file")
+    if kind == "operating-metrics" and source_kind != "customer-file":
+        # Public registration and staffing fields are not customer financials.
+        # Unsupported financial inputs become explicit gaps without blocking the report.
+        public_metrics = {"注册资本", "实缴资本", "成立日期", "成立时间", "员工人数", "员工规模",
+                          "人员规模", "参保人数", "所属行业", "主营业务", "经营范围", "纳税信用等级"}
+        normalized = []
+        for row in rows:
+            if not isinstance(row, list) or len(row) != len(headers):
+                raise ValueError(f"表格 {kind} 每行必须有 {len(headers)} 列")
+            label = row[0].get("text") if isinstance(row[0], dict) else row[0]
+            value = row[1].get("text") if isinstance(row[1], dict) else row[1]
+            pending = value in (None, "") or (isinstance(value, str)
+                and not re.search(r"[0-9一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾]", value)
+                and re.search(r"待(?:核|提供|补|确认)|尚未|未取得|未提供|请企业提供", value))
+            public = label in public_metrics and source_kind in {"government-source", "third-party-platform", "public-source"}
+            normalized.append(row if pending or public else [row[0], PENDING, "仅采用用户提供的财务资料，当前未取得"])
+        rows = normalized
     if not rows:
         rows = [[PENDING for _ in headers]]
     rendered = []
@@ -151,7 +166,7 @@ def section(number: str, data: dict, company: dict) -> str:
                      + "</tbody></table>")
         parts.append('<p class="scope-note">企业主体核验以本次来源为限，待核字段请企业提供相应资料后判断。</p>')
     if number == "07":
-        parts.append('<p class="scope-note">本章为共同事实底稿的经营与财务部分；只填写用户提供的经营、财务资料，不估算营收、利润、研发费、产能或未分配利润。</p>')
+        parts.append('<p class="scope-note">只填写用户提供的经营、财务资料，不估算营收、利润、研发费、产能或未分配利润。</p>')
     paragraphs = data.get("paragraphs", [])
     notes = data.get("notes", [])
     tables = data.get("tables", [])
@@ -195,7 +210,7 @@ def font_uri(path: Path) -> str:
 
 
 def build_sales_html(input_path: Path, output_path: Path) -> dict:
-    data = json.loads(input_path.read_text(encoding="utf-8"))
+    data = json.loads(input_path.read_text(encoding="utf-8-sig"))
     if not isinstance(data, dict) or set(data) - {"company", "report_date", "data_as_of", "sections", "sources"}:
         raise ValueError("输入只接受 company、report_date、data_as_of、sections、sources 业务数据")
     company = data.get("company")

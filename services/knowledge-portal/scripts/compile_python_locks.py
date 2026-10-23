@@ -60,7 +60,7 @@ def find_uv() -> str:
 
 def compile_lock(uv_bin: str, portal_dir: Path, source: str, output: str) -> None:
     custom_command = (
-        f"uv pip compile {source} --universal "
+        f"uv pip compile {source} --upgrade --universal "
         f"--python-version {LOCK_TARGET_PYTHON} --generate-hashes -o {output}"
     )
     command = [
@@ -68,6 +68,7 @@ def compile_lock(uv_bin: str, portal_dir: Path, source: str, output: str) -> Non
         "pip",
         "compile",
         source,
+        "--upgrade",
         "--universal",
         "--python",
         sys.executable,

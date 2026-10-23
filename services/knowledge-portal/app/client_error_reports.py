@@ -7,6 +7,16 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+# Exact client result codes; unknown codes remain ordinary issues requiring review.
+_AUTOMATIC_OUTCOMES: dict[str, tuple[Literal['bug', 'other'], str, str]] = {
+    'GC-AUTO-RECOVERED': ('other', '客户端过程问题已恢复', '任务已完成，过程问题已恢复；保留原异常记录供复盘。'),
+    'GC-AUTO-PROTECTION': ('other', '客户端文件保护提示', '触发已有文件或删除保护；保留已有文件和诊断记录，不等同于运行故障。'),
+    'GC-AUTO-CANCELLED-WITH-ISSUES': ('bug', '客户端任务已取消（含过程异常）', '用户已停止任务；停止前的过程异常仍需查看。'),
+    'GC-AUTO-DELIVERED-WITH-ISSUES': ('bug', '客户端已有输出（含过程异常）', '任务已有输出；过程中仍有未确认恢复的异常，诊断记录保留。'),
+    'GC-AUTO-INTERRUPTED': ('bug', '客户端任务中断（结果待确认）', '任务中断，未完成操作的结果待确认；保留异常记录。'),
+}
+
+
 def redact(value: str) -> str:
     value = re.sub(r"(?i)(authorization|api[_ -]?key|token|password|密码|密钥)\s*[:=：]\s*[^\n,，;；]+", "[已隐藏凭据]", value)
     value = re.sub(r"(?i)\b(?:bearer\s+\S+|(?:sk-|jtk_|gcd_)[A-Za-z0-9_\-]{8,}|eyJ[A-Za-z0-9_\-.]{20,})", "[已隐藏凭据]", value)
@@ -16,7 +26,10 @@ def redact(value: str) -> str:
 
 
 def feedback_category(diagnostic: dict) -> Literal["bug", "other"]:
-    """Separate automatic upgrade stops using current-turn events, not claimed failure classifications."""
+    """Use exact current result codes; legacy upgrade stops still require current-turn event evidence."""
+    outcome = _AUTOMATIC_OUTCOMES.get(diagnostic.get('code'))
+    if outcome is not None:
+        return outcome[0]
     if diagnostic.get("code") != "GC-AUTO-FAILURE":
         return "bug"
     context = json.loads(diagnostic.get("conversation_context") or "{}")
@@ -52,6 +65,14 @@ def feedback_category(diagnostic: dict) -> Literal["bug", "other"]:
     return "other" if upgrade else "bug"
 
 
+def feedback_subject(diagnostic: dict, category: Literal['bug', 'other']) -> str:
+    """Choose a controlled title from saved metadata without loading conversation context."""
+    outcome = _AUTOMATIC_OUTCOMES.get(diagnostic.get('code'))
+    if outcome is not None:
+        return outcome[1] + ' · ' + diagnostic['code']
+    return '客户端升级拦截 · GC-ACCOUNT-UPGRADE' if category == 'other' else '客户端错误 · ' + diagnostic['code']
+
+
 class ClientErrorReport(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     request_id: UUID
@@ -75,6 +96,9 @@ class ClientErrorReport(BaseModel):
     def diagnostic(self) -> dict:
         result = self.model_dump(mode="json")
         result["summary"] = {"conversation": "用户反馈的会话问题", "workbench": "申报与体检操作未完成", "account": "账号操作未完成", "model": "模型操作未完成", "runtime": "客户端运行异常", "general": "用户反馈的客户端问题"}[self.module]
+        outcome = _AUTOMATIC_OUTCOMES.get(self.code)
+        if outcome is not None:
+            result['summary'] = outcome[2]
         result["steps"] = redact(self.steps)
         if self.conversation_context is not None:
             def clean(value, key=''):

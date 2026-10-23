@@ -161,7 +161,7 @@ def _failure_analysis(context: object) -> dict | None:
     def incident(item: object) -> dict | None:
         if not isinstance(item, dict) or not isinstance(item.get("event_seq"), int):
             return None
-        if not isinstance(item.get("category"), str) or item["category"] not in {"runtime", "precondition", "waiting-user", "business-rejection", "outcome-unknown"}:
+        if not isinstance(item.get("category"), str) or item["category"] not in {"runtime", "precondition", "waiting-user", "business-rejection", "outcome-unknown", "protection"}:
             return None
         if not isinstance(item.get("status"), str) or item["status"] not in {"unrecovered", "recovered", "expected-block", "outcome-unknown"}:
             return None
@@ -448,7 +448,7 @@ def _outcome_lines(outcome: dict) -> list[str]:
 
 
 def _analysis_lines(analysis: dict) -> list[str]:
-    categories = {"runtime": "执行故障", "precondition": "前置条件受阻", "waiting-user": "等待用户选择",
+    categories = {"runtime": "执行故障", "precondition": "前置条件受阻", "waiting-user": "等待用户选择", "protection": "文件保护提示",
                   "business-rejection": "业务检查未通过", "outcome-unknown": "结果尚未确认"}
     statuses = {"unrecovered": "未记录同操作恢复", "recovered": "同操作已恢复", "expected-block": "规则拦截", "outcome-unknown": "结果未知"}
     lines = [f"客户端记录：轮次结束状态 {analysis['turn_result']}；专业交付状态 {analysis['delivery_result']}。", ""]

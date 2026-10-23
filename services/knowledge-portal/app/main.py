@@ -48,7 +48,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from markupsafe import Markup
 from pydantic import BaseModel, Field
@@ -57,7 +57,7 @@ from starlette.background import BackgroundTask
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit, feedback_category
+from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit, feedback_category, feedback_subject
 from app.client_diagnostic_jobs import DiagnosticChunk, initialize as initialize_diagnostics, receive_chunk, file_path as diagnostic_file_path
 from app import client_attachments, client_reports
 
@@ -772,16 +772,13 @@ DEVICE_SIGNATURE_MAX_CLOCK_SKEW_SECONDS = 90
 AGENT_BOOTSTRAP_MINUTES = 60
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 public_host = os.environ.get("JIAOTANG_PUBLIC_HOST", "localhost").strip()
-knowledge_mcp = FastMCP(
+knowledge_mcp_transport_security = TransportSecuritySettings(
+    allowed_hosts=[public_host, f"{public_host}:443", "127.0.0.1:8100", "localhost:8100", "testserver"],
+    allowed_origins=[f"https://{public_host}"],
+)
+knowledge_mcp = MCPServer(
     "企业全生命周期助手知识库",
     instructions="使用个人访问凭据检索团队知识库。先搜索，再按文档编号读取原文。",
-    stateless_http=True,
-    json_response=True,
-    streamable_http_path="/",
-    transport_security=TransportSecuritySettings(
-        allowed_hosts=[public_host, f"{public_host}:443", "127.0.0.1:8100", "localhost:8100", "testserver"],
-        allowed_origins=[f"https://{public_host}"],
-    ),
 )
 
 
@@ -13636,7 +13633,7 @@ def client_error_report_submit(
         raise HTTPException(status_code=403, detail="请使用客户端登录后提交")
     diagnostic = report.diagnostic()
     category = feedback_category(diagnostic)
-    subject = "客户端升级拦截 · GC-ACCOUNT-UPGRADE" if category == "other" else "客户端错误 · " + report.code
+    subject = feedback_subject(diagnostic, category)
     now = isoformat(utc_now())
     with closing(database()) as connection:
         initialize_diagnostics(connection)
@@ -16147,12 +16144,12 @@ def admin_metadata_review(
 def admin_confirm_project_alias(
     raw_project_name: Annotated[str, Form()],
     canonical_project_name: Annotated[str, Form()],
-    region: Annotated[str, Form()],
-    start_year: Annotated[str, Form()],
-    end_year: Annotated[str, Form()],
-    note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    region: Annotated[str, Form()] = "",
+    start_year: Annotated[str, Form()] = "",
+    end_year: Annotated[str, Form()] = "",
+    note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -16180,12 +16177,12 @@ def admin_preview_project_alias(
     request: Request,
     raw_project_name: Annotated[str, Form()],
     canonical_project_name: Annotated[str, Form()],
-    region: Annotated[str, Form()],
-    start_year: Annotated[str, Form()],
-    end_year: Annotated[str, Form()],
-    note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    region: Annotated[str, Form()] = "",
+    start_year: Annotated[str, Form()] = "",
+    end_year: Annotated[str, Form()] = "",
+    note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -16220,13 +16217,13 @@ def admin_preview_project_alias(
 def admin_review_policy(
     queue_id: Annotated[int, Form()],
     review_status: Annotated[str, Form()],
-    official_source_url: Annotated[str, Form()],
-    official_document_title: Annotated[str, Form()],
-    official_published_at: Annotated[str, Form()],
-    validity_status: Annotated[str, Form()],
-    verification_note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    official_source_url: Annotated[str, Form()] = "",
+    official_document_title: Annotated[str, Form()] = "",
+    official_published_at: Annotated[str, Form()] = "",
+    validity_status: Annotated[str, Form()] = "",
+    verification_note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -16255,13 +16252,13 @@ def admin_preview_policy(
     request: Request,
     queue_id: Annotated[int, Form()],
     review_status: Annotated[str, Form()],
-    official_source_url: Annotated[str, Form()],
-    official_document_title: Annotated[str, Form()],
-    official_published_at: Annotated[str, Form()],
-    validity_status: Annotated[str, Form()],
-    verification_note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    official_source_url: Annotated[str, Form()] = "",
+    official_document_title: Annotated[str, Form()] = "",
+    official_published_at: Annotated[str, Form()] = "",
+    validity_status: Annotated[str, Form()] = "",
+    verification_note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -16294,9 +16291,9 @@ def admin_preview_policy(
 def admin_split_policy_cluster(
     cluster_id: Annotated[int, Form()],
     document_ids: Annotated[list[int], Form()],
-    note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -16343,9 +16340,9 @@ def admin_compare_policy_cluster(
 def admin_merge_policy_clusters(
     source_cluster_id: Annotated[int, Form()],
     target_cluster_id: Annotated[int, Form()],
-    note: Annotated[str, Form()],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    note: Annotated[str, Form()] = "",
 ):
     require_admin(user)
     validate_csrf(user, csrf_token)
@@ -21757,6 +21754,8 @@ async def authoritative_list_search(
     """查询小巨人、省级专精特新和三首权威事实。
 
     list_type仅支持national_small_giant、provincial_specialized_sme、three_first及其中文名称。
+    product_name和industry只适用于three_first；其他项目按产品或行业反查企业，
+    应调用recognition_search并保留原查询筛选条件，不得删除条件后改查全量名单。
     不支持all或高新技术企业。查询企业全部项目使用public_list_search，不传project_name；
     高新等其他项目使用public_list_search并传project_name。全量名单必须翻页至has_more=false。
     """
@@ -21953,4 +21952,9 @@ if register_kindle_routes is not None:
     )
 
 
-app.mount("/mcp", MCPBearerMiddleware(knowledge_mcp.streamable_http_app()))
+app.mount("/mcp", MCPBearerMiddleware(knowledge_mcp.streamable_http_app(
+    stateless_http=True,
+    json_response=True,
+    streamable_http_path="/",
+    transport_security=knowledge_mcp_transport_security,
+)))

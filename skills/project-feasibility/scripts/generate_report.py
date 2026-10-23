@@ -6,17 +6,19 @@ import argparse
 import json
 from pathlib import Path
 
-from fill_report_template import complete_report
+from fill_report_template import ReportInputError, complete_report
 from select_report_template import _select_by_alias, load_registry, resolve_template
 
 
 def generate_report(input_path: Path, output_path: Path, report_type: str) -> dict:
-    fixture = json.loads(input_path.read_text(encoding="utf-8"))
+    fixture = json.loads(input_path.read_text(encoding="utf-8-sig"))
+    if not isinstance(fixture, dict) or not isinstance(fixture.get("project_id"), str):
+        raise ReportInputError("报告输入必须为包含 project_id 的对象", "report-required-fields", ["project_id"])
     output_path = output_path.expanduser().resolve()
     project = _select_by_alias(str(fixture["project_id"]), load_registry()["projects"])
     direct_html = project["id"] in {"high-tech-enterprise", "specialized-sme", "little-giant"}
     if direct_html and output_path.suffix.lower() != ".html":
-        raise ValueError("高新、专精分析及体检报告只生成 HTML 供客户端直接导出 PDF；申请书使用独立 Word 回填操作")
+        raise ReportInputError("高新、专精分析及体检报告只生成 HTML 供客户端直接导出 PDF；申请书使用独立 Word 回填操作", "report-output-format", ["output"])
     selection = resolve_template(str(project["id"]), report_type, template_format="html" if direct_html else "docx")
     # The copied blank master is never an intermediate delivery artifact.
     skill_root = Path(__file__).resolve().parents[1]
@@ -43,7 +45,8 @@ def main() -> int:
         result = generate_report(args.input, args.output, args.report_type)
     except (ValueError, FileNotFoundError, FileExistsError) as error:
         print(json.dumps({"schema_version": "gongchuang-project-report-operation/v1",
-                          "status": "fail", "errors": [str(error)]}, ensure_ascii=False))
+                          "status": "fail", "errors": [str(error)],
+                          **({"input_rejection": error.input_rejection} if isinstance(error, ReportInputError) else {})}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False))
     return 0
