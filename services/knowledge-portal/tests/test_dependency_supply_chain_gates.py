@@ -42,9 +42,9 @@ def test_dependency_inputs_separate_production_and_test_tools():
 
     assert "pytest" not in production.lower()
     assert "-r requirements.in" in test
-    assert "pytest==8.4.1" in test
-    assert "setuptools==83.0.0" in build
-    assert "wheel==0.47.0" in build
+    assert "pytest==9.1.1" in test
+    assert "setuptools==84.2.1" in build
+    assert "wheel==0.48.0" in build
     assert "--require-hashes" in compatibility
     assert "-r requirements.lock" in compatibility
     assert "fastapi==" not in compatibility

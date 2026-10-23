@@ -1114,7 +1114,7 @@ def extract_pdf(path: Path) -> str:
     parts: list[str] = []
     character_count = 0
     try:
-        import fitz
+        import pymupdf as fitz
     except ImportError:
         from pypdf import PdfReader
 

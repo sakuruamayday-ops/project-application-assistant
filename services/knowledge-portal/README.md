@@ -22,6 +22,8 @@
 
 自动上报的当前轮次若只有明确的 `GC-ACCOUNT-UPGRADE` 升级拦截，收件时归为“其他、待处理”，不记为 Bug；原诊断、附件、请求编号和导出能力保留，不自动标为解决或关闭。同轮工具故障、专业交付失败、其他终止错误或事件裁剪后信息不全的报告仍归为 Bug。手工反馈不按升级文案自动分流，历史记录不在收件时重分类。
 
+新版客户端的确切结果码在收件时生成受控标题与摘要：`GC-AUTO-RECOVERED`、`GC-AUTO-PROTECTION` 归“其他”；已取消或已有输出但含过程异常、中断及未知码仍保留 Bug 分类，并明确说明实际状态。全部记录仍待处理，完整异常、附件和导出保留，不自动关单。列表复用已保存的类别、标题和顶层诊断元数据，继续在 SQLite 中排除 `conversation_context`，不为分类重新载入完整会话。
+
 MCP 检索入口把现有同步查询放在线程中执行，慢检索不会占住接收账号及健康请求的通信线程。参数校验、权限、检索上限、分页及返回内容沿用原逻辑；SQLite 连接在执行查询的线程中创建和关闭，不在线程之间传递。取消请求会中断等待，已进入的同步查询仍按现有查询上限结束。
 
 `app/client_diagnostic_jobs.py` 从已有诊断JSON及文件回执生成管理员每日复盘。复盘先列用户目标、最后可见回复、已发布文件及未取得发布回执的目标，再列错误阶段与恢复顺序。模型完成承诺、原始上传附件、只生成HTML及普通draft检查点不能代替实际PDF或Word交付；文件交付观察不替代内容验收。
@@ -53,9 +55,11 @@ export JIAOTANG_SECURE_COOKIES=false
 
 `requirements.in`、`requirements-test.in` 和 `requirements-build.in` 只用于人工维护顶层依赖；运行环境不得直接解析这些文件。`requirements.lock` 与 `requirements-test.lock` 固定全部传递依赖并逐制品绑定 SHA-256，前者用于生产，后者额外固定 pytest 等测试工具。`requirements-build.lock` 单独固定 pip、setuptools、wheel 及其传递依赖，只用于把锁内源码包预构建为 wheel，不进入生产应用环境。
 
+PyMuPDF 2.0 将 PyMuPDF4LLM、Layout 和 ONNX 运行时列为依赖，普通 `import pymupdf` 也会初始化随包提供的本地版面模型，不能只更新主 wheel 或漏装这些依赖。官方 `pymupdf.use_layout(False)` 关闭后续版面分析，不阻止此前导入时的模型初始化；2.0 未提供已核实的导入前禁用开关，见[官方发布说明](https://pymupdf.io/blog/pymupdf-2-0)。现有知识索引仍在隔离子进程内调用经典 `get_text("text")`，保留 45 秒提取超时，不改为自动版面、OCR 或联网分析。候选 Mac arm64 / Python 3.12 的一次冷导入及单页读写、渲染测量约 6 秒、峰值 RSS 307 MiB；这不是 Linux 生产性能结论，部署仍须匹配 Linux x86_64 / CPython 3.12 的原生依赖并留出实际内存。
+
 ## Python 依赖锁与离线 wheelhouse
 
-依赖升级必须在 Python 3.12 环境中使用固定的 `uv 0.11.28`：
+依赖升级必须在 Python 3.12 环境中使用固定的 `uv 0.13.5`：
 
 ```bash
 python scripts/compile_python_locks.py
@@ -63,7 +67,7 @@ python scripts/python_supply_chain.py lock-metadata-verify \
   --portal-dir .
 ```
 
-生成后必须评审 `requirements.lock`、`requirements-test.lock` 和 `requirements-lock-metadata.json` 的差异。元数据把两个顶层输入、两份全传递锁和生成器身份绑定在一起；任何输入或锁的单边修改都会导致 CI 失败。该流程只解析依赖与生成哈希，不执行公共漏洞查询。
+生成后必须评审 `requirements.lock`、`requirements-test.lock`、`requirements-build.lock` 和 `requirements-lock-metadata.json` 的差异。元数据把各顶层输入、三份全传递锁和生成器身份绑定在一起；任何输入或锁的单边修改都会导致 CI 失败。该流程只解析依赖与生成哈希，不执行公共漏洞查询。
 
 CI 使用 Python 3.12 构建两个 wheelhouse：
 

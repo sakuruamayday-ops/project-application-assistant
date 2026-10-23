@@ -38,12 +38,12 @@
     {
       "id": "company-law-compliance-2026",
       "path": "legal-regulations/references/company-law-compliance-2026.md",
-      "verified_at": "2026-07-21",
+      "verified_at": "2026-10-23",
       "effective_from": "2024-07-01",
       "effective_until": null,
-      "next_review_at": "2026-10-21",
-      "source_locator": "现行公司法及配套规定本地核验清单",
-      "source_sha256": "7a93fec392790216b444a6e2d583b518eef346c54c58c5b7636275917afd0342",
+      "next_review_at": "2026-10-31",
+      "source_locator": "2026-10-23复核公司法SAMR正文、国务院令第784号生态环境部转载、SAMR令第95号、最高法时间效力规定及第八十八条第一款不溯及批复；官方原文入口见规则文末。仅覆盖所列基础文件与自查框架，不穷尽全部新司法解释，具体争议仍须按行为日期补核。",
+      "source_sha256": "ace755e32d22ad5e282b912cb3cb982d51d596c96770dbbf8c8cea1ae52bbcf9",
       "block_after_next_review": true
     },
     {

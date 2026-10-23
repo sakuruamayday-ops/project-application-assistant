@@ -144,9 +144,9 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 #### 用户明确要 Word 时
 
-1. 保留当前任务及 `manufacturing-tax-risk-report` 画像，对同一 HTML 正文执行专业预校验，显式传入 `deliveryMode="chat"`、`candidateArtifactPath=同一 HTML 的绝对路径`、`artifactFormat="docx"`、`deliveryProfileId="manufacturing-tax-risk-report"`，不让模型重抄 body。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；政策原文未核验的报告转成 Word 后仍是草稿，不因换格式升级为正式结论。
+1. 沿用当前任务、同一 HTML 正文及已核验的事实，不重新抄写 body，也不把专业审核作为生成 Word 的前置。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；关键依据或政策原文未核验时保持初稿，不因换格式升级为正式结论。
 2. 调用已验签 `evidence-ledger.create-docx-from-file`，`input` 使用同一工作区 HTML 的绝对路径，`output` 使用尚不存在的 `.docx` 路径。该操作直接复制 HTML 正文和表格，不把财务正文交给模型重写成 Markdown，不反向抄录数值，也不修改原 HTML。
-3. 调用已验签 `evidence-ledger.apply-office-branding-gold`，`artifact` 使用该 DOCX 路径。该固定操作使用共享金色资产写入页眉和居中水印；随后继续对同一税务画像执行 artifact 专业校验、文件打开和品牌检查。只交付本次实际生成并通过检查的 Word，不能省略画像或用旧文件回执替代。
+3. 调用已验签 `evidence-ledger.apply-office-branding-gold`，`artifact` 使用该 DOCX 路径。该固定操作使用共享金色资产写入页眉和居中水印；随后检查本次 Word 能否打开、正文和品牌是否保留；需要专业复核时另行检查同一份文件。只交付本次实际生成的 Word，不用旧文件回执替代，也不把初稿冒称完整定稿。
 
 其他宿主没有上述操作时，从当前 Skill 目录执行同一现有脚本：
 
@@ -160,7 +160,7 @@ python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.doc
 
 1. 固定使用 `assets/gold-advisor.css` 与包内生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
    生成器已从共享品牌运行时向每个固定页面写入金色水印、品牌抬头及封面署名，作者也在 HTML 元数据中声明。品牌不由模型拼写或另行决定。
-2. 在提供 `gongchuang_deliver_pdf` 的共创客户端内，对生成器返回的 HTML 执行 chat 专业预校验，保留本任务和画像，通过后只调用一次该工具。客户端完成渲染、专业、打开、正文、品牌与逐页视觉检查，并发布同一个 PDF 文件卡。已有品牌由客户端保留，不重复叠加；渲染后不得再调用 `brand_gold_pdf.py`、修改 PDF 或另出一份同正文 PDF，也不重复运行下方其他宿主的交付流程。
+2. 在提供 `gongchuang_deliver_pdf` 的共创客户端内，以生成器返回的同一 HTML 调用该工具，完成导出、可打开检查和文件入口交付，不先等待业务审核。事实、计算、正文、品牌和版式按本技能复核，缺关键依据时明确交付初稿。已有品牌由客户端保留，不重复叠加；成功后复用 PDF，后续阶段失败只补该步骤，不再调用 `brand_gold_pdf.py` 改写同一成品或另出同正文副本，也不重复运行下方其他宿主的交付流程。
 3. 以下内存管道仅用于没有上述宿主渲染器的兼容宿主；已有品牌会由共享运行时保留，不得重复叠加。
    确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。以内存管道渲染并调用同一技能包内 `skills/_runtime/gongchuang-branding` 共享运行时：
 

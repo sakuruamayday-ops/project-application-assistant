@@ -237,16 +237,23 @@ def test_hightech_master_tables_are_filled_without_losing_rows_or_guidance_clean
 
 
 @pytest.mark.parametrize("entry", [
-    {"columns": ["不存在的表头"], "rows": [["数据"]]},
     {"columns": ["项目", "申报年度", "申报截止日期", "当前状态", "下一步"], "rows": [["列数错误"]]},
 ])
-def test_table_content_rejects_unmatched_headers_and_bad_width(entry):
+def test_table_content_rejects_bad_width(entry):
     document = Document()
     table = document.add_table(rows=2, cols=5)
     for cell, value in zip(table.rows[0].cells, ["项目", "申报年度", "申报截止日期", "当前状态", "下一步"]):
         cell.text = value
     with pytest.raises(ValueError):
         FILLER._fill_table_content(document, {"table_content": [entry]})
+
+
+def test_unmatched_table_content_is_preserved_as_supplemental_draft_analysis():
+    document = Document()
+    fixture = {"table_content": [{"columns": ["补充事实"], "rows": [["必须保留的事实"]]}], "_input_warnings": []}
+    FILLER._fill_table_content(document, fixture)
+    assert document.tables[-1].cell(1, 0).text == "必须保留的事实"
+    assert fixture["_input_warnings"]
 
 
 def test_failed_report_check_does_not_occupy_output_or_publish_receipt(tmp_path, monkeypatch):

@@ -5,7 +5,9 @@ import re
 
 from lxml import etree, html
 
-from fill_report_template import PLACEHOLDER, _condition_match, _fallback_for_placeholder, _replace_training_text
+from fill_report_template import (PLACEHOLDER, ReportInputError, _condition_match, _fallback_for_placeholder,
+                                 _replace_training_text, normalize_text, report_table_entries, table_header_key)
+from fill_report_template import primary_source_name
 from report_html import html_table
 
 
@@ -119,7 +121,7 @@ def _fill_conditions(table, fixture):
         item = _condition_match(fixture, _text(cells[0])) or {}
         value = str(item.get("value") or "当前资料未提供可复算数据")
         state = str(item.get("state") or "待企业确认")
-        source = str(item.get("source") or fixture["_validated_sources"][0]["name"])
+        source = str(item.get("source") or primary_source_name(fixture))
         if state == "企业提供待核" and re.search(r"(?:企查查|天眼查|\bQCC\b|\bTYC\b)", source, re.IGNORECASE):
             state = "第三方平台查询，待企业确认"
         gap = str(item.get("gap") or "数据和证据尚未闭合")
@@ -168,28 +170,25 @@ def _fill_tables(body, fixture):
 
 
 def _fill_custom_tables(body, fixture):
-    entries = fixture.get("table_content", [])
-    if not isinstance(entries, list):
-        raise ValueError("table_content 必须为表格数组")
+    entries = report_table_entries(fixture)
     used = set()
     for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError("table_content 每项必须包含 columns 与 rows")
         columns, rows = entry.get("columns"), entry.get("rows")
-        if not isinstance(columns, list) or not columns or not all(isinstance(c, str) and c.strip() for c in columns):
-            raise ValueError("table_content.columns 必须为非空表头数组")
-        key = tuple(value.strip() for value in columns)
+        key = table_header_key(columns)
         if key in used:
-            raise ValueError("重复回填同一表头:" + " | ".join(key))
+            raise ReportInputError("重复回填同一表头:" + " | ".join(key), "report-table-target", ["table_content.columns"])
         used.add(key)
         matches = [table for table in body.xpath("./table")
-                   if tuple(_text(c) for c in _cells(_rows(table)[0])) == key]
+                   if table_header_key([_text(c) for c in _cells(_rows(table)[0])]) == key]
+        if not matches:
+            etree.SubElement(body, "h2").text = "补充分析"
+            body.append(html.fromstring(html_table(columns, rows)))
+            fixture["_input_warnings"].append("补充分析中的表格内容和位置尚需复核")
+            continue
         if len(matches) != 1:
-            raise ValueError("表头必须唯一匹配母版:" + " | ".join(key))
-        if (not isinstance(rows, list) or not rows or any(not isinstance(row, list) or len(row) != len(columns)
-                or any(not isinstance(value, (str, int, float)) or isinstance(value, bool) for value in row) for row in rows)):
-            raise ValueError("table_content.rows 必须非空且每行列数与表头一致")
-        _replace_rows(matches[0], rows)
+            raise ReportInputError("表头必须唯一匹配母版:" + " | ".join(key), "report-table-target", ["table_content.columns"])
+        if rows:
+            _replace_rows(matches[0], rows)
 
 
 def _fill_associations(body, fixture):
@@ -283,5 +282,11 @@ def render_report(template_path: Path, fixture, report_type, release_tag):
         label = "项目前期评估报告" if report_type == "preassessment" else "项目申报可行性分析报告"
         root.find("head/title").text = f"{fixture['enterprise']}_{fixture['project_object']}_{label}"
     _append_sources(body, fixture, action_layout)
+    if normalize_text(str(fixture["project_object"])) not in normalize_text(body.text_content()):
+        etree.SubElement(body, "p").text = f"项目核心对象：{fixture['project_object']}"
+    if fixture["_input_warnings"]:
+        etree.SubElement(body, "h2").text = "初稿说明与待补事项"
+        for warning in dict.fromkeys(fixture["_input_warnings"]):
+            etree.SubElement(body, "p").text = warning
     text = "\n".join(_text(node) for node in body.xpath(".//p|.//h1|.//h2|.//h3"))
     return html.tostring(root, encoding="unicode", doctype="<!doctype html>"), text, placeholders

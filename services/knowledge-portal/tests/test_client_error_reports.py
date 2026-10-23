@@ -7,7 +7,8 @@ import tracemalloc
 import pytest
 from fastapi.testclient import TestClient
 from test_portal import load_app
-from app.client_error_reports import feedback_category
+from app.client_error_reports import feedback_category, feedback_subject
+from app import client_error_reports
 
 
 def report():
@@ -90,6 +91,67 @@ def test_uncertain_or_cropped_context_is_not_reclassified_as_an_upgrade_stop():
     context.pop('failed_turn')
     assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': json.dumps(context)}) == 'bug'
     assert feedback_category({'code': 'GC-AUTO-FAILURE', 'conversation_context': '[]'}) == 'bug'
+
+
+@pytest.mark.parametrize('code,category,title', [
+    ('GC-AUTO-RECOVERED', 'other', '客户端过程问题已恢复'),
+    ('GC-AUTO-PROTECTION', 'other', '客户端文件保护提示'),
+    ('GC-AUTO-CANCELLED-WITH-ISSUES', 'bug', '客户端任务已取消（含过程异常）'),
+    ('GC-AUTO-DELIVERED-WITH-ISSUES', 'bug', '客户端已有输出（含过程异常）'),
+    ('GC-AUTO-INTERRUPTED', 'bug', '客户端任务中断（结果待确认）'),
+])
+def test_automatic_outcome_metadata_does_not_parse_conversation_context(monkeypatch, code, category, title):
+    def unexpected_parse(_value):
+        raise AssertionError('Outcome presentation must use saved metadata')
+    monkeypatch.setattr(client_error_reports.json, 'loads', unexpected_parse)
+    diagnostic = {'code': code, 'conversation_context': 'large context is not needed for this classification'}
+    assert feedback_category(diagnostic) == category
+    assert feedback_subject(diagnostic, category) == title + ' · ' + code
+
+
+@pytest.mark.parametrize('code', ['GC-AUTO-RECOVERED-FAKE', 'GC-AUTO-PROTECTION-FAILED', 'GC-AUTO-CANCELLED'])
+def test_unknown_automatic_code_is_not_reclassified(code):
+    diagnostic = {'code': code}
+    assert feedback_category(diagnostic) == 'bug'
+    assert feedback_subject(diagnostic, 'bug') == '客户端错误 · ' + code
+
+
+def test_automatic_outcomes_preserve_diagnostics_and_pending_review_with_accurate_list_titles(tmp_path):
+    module, client, headers = setup(tmp_path)
+    cases = [
+        ('GC-AUTO-RECOVERED', 'other', '客户端过程问题已恢复'),
+        ('GC-AUTO-PROTECTION', 'other', '客户端文件保护提示'),
+        ('GC-AUTO-CANCELLED-WITH-ISSUES', 'bug', '客户端任务已取消（含过程异常）'),
+        ('GC-AUTO-DELIVERED-WITH-ISSUES', 'bug', '客户端已有输出（含过程异常）'),
+        ('GC-AUTO-INTERRUPTED', 'bug', '客户端任务中断（结果待确认）'),
+        ('GC-AUTO-FAILURE', 'bug', '客户端错误'),
+    ]
+    context = {'failed_turn': 1, 'events': [
+        {'type': 'tool/ptc-dispatch', 'data': {'turn': 1, 'isError': True, 'error': 'synthetic retained failure'}},
+        {'type': 'turn/end', 'data': {'turn': 1, 'reason': {'kind': 'completed'}}},
+    ]}
+    receipts = []
+    for code, category, title in cases:
+        payload = {**report(), 'module': 'conversation', 'code': code, 'steps': '', 'conversation_context': json.dumps(context)}
+        response = client.post('/v1/client-error-reports', json=payload, headers=headers)
+        assert response.status_code == 200, response.text
+        receipt = response.json()
+        assert client.post('/v1/client-error-reports', json=payload, headers=headers).json() == receipt
+        receipts.append((receipt['report_id'], title))
+        with closing(module.database()) as db:
+            row = db.execute('SELECT category,status,resolved_at,subject,content FROM feedback_messages WHERE id=?', (receipt['report_id'],)).fetchone()
+            assert tuple(row)[:4] == (category, 'pending', None, title + ' · ' + code)
+            stored = json.loads(db.execute('SELECT diagnostic_json FROM client_error_reports WHERE feedback_id=?', (receipt['report_id'],)).fetchone()[0])
+            assert stored['code'] == code
+            assert json.loads(stored['conversation_context']) == context
+            assert row['content'] == stored['summary']
+    client.post('/login', data=dict(username='owner', password='synthetic-password-123'))
+    page = client.get('/feedback')
+    assert page.status_code == 200
+    for report_id, title in receipts:
+        assert title in page.text
+        exported = client.get(f'/admin/feedback/{report_id}/diagnostic').json()
+        assert json.loads(exported['conversation_context']) == context
 
 
 def test_expected_upgrade_intake_keeps_pending_diagnostics_idempotence_and_attachments(tmp_path):

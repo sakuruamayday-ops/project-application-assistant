@@ -52,9 +52,45 @@ EVIDENCE_STATES = {
     "冲突待核",
     "不适用",
 }
+EVIDENCE_STATE_ALIASES = {"待补强": "存在差距", "待核实": "待企业确认", "待核": "待企业确认",
+                          "已有": "已具备", "待确认": "待企业确认", "未具备": "明确未具备"}
 PORTABLE_CJK_FONT = "Noto Sans SC"
 PORTABLE_CJK_FONT_PATH = Path(__file__).resolve().parents[1] / "assets/fonts/NotoSansSC-Variable.ttf"
 PUBLIC_DIGEST = re.compile(r"(?:SHA[\s_-]*256|(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f]))", re.IGNORECASE)
+
+
+class ReportInputError(ValueError):
+    """A known input defect that the host may recognize without parsing prose."""
+
+    def __init__(self, message: str, code: str, fields: list[str]):
+        super().__init__(message)
+        self.input_rejection = {"code": code, "fields": fields}
+
+
+def table_header_key(columns) -> tuple[str, ...]:
+    aliases = {"预计得分": "预计", "预计分数": "预计", "满分值": "满分",
+               "评分依据": "评分规则", "补强建议": "补强", "补强措施": "补强",
+               "责任人员": "责任人", "截止日期": "截止日"}
+    return tuple(aliases.get(normalize_text(str(value)), normalize_text(str(value))) for value in columns)
+
+
+def report_table_entries(fixture: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = fixture.get("table_content", [])
+    if isinstance(entries, dict) and set(entries) <= {"columns", "rows"}:
+        entries = [entries]
+    if not isinstance(entries, list):
+        raise ReportInputError("table_content 必须为表格数组或单张表格对象", "report-table-shape", ["table_content"])
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ReportInputError("table_content 每项必须包含 columns 与 rows", "report-table-shape", ["table_content"])
+        columns, rows = entry.get("columns"), entry.get("rows")
+        if (not isinstance(columns, list) or not columns
+                or not all(isinstance(value, str) and value.strip() for value in columns)):
+            raise ReportInputError("table_content.columns 必须为非空表头数组", "report-table-shape", ["table_content.columns"])
+        if (not isinstance(rows, list) or any(not isinstance(row, list) or len(row) != len(columns)
+                or any(not isinstance(value, (str, int, float)) or isinstance(value, bool) for value in row) for row in rows)):
+            raise ReportInputError("table_content.rows 每行列数须与表头一致", "report-table-shape", ["table_content.rows"])
+    return entries
 
 
 def sha256_file(path: Path) -> str:
@@ -67,6 +103,11 @@ def sha256_file(path: Path) -> str:
 
 def normalize_text(value: str) -> str:
     return re.sub(r"\s+", "", value or "")
+
+
+def primary_source_name(fixture: dict[str, Any]) -> str:
+    sources = fixture["_validated_sources"]
+    return sources[0]["name"] if sources else "尚未提供客户资料"
 
 
 def extract_source_text(path: Path) -> str:
@@ -133,27 +174,32 @@ def validate_case_fixture(
     required = {
         "project_id",
         "enterprise",
-        "project_object",
-        "suggested_year",
-        "deadline",
-        "conclusion",
-        "conclusion_basis",
-        "primary_gap",
-        "next_action",
-        "materials",
-        "policies",
     }
     missing = sorted(required - set(fixture))
     if missing:
-        raise ValueError("客户夹具缺字段:" + ",".join(missing))
+        raise ReportInputError("客户夹具缺字段:" + ",".join(missing), "report-required-fields", missing)
     project_id = str(fixture["project_id"]).strip()
     if expected_project_id and project_id != expected_project_id:
         raise ValueError(f"项目路由与夹具不一致:{expected_project_id}/{project_id}")
     if not str(fixture["enterprise"]).strip():
         raise ValueError("企业名称不得为空")
-    materials = fixture.get("materials")
-    if not isinstance(materials, list) or not materials:
-        raise ValueError("每类项目至少需要一份真实客户资料")
+    fixture = deepcopy(fixture)
+    warnings: list[str] = []
+    defaults = {"project_object": "申报核心对象待明确", "suggested_year": "待核验当期申报条件后确定",
+                "deadline": "待核验当期申报通知", "conclusion": "暂无法判断",
+                "conclusion_basis": "现有资料不足以确认主要结论。", "primary_gap": "关键证据待补充",
+                "next_action": "补充关键证据后继续完善报告"}
+    labels = {"project_object": "申报核心对象", "suggested_year": "建议申报年度", "deadline": "申报截止时间",
+              "conclusion": "总体结论", "conclusion_basis": "结论依据", "primary_gap": "主要差距", "next_action": "下一步行动"}
+    for key, default in defaults.items():
+        if not str(fixture.get(key) or "").strip():
+            fixture[key] = default
+            warnings.append(f"{labels[key]}尚未明确，当前保留待核提示")
+    materials = fixture.get("materials", [])
+    if not isinstance(materials, list):
+        raise ValueError("materials 必须为资料数组")
+    if not materials:
+        warnings.append("尚未提供可核验的客户资料，以下结论作为初稿参考")
     normalized_sources: list[dict[str, Any]] = []
     for material in materials:
         if not isinstance(material, dict):
@@ -190,9 +236,11 @@ def validate_case_fixture(
                 "public_source": _public_source_reference(material),
             }
         )
-    policies = fixture.get("policies")
-    if not isinstance(policies, list) or not policies:
-        raise ValueError("夹具必须至少锁定一项政策基线")
+    policies = fixture.get("policies", [])
+    if not isinstance(policies, list):
+        raise ValueError("policies 必须为政策数组")
+    if not policies:
+        warnings.append("尚未核验政策基线，申报条件和窗口须继续核实")
     for policy in policies:
         if not isinstance(policy, dict) or not str(policy.get("title") or "").strip():
             raise ValueError("政策基线缺文件名称")
@@ -200,12 +248,15 @@ def validate_case_fixture(
             raise ValueError("政策基线缺原文位置或官方链接")
     for condition in fixture.get("conditions", []):
         state = str(condition.get("state") or "待企业确认")
+        state = EVIDENCE_STATE_ALIASES.get(state, state)
         if state not in EVIDENCE_STATES:
-            raise ValueError(f"不受控的证据状态:{state}")
+            raise ReportInputError(f"不受控的证据状态:{state}", "report-evidence-state", ["conditions.state"])
+        condition["state"] = state
     conclusion = CONCLUSION_ALIASES.get(str(fixture["conclusion"]).strip(), str(fixture["conclusion"]).strip())
     if conclusion not in CONCLUSIONS:
         raise ValueError("前期评估结论必须为可申报、有条件申报、不可申报或暂无法判断")
-    return {**fixture, "conclusion": conclusion, "_validated_sources": normalized_sources}
+    return {**fixture, "materials": materials, "policies": policies, "conclusion": conclusion,
+            "_validated_sources": normalized_sources, "_input_warnings": warnings}
 
 
 def _set_text(paragraph, value: str) -> None:
@@ -319,7 +370,7 @@ def _replace_training_text(value: str, fixture: dict[str, Any], release_tag: str
 def _fallback_for_placeholder(token: str, context: str, fixture: dict[str, Any]) -> str:
     hint = token.strip("［］")
     combined = context + hint
-    primary_source = fixture["_validated_sources"][0]["name"]
+    primary_source = primary_source_name(fixture)
     if hint == "填写并注明来源":
         return "同行数据未取得，来源待补充"
     if hint in ("政府公示同类企业", "行业代表产品"):
@@ -455,7 +506,7 @@ def _fill_summary_table(table, fixture: dict[str, Any], feasibility: bool) -> No
 
 
 def _fill_condition_table(table, fixture: dict[str, Any], feasibility: bool) -> None:
-    primary_source = fixture["_validated_sources"][0]["name"]
+    primary_source = primary_source_name(fixture)
     for row in table.rows[1:]:
         cells = row.cells
         condition = cells[0].text.strip()
@@ -607,31 +658,32 @@ def _fill_table_by_header(table, fixture: dict[str, Any], feasibility: bool) -> 
 
 
 def _fill_table_content(document: Document, fixture: dict[str, Any]) -> None:
-    """Fill existing master tables by exact column labels, preserving their layout."""
-    entries = fixture.get("table_content", [])
-    if not isinstance(entries, list):
-        raise ValueError("table_content 必须为表格数组")
+    """Match known header aliases; retain additional analysis without changing the master."""
+    entries = report_table_entries(fixture)
     used: set[tuple[str, ...]] = set()
     for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError("table_content 每项必须包含 columns 与 rows")
         columns, rows = entry.get("columns"), entry.get("rows")
-        if (not isinstance(columns, list) or not columns
-                or not all(isinstance(value, str) and value.strip() for value in columns)):
-            raise ValueError("table_content.columns 必须为非空表头数组")
-        key = tuple(value.strip() for value in columns)
+        key = table_header_key(columns)
         if key in used:
-            raise ValueError("重复回填同一表头:" + " | ".join(key))
+            raise ReportInputError("重复回填同一表头:" + " | ".join(key), "report-table-target", ["table_content.columns"])
         used.add(key)
         matches = [table for table in document.tables if table.rows
-                   and tuple(cell.text.strip() for cell in table.rows[0].cells) == key]
+                   and table_header_key([cell.text for cell in table.rows[0].cells]) == key]
+        if not matches:
+            document.add_heading("补充分析", level=2)
+            table = document.add_table(rows=1, cols=len(columns))
+            table.style = "Table Grid"
+            for cell, value in zip(table.rows[0].cells, columns, strict=True):
+                _set_cell_text(cell, value)
+            for values in rows:
+                for cell, value in zip(table.add_row().cells, values, strict=True):
+                    _set_cell_text(cell, str(value))
+            fixture["_input_warnings"].append("补充分析中的表格内容和位置尚需复核")
+            continue
         if len(matches) != 1:
-            raise ValueError("表头必须唯一匹配母版:" + " | ".join(key))
-        if (not isinstance(rows, list) or not rows
-                or any(not isinstance(row, list) or len(row) != len(columns)
-                       or any(not isinstance(value, (str, int, float)) or isinstance(value, bool)
-                              for value in row) for row in rows)):
-            raise ValueError("table_content.rows 必须非空且每行列数与表头一致")
+            raise ReportInputError("表头必须唯一匹配母版:" + " | ".join(key), "report-table-target", ["table_content.columns"])
+        if not rows:
+            continue
         table = matches[0]
         template_row = deepcopy(table.rows[-1]._tr)
         while len(table.rows) > 1:
@@ -687,7 +739,7 @@ def _remove_authoring_guidance(document: Document) -> None:
 
 
 def _generic_fill(document: Document, fixture: dict[str, Any], placeholders: re.Pattern[str]) -> None:
-    source_name = fixture["_validated_sources"][0]["name"]
+    source_name = primary_source_name(fixture)
     for paragraph in _iter_paragraphs(document):
         if paragraph._p.findall(".//" + qn("w:fldChar")) or paragraph._p.findall(".//" + qn("w:instrText")):
             for run in paragraph.runs:
@@ -822,7 +874,7 @@ def _write_completed_report(template_path, output_path, validated, report_type, 
             errors.append(f"仍存在内部候选标记:{marker}")
     if str(validated["enterprise"]) not in text:
         errors.append("成稿缺企业名称")
-    if str(validated["project_object"]) not in text:
+    if normalize_text(str(validated["project_object"])) not in normalize_text(text):
         errors.append("成稿缺项目核心对象")
     if "数据来源" not in text:
         errors.append("成稿缺资料来源台账")
@@ -849,6 +901,8 @@ def _write_completed_report(template_path, output_path, validated, report_type, 
         "output_path": str(output_path),
         "output_sha256": sha256_file(output_path),
         "source_count": len(validated["_validated_sources"]),
+        "report_stage": "draft" if validated["_input_warnings"] else "unclassified",
+        "warnings": validated["_input_warnings"],
         "source_receipts": [
             {"name": item["name"], "sha256": item["sha256"], "anchor_count": len(item["anchors"])}
             for item in validated["_validated_sources"]
@@ -912,6 +966,12 @@ def complete_report(
         _fill_hightech_associations(document, validated)
         _remove_authoring_guidance(document)
     _append_source_ledger(document, validated)
+    if normalize_text(str(validated["project_object"])) not in normalize_text(document_text(document)):
+        document.add_paragraph(f"项目核心对象：{validated['project_object']}")
+    if validated["_input_warnings"]:
+        document.add_heading("初稿说明与待补事项", level=1)
+        for warning in dict.fromkeys(validated["_input_warnings"]):
+            document.add_paragraph(warning)
     if layout == "sme-action":
         for paragraph in document.paragraphs:
             if paragraph.text == "附录 C、数据来源":
@@ -958,7 +1018,7 @@ def main() -> int:
     parser.add_argument("--release-tag", required=True)
     parser.add_argument("--public-root", type=Path)
     args = parser.parse_args()
-    fixture = json.loads(args.fixture.expanduser().resolve().read_text(encoding="utf-8"))
+    fixture = json.loads(args.fixture.expanduser().resolve().read_text(encoding="utf-8-sig"))
     result = complete_report(
         template_path=args.template,
         output_path=args.output,
