@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -525,7 +526,7 @@ def test_policy_freshness_current_manifest_passes():
             "--skills-root",
             str(SKILLS),
             "--as-of",
-            "2026-10-04",
+            date.today().isoformat(),
         ],
         check=False,
         capture_output=True,
