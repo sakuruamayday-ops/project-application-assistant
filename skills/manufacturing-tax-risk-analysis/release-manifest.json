@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "manufacturing-tax-risk-analysis",
-  "release_tag": "V1.7.4",
+  "release_tag": "V1.7.8",
   "required_paths": [
     "SKILL.md",
     "assets/gold-advisor.css",
@@ -29,9 +29,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d92c733bd65dc7b1c496393eb4b85b813f85c0ddea0420a9bd494ecd9c097290",
+    "SKILL.md": "eeeb0f3b60c158add95810997f0357875704bb9e35495826ae1bbebb2fcb2efa",
     "assets/deep-gold-advisor-template.html": "d9a9344ac006fb35d1bf46205a2543eecc78019d3c0cdc90fda9ce53e28fdae7",
-    "assets/gold-advisor.css": "d15f8f47dc7d347aa896016f2c6e153276385a069bcffaebd05cf1d17723c5fe",
+    "assets/gold-advisor.css": "4765d1ae46df36e1b68ab6316d309ba2b979800b14a7227bbd714ec7902e26f7",
     "package.json": "48954c26137d279550159b04a43ce5461143690d097f18fb6578cb4cbe53ac14",
     "references/data-schema.md": "ca743ebaa96a16a4abf986cb90d4590c0de93e9ce8516a082f2c04f202731546",
     "references/financial-paragraph-templates.md": "5ae96595f0208872a6d691e178290ec9074e8be79014a22da184fb759a6a3319",
@@ -40,7 +40,7 @@
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/report-data.example.json": "8ebde9d67a1a8bfdc19ce28e9ab1c45d8487f5a5ff83e2b4a26f1867ab12cf06",
     "references/report-input-schema.md": "a84cf8d706fbae9e6af528fa5698a7b1116a0993fd30536affa9deced524a4e5",
-    "references/report-spec.md": "4569d6f7aefceb7631ecfae7cf0340d10f47761ac458c64cdbe5229770437b79",
+    "references/report-spec.md": "4675e5b8fc7f68e2bf8a2a2be7473e1591493adae52afdb15f290e56eabdcd2e",
     "references/risk-gates.md": "c0b3f606cfc5eb38d98320dfbb7c73df4f0bbad6de6561bcb4b428c1669d5123",
     "references/tax-calculation-and-freshness-protocol.md": "6c77b6a8119aa0e0bd33c1985ac247450ce46fe2807f31ddaa5b152bcdde1c87",
     "scripts/brand_gold_pdf.py": "5084b6787289ecaeb71d1483a90a52cd82ee61df34c27c021cd4a810d4b9b299",

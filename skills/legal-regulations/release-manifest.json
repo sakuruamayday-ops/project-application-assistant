@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "legal-regulations",
-  "release_tag": "V1.7.4",
+  "release_tag": "V1.7.8",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -30,7 +30,7 @@
   },
   "files": {
     "SKILL.md": "09a27b1bbd9c64230cb7b5687b327604c3d4f8e1de4ad0d122157f7d6947e5fa",
-    "references/company-law-compliance-2026.md": "7a93fec392790216b444a6e2d583b518eef346c54c58c5b7636275917afd0342",
+    "references/company-law-compliance-2026.md": "ace755e32d22ad5e282b912cb3cb982d51d596c96770dbbf8c8cea1ae52bbcf9",
     "references/industry-routing.md": "745bb0f7ef8d3210fc3463192eddbef5c84167d7bd780ccdbe2f00aed95f2a72",
     "references/local-retrieval.md": "879dbaf22ad11602228764697ba1cfbf136252d8ce563fed8e70bc524d6caaea",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
