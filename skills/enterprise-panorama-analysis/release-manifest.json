@@ -96,7 +96,7 @@
     "references/version-b-advisory.md": "ea98600154b4f9a23b87c82d3e9282c5ddc270e7451685979a05034dc4e26f92",
     "references/visual-style.md": "ab71a6169510234d00426a75beef25e77ebf96e15c0a55e2b6a101e35f4a7e5d",
     "scripts/brand_config.py": "4e1fa2150982fceaa87914a6b6249231a27210e1fcf8cea7cc311f591e25dc01",
-    "scripts/build_sales_html.py": "ccea9a66d4edc50190eac5432459a8da2e5d143e7b5e826b203f5d18f9c27ffb",
+    "scripts/build_sales_html.py": "9684a4b4b5b5b0a030dcc1064000697b7cf412c1203350770df5ae83946eb01f",
     "scripts/pdf_two_pass.py": "8c9669d92c1dd7ac52c2fa5b99e3ac6a243e0aed45a9d27d424e01c5ab68da79",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/render_html_report.py": "9840ec65f521add8d2b1760952bad1e660dcd34d045d0c7e5f77a8d3342f55ea",
