@@ -16,6 +16,26 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 
+def test_current_repository_release_metadata_matches_suite() -> None:
+    root = SCRIPT.parents[1]
+    release = json.loads(
+        (root / "skills/suite-manifest.json").read_text(encoding="utf-8")
+    )["release"]
+    version, tag = release["version"], release["tag"]
+    project = (root / "pyproject.toml").read_text(encoding="utf-8")
+    project_section = project.split("[project]\n", 1)[1].split("\n[", 1)[0]
+    assert f'version = "{version}"\n' in project_section
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    release_link = f"docs/releases/{tag}.md"
+    assert (root / release_link).is_file()
+    assert f'href="{release_link}"' in readme
+    assert f"Release-{tag}-" in readme
+    assert f"| 产品标签 | `{tag}` |" in readme
+    assert f"| 组件版本 | `{version}` |" in readme
+    assert "知识索引独立发布" in readme
+
+
 def test_release_json_serializes_nested_paths(tmp_path: Path) -> None:
     payload = {
         "status": "preflight-pass",
