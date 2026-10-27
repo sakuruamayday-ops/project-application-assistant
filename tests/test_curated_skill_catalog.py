@@ -58,6 +58,9 @@ def test_client_runtime_contract_makes_hooks_host_enforced_and_fail_closed():
     assert contract["enforcement"]["owner"] == "signed-desktop-host-plus-native-cordis-plugin"
     assert contract["enforcement"]["model_compliance_is_not_enforcement"] is True
     assert contract["dsh_hook_compatibility"]["trusted_enforcement_boundary"] is False
+    assert contract["enforcement"]["failure_scope"] == "security-integrity-permission-and-real-execution"
+    assert "business_quality_repair_budget" not in contract["enforcement"]
+    assert contract["enforcement"]["business_quality_failure"].startswith("advisory-")
     assert {
         item["component"] for item in contract["enforcement_components"]
     } == {
@@ -90,7 +93,7 @@ def test_client_runtime_contract_preserves_professional_skills_across_providers(
     ]
     assert professional["provider_independent"] is True
     assert professional["unmatched_business_task"] == (
-        "require-project-task-router-and-refuse-generic-fallback"
+        "ordinary-assistant-flow-without-forced-professional-routing"
     )
     assert {
         "SKILL.md",
@@ -100,7 +103,13 @@ def test_client_runtime_contract_preserves_professional_skills_across_providers(
         "tests-and-machine-validators",
     } == set(professional["skill_is_execution_bundle"])
     assert professional["humanizer_order"][-1] == "rerun-consistency-check"
-    assert "load-every-required-skill" in professional["required_chain"]
-    assert "validate-exact-candidate-with-local-professional-kernel" in professional["required_chain"]
-    assert "bind-final-chat-answer-to-validated-candidate-sha256" in professional["required_chain"]
-    assert "validate-required-response-structure-in-contract-order" in professional["required_chain"]
+    assert "read-relevant-skill-guidance-on-demand" in professional["required_chain"]
+    assert "preserve-fact-policy-calculation-and-evidence-boundaries" in professional["required_chain"]
+    assert "reuse-actual-source-and-existing-artifacts" in professional["required_chain"]
+    assert "verify-real-artifact-and-openability" in professional["required_chain"]
+    assert "load-every-required-skill" not in professional["required_chain"]
+    assert "require-current-turn-artifact-receipts-for-formal-files" not in professional["required_chain"]
+    stop = next(item for item in contract["lifecycle"] if item["point"] == "turn-stopping")
+    assert "allow-at-most-one-deterministic-repair" not in stop["requirements"]
+    assert "never-force-an-unbounded-continuation-loop" in stop["requirements"]
+    assert "verify-claimed-files-exist-and-are-openable" in stop["requirements"]

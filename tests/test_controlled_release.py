@@ -479,16 +479,16 @@ def test_local_release_sync_is_fail_closed_and_strips_transient_tokens(
                 {
                     "status": "pass",
                     "completed_at": "2026-08-08T00:00:00Z",
+                    "scope": "skills-only",
                     "formal_release": {"version": "1.6.1"},
                     "skills": {
                         "status": "installed-and-verified",
                         "skill_count": 49,
                     },
                     "index": {
-                        "status": "current",
-                        "release_id": "policy-current",
+                        "status": "not-requested-skills-only",
                     },
-                    "knowledge": {"status": "complete"},
+                    "knowledge": {"status": "not-requested-skills-only"},
                 }
             ),
             stderr="",
@@ -503,7 +503,18 @@ def test_local_release_sync_is_fail_closed_and_strips_transient_tokens(
 
     assert result["status"] == "pass"
     assert captured["command"][-2:] == ["--expected-version", "1.6.1"]
+    assert "--skills-only" in captured["command"]
     assert "GH_TOKEN" not in captured["env"]
+
+    def wrong_scope(command, **kwargs):
+        response = pass_sync(command, **kwargs)
+        payload = json.loads(response.stdout)
+        payload["scope"] = "skills-and-index"
+        return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
+
+    monkeypatch.setattr(MODULE.subprocess, "run", wrong_scope)
+    with pytest.raises(RuntimeError, match="作用域不匹配"):
+        MODULE.run_local_release_sync(script, expected_version="1.6.1")
 
     def fail_sync(*_args, **_kwargs):
         return SimpleNamespace(

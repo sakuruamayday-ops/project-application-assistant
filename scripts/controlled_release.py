@@ -104,7 +104,7 @@ def run_local_release_sync(
     *,
     expected_version: str,
 ) -> dict[str, object]:
-    """Run the local signed-release gate once, immediately after publish."""
+    """Install the signed skill release without activating unrelated knowledge data."""
     resolved, _digest = validate_local_release_sync(script)
     environment = os.environ.copy()
     for name in ("GITHUB_PAT_TOKEN", "GH_TOKEN", "EXA_API_KEY"):
@@ -114,6 +114,7 @@ def run_local_release_sync(
             sys.executable,
             str(resolved),
             "--apply",
+            "--skills-only",
             "--expected-version",
             expected_version,
         ],
@@ -149,16 +150,16 @@ def run_local_release_sync(
         "already-current-and-verified",
     }:
         raise RuntimeError("本机技能安装与签名验收未通过")
-    if not isinstance(index, dict) or index.get("status") not in {
-        "current",
-        "switched-and-verified",
-    }:
-        raise RuntimeError("本机活动索引切换验收未通过")
-    if not isinstance(knowledge, dict) or knowledge.get("status") != "complete":
-        raise RuntimeError("本机知识源清单完整性验收未通过")
+    if payload.get("scope") != "skills-only" or not isinstance(index, dict) or (
+        index.get("status") != "not-requested-skills-only"
+    ) or not isinstance(knowledge, dict) or (
+        knowledge.get("status") != "not-requested-skills-only"
+    ):
+        raise RuntimeError("技能发布同步作用域不匹配；本次不得改动知识索引")
     return {
         "status": "pass",
         "mode": "formal-release-immediate",
+        "scope": "skills-only",
         "version": expected_version,
         "skills": skills.get("status"),
         "skill_count": skills.get("skill_count"),
@@ -1441,7 +1442,7 @@ def main() -> None:
     parser.add_argument(
         "--local-release-sync-script",
         type=Path,
-        help="仅显式要求本机技能及知识索引同步时提供；官网发布默认不执行本机同步",
+        help="显式要求本机正式技能同步时提供；该技能事务不切换或整理知识索引",
     )
     parser.add_argument(
         "--client-skill-update-url",

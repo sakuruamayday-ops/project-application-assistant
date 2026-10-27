@@ -25,6 +25,7 @@ table { width: 100%; border-collapse: collapse; margin: 0 0 18px; table-layout: 
 caption { font-weight: 700; text-align: left; margin: 0 0 12px; border-left: 4px solid var(--orange); padding-left: 12px; font-size: 15px; }
 thead { display: table-header-group; }
 tr { break-inside: avoid; }
+tbody tr:nth-last-child(2) { break-after: avoid; }
 th, td { border: 1px solid #ddd; vertical-align: top; overflow-wrap: anywhere; }
 th { background: #f8f9fa; color: #495057; padding: 9px 12px; text-align: left; }
 td { padding: 8px 12px; }
@@ -44,6 +45,7 @@ tbody tr:nth-child(even) td { background: #fcfcfc; }
 .section-title > span:last-child { position: relative; top: 2pt; }
 .report-section { border-bottom: 1px dashed #e9ecef; padding-bottom: 24px; }
 .summary-card { background: #fff8f1; border: 1px solid #ffdab9; border-radius: 6px; padding: 20px; margin: 20px 0; }
+.summary-card, .callout, .notice, .scope-note, .comparison-grid, .assessment-card, .report-end { break-inside: avoid; }
 .summary-card h3 { color: #b45309; font-size: 13px; margin: 0 0 8px; }
 .summary-card p { margin-bottom: 0; }
 .callout, .notice, .scope-note { padding: 16px 20px; border-radius: 6px; font-size: 13px; margin: 16px 0 24px; }

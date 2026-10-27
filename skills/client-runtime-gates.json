@@ -1,10 +1,10 @@
 {
   "schema_version": "gongchuang-client-runtime-gates/v1",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.7.9",
   "host": {
     "upstream": "deepseek-ai/deepseek-harness",
-    "pinned_commit": "d347e703908d0406b7a7ef80e3a0e594d86b2215",
-    "upstream_stage": "dsh-v0.1.3-alpha.1",
+    "pinned_commit": "687f282e8625c6b8d11ff58211a90524be2e4317",
+    "upstream_stage": "dsh-v0.2.1-rc.2",
     "upgrade_policy": "pin-and-revalidate"
   },
   "dsh_hook_compatibility": {
@@ -24,10 +24,11 @@
     "owner": "signed-desktop-host-plus-native-cordis-plugin",
     "model_compliance_is_not_enforcement": true,
     "security_integrity_failure": "refuse-agent-start-or-block-current-action",
-    "business_quality_failure": "one-repair-then-user-visible-terminal-outcome",
-    "business_quality_repair_budget": 1,
+    "business_quality_failure": "advisory-findings-with-explicit-gaps-continue-available-output",
     "unsigned-or-user-removable-gate_is_forbidden": true,
-    "all_model_providers_share_the_same_gate": true
+    "all_model_providers_share_the_same_gate": true,
+    "failure_scope": "security-integrity-permission-and-real-execution",
+    "business_quality_repair_policy": "fix-affected-content-without-a-fixed-repair-count; stop-unchanged-failing-paths"
   },
   "professional_execution": {
     "binding": "same-host-verified-skill-suite",
@@ -42,18 +43,16 @@
       "templates-and-assets",
       "tests-and-machine-validators"
     ],
-    "activation_proof": "successful-skill-tool-call-or-explicit-user-skill-invocation",
+    "activation_proof": "successful-skill-read-records-guidance-not-operation-admission",
     "required_chain": [
-      "route-task-to-specific-professional-skill",
-      "expand-requires-and-quality-gate-relations",
-      "load-every-required-skill",
+      "scope-work-to-the-user-request",
+      "read-relevant-skill-guidance-on-demand",
       "preserve-fact-policy-calculation-and-evidence-boundaries",
-      "validate-exact-candidate-with-local-professional-kernel",
-      "bind-final-chat-answer-to-validated-candidate-sha256",
-      "validate-required-response-structure-in-contract-order",
-      "require-current-turn-artifact-receipts-for-formal-files"
+      "reuse-actual-source-and-existing-artifacts",
+      "verify-real-artifact-and-openability",
+      "disclose-data-gaps-and-unfinished-checks"
     ],
-    "unmatched_business_task": "require-project-task-router-and-refuse-generic-fallback",
+    "unmatched_business_task": "ordinary-assistant-flow-without-forced-professional-routing",
     "provider_independent": true,
     "humanizer_order": [
       "lock-facts-policy-numbers-and-citations",
@@ -61,7 +60,7 @@
       "apply-gongchuang-humanizer-zh",
       "rerun-consistency-check"
     ],
-    "failure_behavior": "repair-once-then-return-draft-waiting-user-or-failed-with-actionable-gaps"
+    "failure_behavior": "preserve-created-output-resume-the-failed-stage-and-report-actionable-gaps"
   },
   "enforcement_components": [
     {
@@ -92,9 +91,10 @@
     {
       "component": "artifact-delivery-gate",
       "responsibility": [
-        "run-deterministic-business-and-document-validators",
-        "block-export-publish-or-completion-without-current-turn-receipts",
-        "seal-auditable-receipts"
+        "verify-actual-file-identity-openability-and-execution-result",
+        "keep-business-content-and-visual-review-as-actionable-guidance",
+        "preserve-created-output-and-publish-only-real-files",
+        "record-checks-without-professional-approval-promotion"
       ]
     }
   ],
@@ -124,9 +124,9 @@
       "blocking": true,
       "requirements": [
         "create-new-turn-id",
-        "reset-active-skills-for-new-turn",
-        "preserve-only-blocked-continuation-state",
-        "run-input-policy"
+        "preserve-live-skill-guidance-and-current-task",
+        "preserve-existing-artifacts-and-resume-failed-stages",
+        "run-input-security-policy"
       ]
     },
     {
@@ -134,10 +134,10 @@
       "blocking": true,
       "requirements": [
         "observe-tool-and-user-explicit-invocation",
-        "register-every-activated-skill-in-turn-state",
+        "record-loaded-guidance-without-operation-admission",
         "reject-unverified-skill-body",
-        "accumulate-multiple-skills",
-        "expand-signed-requires-and-quality-gate-relations",
+        "reuse-guidance-within-supported-host-context",
+        "treat-requires-and-quality-relations-as-task-guidance",
         "bind-professional-contract-version-to-suite-version"
       ]
     },
@@ -164,12 +164,11 @@
       "point": "turn-stopping",
       "blocking": true,
       "requirements": [
-        "run-delivery-gates-for-all-active-skills",
-        "reject-missing-required-skill-or-contract-ordered-section",
-        "reject-evidence-boundary-or-quality-gate-omission",
-        "require-current-turn-receipts",
-        "allow-at-most-one-deterministic-repair",
-        "return-draft-waiting-user-or-failed-terminal-outcome-with-actionable-gaps",
+        "verify-claimed-files-exist-and-are-openable",
+        "preserve-fact-policy-calculation-and-evidence-boundaries",
+        "report-data-gaps-and-unfinished-checks",
+        "respect-user-stop-and-bounded-execution",
+        "stop-unchanged-failing-paths-with-actionable-reasons",
         "never-force-an-unbounded-continuation-loop"
       ]
     },
@@ -185,9 +184,9 @@
   ],
   "mandatory_regressions": [
     "first-request-waits-for-session-start",
-    "new-turn-resets-skill-state",
-    "same-turn-multi-skill-accumulates",
-    "blocked-continuation-keeps-original-turn-state",
+    "fixed-operations-do-not-require-skill-preload",
+    "loaded-guidance-does-not-grant-professional-approval",
+    "recoverable-failure-preserves-existing-artifacts",
     "missing-or-crashed-gate-fails-closed",
     "direct-tool-call-cannot-bypass-policy",
     "compatibility-hook-bridge-cannot-be-trusted-as-enforcement-boundary",

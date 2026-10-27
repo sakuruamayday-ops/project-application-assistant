@@ -181,7 +181,7 @@
     {
       "id": "evidence-ledger.create-docx",
       "skill": "evidence-ledger",
-      "description": "将已定稿正文一次写成新的原生 DOCX，保留标题、表格及行内格式。普通导出无需专业预校验；专业任务使用已通过 chat 预校验的正文，主技能有专用模板时优先使用其模板。",
+      "description": "将本次实际正文一次写成新的原生 DOCX，保留标题、表格、行内格式、来源与待核说明。主技能有专用模板时优先使用其模板；格式转换只生成文件，不代表内容已经专业审定。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
@@ -226,7 +226,7 @@
     {
       "id": "evidence-ledger.create-docx-from-file",
       "skill": "evidence-ledger",
-      "description": "从工作区 UTF-8 Markdown、文本或已确认的HTML正文生成原生 DOCX；HTML直接保留正文和表格，不重算数字或改写来源。input不超过1MiB，output为新的docx路径；专业成品仍须保留原画像和校验。",
+      "description": "从工作区 UTF-8 Markdown、文本或已确认的HTML正文生成原生 DOCX；HTML直接保留正文和表格，不重算数字或改写来源。input不超过1MiB，output为新的docx路径；保留来源与待核说明，生成后检查真实文件和可打开性。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
@@ -299,7 +299,7 @@
     {
       "id": "evidence-ledger.apply-office-branding-gold",
       "skill": "evidence-ledger",
-      "description": "在用户明确要求的税务Word报告正文和表格保存后，使用已验签共享运行时的金色资产写入统一品牌页眉和居中水印；首次artifact校验前执行，保留原税务画像及草稿状态。",
+      "description": "在用户明确要求的税务Word报告正文和表格保存后，使用已验签共享运行时的金色资产写入统一品牌页眉和居中水印；保留正文、表格和待核说明，对同一实际文件继续检查，不把品牌写入当作专业审核通过。",
       "script": "evidence-ledger/scripts/apply_office_branding.py",
       "files": [
         "_runtime/gongchuang-branding/scripts/office_watermark.py",
