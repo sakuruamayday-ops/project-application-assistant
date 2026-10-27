@@ -7445,6 +7445,73 @@ def update_document_index(
             temporary.replace(failed_directory / temporary.name)
 
 
+def initialize_client_error_report_summaries(connection: sqlite3.Connection) -> None:
+    """Initialize list projections atomically on an idle connection; preserve complete diagnostics."""
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS client_error_report_summaries (
+                feedback_id INTEGER PRIMARY KEY REFERENCES client_error_reports(feedback_id)
+                    ON UPDATE CASCADE ON DELETE CASCADE,
+                diagnostic_json TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS client_error_report_summaries_after_insert
+            AFTER INSERT ON client_error_reports
+            BEGIN
+                INSERT INTO client_error_report_summaries(feedback_id,diagnostic_json)
+                VALUES (
+                    NEW.feedback_id,
+                    CASE WHEN json_valid(NEW.diagnostic_json)
+                         THEN json_remove(NEW.diagnostic_json,'$.conversation_context')
+                         ELSE NULL END
+                )
+                ON CONFLICT(feedback_id) DO UPDATE
+                SET diagnostic_json=excluded.diagnostic_json;
+            END
+            """
+        )
+        connection.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS client_error_report_summaries_after_update
+            AFTER UPDATE OF diagnostic_json ON client_error_reports
+            BEGIN
+                INSERT INTO client_error_report_summaries(feedback_id,diagnostic_json)
+                VALUES (
+                    NEW.feedback_id,
+                    CASE WHEN json_valid(NEW.diagnostic_json)
+                         THEN json_remove(NEW.diagnostic_json,'$.conversation_context')
+                         ELSE NULL END
+                )
+                ON CONFLICT(feedback_id) DO UPDATE
+                SET diagnostic_json=excluded.diagnostic_json;
+            END
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO client_error_report_summaries(feedback_id,diagnostic_json)
+            SELECT report.feedback_id,
+                   CASE WHEN json_valid(report.diagnostic_json)
+                        THEN json_remove(report.diagnostic_json,'$.conversation_context')
+                        ELSE NULL END
+            FROM client_error_reports report
+            WHERE NOT EXISTS (
+                SELECT 1 FROM client_error_report_summaries summary
+                WHERE summary.feedback_id=report.feedback_id
+            )
+            """
+        )
+        connection.commit()
+    except BaseException:
+        connection.rollback()
+        raise
+
+
 def init_database() -> None:
     with closing(database()) as connection:
         connection.executescript(
@@ -8489,6 +8556,7 @@ def init_database() -> None:
         if init_kindle_database is not None:
             init_kindle_database(connection, DATA_DIR)
         connection.commit()
+        initialize_client_error_report_summaries(connection)
 
 
 @app.middleware("http")
@@ -12066,11 +12134,11 @@ def portal_payload(
                 ]
         feedback_sql = """
             SELECT feedback_messages.*,users.username,users.real_name,
-                   json_remove(client_error_reports.diagnostic_json,
-                               '$.conversation_context') AS diagnostic_json
+                   client_error_report_summaries.diagnostic_json AS diagnostic_json
             FROM feedback_messages
             JOIN users ON users.id=feedback_messages.user_id
-            LEFT JOIN client_error_reports ON client_error_reports.feedback_id=feedback_messages.id
+            LEFT JOIN client_error_report_summaries
+              ON client_error_report_summaries.feedback_id=feedback_messages.id
         """
         feedback_parameters: tuple[object, ...] = ()
         if not single_page and active_page != "feedback":
@@ -12079,8 +12147,7 @@ def portal_payload(
             feedback_sql += " WHERE feedback_messages.user_id=?"
             feedback_parameters = (int(user["id"]),)
         feedback_sql += " ORDER BY feedback_messages.id DESC LIMIT 100"
-        # Full conversation context is retained for individual diagnostic export.
-        # Project it out in SQLite before the list fetch/render can amplify it.
+        # Complete diagnostics remain separate from the bounded list projection.
         feedback_messages = format_row_datetimes(
             connection.execute(feedback_sql, feedback_parameters).fetchall(),
             "created_at",
@@ -12088,7 +12155,8 @@ def portal_payload(
             "resolved_at",
         )
         for feedback in feedback_messages:
-            feedback["diagnostic"] = json.loads(feedback["diagnostic_json"]) if feedback.get("diagnostic_json") else None
+            diagnostic = json.loads(feedback["diagnostic_json"]) if feedback.get("diagnostic_json") else None
+            feedback["diagnostic"] = diagnostic if isinstance(diagnostic, dict) else None
         feedback_total = len(feedback_messages)
         normalized_feedback_status = feedback_status.strip().casefold()[:20]
         if normalized_feedback_status in {"pending", "reviewing", "resolved", "closed"}:
