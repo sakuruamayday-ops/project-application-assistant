@@ -466,11 +466,12 @@ def build_release_transaction_manifest(
     if local_sync_script_sha256:
         participants["local_sync"] = {
             "mode": "formal-release-immediate",
+            "scope": "skills-only",
             "required_version": validation["short_version"],
             "generic_package_sha256": package_hashes.get("generic", ""),
             "sync_script_sha256": local_sync_script_sha256,
             "required_result": (
-                "signed-local-install-and-index-verification-pass"
+                "signed-local-skill-installation-verification-pass"
                 if "generic" in package_hashes
                 else "not-applicable-platform-hotfix"
             ),

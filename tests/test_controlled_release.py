@@ -441,6 +441,10 @@ def test_transaction_manifest_binds_all_release_participants(
     assert manifest["participants"]["local_sync"]["sync_script_sha256"] == (
         "a" * 64
     )
+    assert manifest["participants"]["local_sync"]["scope"] == "skills-only"
+    assert manifest["participants"]["local_sync"]["required_result"] == (
+        "signed-local-skill-installation-verification-pass"
+    )
     assert manifest["participants"]["client_update"] == {
         "release_version": "1.4.1",
         "archive_sha256": "b" * 64,
