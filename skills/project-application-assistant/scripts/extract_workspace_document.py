@@ -570,6 +570,9 @@ def extract_pptx(path: Path) -> dict[str, object]:
 
 
 def extract_pdf(path: Path) -> dict[str, object]:
+    if __name__ == "__main__":
+        sys.modules.setdefault("pymupdf.layout", None)
+        sys.modules.setdefault("pymupdf4llm", None)
     try:
         import pymupdf
     except ImportError as error:

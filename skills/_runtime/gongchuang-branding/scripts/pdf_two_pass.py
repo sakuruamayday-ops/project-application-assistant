@@ -4,9 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import json
 from pathlib import Path
 from typing import Any
+
+if __name__ == "__main__":
+    # Fixed CLI PDF work uses the classic engine; preserve any caller-loaded ML modules.
+    sys.modules.setdefault("pymupdf.layout", None)
+    sys.modules.setdefault("pymupdf4llm", None)
 
 import pymupdf as fitz
 

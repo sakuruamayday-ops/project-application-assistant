@@ -2,12 +2,18 @@
 """Render the branded Version B advisory PDF without an unbranded disk intermediate."""
 
 import argparse
+import sys
 import base64
 import os
 from pathlib import Path
 import shutil
 import subprocess
 
+
+if __name__ == "__main__":
+    # Fixed CLI PDF work uses the classic engine; preserve any caller-loaded ML modules.
+    sys.modules.setdefault("pymupdf.layout", None)
+    sys.modules.setdefault("pymupdf4llm", None)
 
 HERE = Path(__file__).resolve().parent
 SKILLS_ROOT = Path(__file__).resolve().parents[2]

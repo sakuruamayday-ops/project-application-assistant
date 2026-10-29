@@ -8,6 +8,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+if __name__ == "__main__":
+    # Fixed CLI PDF work uses the classic engine; preserve any caller-loaded ML modules.
+    sys.modules.setdefault("pymupdf.layout", None)
+    sys.modules.setdefault("pymupdf4llm", None)
+
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
 BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
 if not BRANDING_SCRIPTS.is_dir():

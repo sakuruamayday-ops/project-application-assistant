@@ -8,6 +8,11 @@ import json
 import sys
 from pathlib import Path
 
+if __name__ == "__main__":
+    # Fixed CLI PDF work uses the classic engine; preserve any caller-loaded ML modules.
+    sys.modules.setdefault("pymupdf.layout", None)
+    sys.modules.setdefault("pymupdf4llm", None)
+
 import pymupdf as fitz
 
 SKILLS_ROOT = Path(__file__).resolve().parents[2]

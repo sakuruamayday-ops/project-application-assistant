@@ -69,6 +69,9 @@ def _docx_blocks(path: Path) -> tuple[list[str], list[list[str]]]:
 
 
 def _pdf_text(path: Path) -> str:
+    if __name__ == "__main__":
+        sys.modules.setdefault("pymupdf.layout", None)
+        sys.modules.setdefault("pymupdf4llm", None)
     import fitz
 
     document = fitz.open(path)
@@ -113,6 +116,9 @@ def _pdf_font_is_self_contained(document: Any, xref: int, subtype: str) -> bool:
 
 def _pdf_cjk_font_errors(path: Path) -> list[str]:
     """Require visible Chinese spans to have self-contained glyph data."""
+    if __name__ == "__main__":
+        sys.modules.setdefault("pymupdf.layout", None)
+        sys.modules.setdefault("pymupdf4llm", None)
     import fitz
 
     errors: list[str] = []

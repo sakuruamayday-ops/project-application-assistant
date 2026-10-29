@@ -7,11 +7,13 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from zipfile import ZipFile
 
-import pymupdf as fitz
+if TYPE_CHECKING:
+    import pymupdf as fitz
 
 from brand_config import public_identity
 
@@ -27,6 +29,8 @@ class GateFailure(RuntimeError):
 
 
 def _asset_alpha_hashes() -> set[str]:
+    import pymupdf as fitz
+
     hashes: set[str] = set()
     assets = sorted(ASSET_DIR.glob("brand-*.png"))
     if not assets:
@@ -43,6 +47,8 @@ def _asset_alpha_hashes() -> set[str]:
 
 def pdf_brand_watermark_rects(document: fitz.Document, page: fitz.Page) -> list[fitz.Rect]:
     """Return actual placements without recounting shared image xrefs."""
+    import pymupdf as fitz
+
     alpha_hashes = _asset_alpha_hashes()
     brand_xrefs: set[int] = set()
     for image in page.get_images(full=True):
@@ -65,6 +71,11 @@ def validate_pdf(
     expected_author: str | None = None,
     expected_title_contains: str | None = None,
 ) -> dict[str, Any]:
+    if __name__ == "__main__":
+        sys.modules.setdefault("pymupdf.layout", None)
+        sys.modules.setdefault("pymupdf4llm", None)
+    import pymupdf as fitz
+
     pdf_path = Path(path)
     if not pdf_path.is_file():
         raise FileNotFoundError(pdf_path)

@@ -2,9 +2,15 @@
 """Render the owner-approved unwatermarked white-background sales report."""
 
 import argparse
+import sys
 import re
 import unicodedata
 from pathlib import Path
+
+if __name__ == "__main__":
+    # Fixed CLI PDF work uses the classic engine; preserve any caller-loaded ML modules.
+    sys.modules.setdefault("pymupdf.layout", None)
+    sys.modules.setdefault("pymupdf4llm", None)
 
 import pymupdf as fitz
 

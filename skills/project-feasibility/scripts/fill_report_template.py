@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from copy import deepcopy
 from datetime import date
 from io import BytesIO
@@ -123,6 +124,9 @@ def extract_source_text(path: Path) -> str:
         )
         return "\n".join(parts)
     if suffix == ".pdf":
+        if __name__ == "__main__":
+            sys.modules.setdefault("pymupdf.layout", None)
+            sys.modules.setdefault("pymupdf4llm", None)
         import fitz
 
         document = fitz.open(path)
