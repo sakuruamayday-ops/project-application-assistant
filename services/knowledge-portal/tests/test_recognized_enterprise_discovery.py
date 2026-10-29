@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import sqlite3
 
+import pytest
+
 from app.recognized_enterprise_discovery import (
+    RecognitionQueryError,
+    UnsupportedRecognitionProject,
     build_recognition_query_plan,
     discover_recognized_enterprises,
     recognition_search,
@@ -103,6 +107,36 @@ def test_discovery_rejects_unknown_project_instead_of_guessing():
         assert "暂不支持的认定项目" in str(error)
     else:
         raise AssertionError("未知项目必须显式拒绝")
+
+
+def test_unsupported_high_tech_recognition_reports_scope_and_existing_search_route():
+    connection = sqlite3.connect(":memory:")
+    with pytest.raises(UnsupportedRecognitionProject) as failure:
+        recognition_search(
+            connection, query="查询浙江电子企业高新技术企业名单",
+            projects=["高新技术企业"], subject_terms=["电子"], regions=["浙江"],
+        )
+    error = failure.value
+    assert error.code == "GC-RECOGNITION-PROJECT-UNSUPPORTED"
+    assert error.project == "高新技术企业"
+    assert "小巨人" in error.supported_projects
+    assert "专精特新中小企业" in error.supported_projects
+    assert "高新技术企业" not in error.supported_projects
+    assert "knowledge_search" in str(error)
+    assert "企业、地区、年度和项目关键词" in str(error)
+    assert "不代表没有相关企业或知识库没有资料" in str(error)
+
+
+@pytest.mark.parametrize("arguments", [
+    {"result_group": "unsupported"},
+    {"offset": 1},
+    {"result_group": "exact"},
+])
+def test_recognition_paging_limitations_are_declared_input_failures(arguments):
+    connection = sqlite3.connect(":memory:")
+    with pytest.raises(RecognitionQueryError) as failure:
+        recognition_search(connection, query="工业机器人有哪些小巨人", **arguments)
+    assert failure.value.code == "GC-RECOGNITION-INVALID-ARGUMENT"
 
 
 def test_common_national_small_giant_project_aliases_are_supported():

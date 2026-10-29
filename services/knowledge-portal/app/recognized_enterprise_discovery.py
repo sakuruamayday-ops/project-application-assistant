@@ -54,6 +54,38 @@ PROJECT_ALIASES = {
     "工业新产品": ("unified", "工业新产品"),
 }
 
+
+class RecognitionQueryError(ValueError):
+    """An expected input or capability limitation of recognition discovery."""
+
+    code = "GC-RECOGNITION-INVALID-ARGUMENT"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f"{self.code}：{message}")
+
+
+class UnsupportedRecognitionProject(RecognitionQueryError):
+    """A requested project has no reviewed structured-recognition query route."""
+
+    code = "GC-RECOGNITION-PROJECT-UNSUPPORTED"
+
+    def __init__(self, project: str) -> None:
+        self.project = project
+        represented: set[tuple[str, str]] = set()
+        supported: list[str] = []
+        for alias, route in PROJECT_ALIASES.items():
+            if route not in represented:
+                represented.add(route)
+                supported.append(alias)
+        self.supported_projects = tuple(supported)
+        super().__init__(
+            f"暂不支持的认定项目：{project}。"
+            f"该专用名单检索当前支持：{'、'.join(supported)}。"
+            "请改用 knowledge_search，保留原企业、地区、年度和项目关键词检索原文，再核对官方名单；"
+            "专用接口不支持不代表没有相关企业或知识库没有资料。"
+        )
+
+
 REGION_ALIASES = {
     "北京": "北京市",
     "天津": "天津市",
@@ -382,7 +414,7 @@ def resolve_projects(projects: Sequence[object]) -> list[tuple[str, str, str]]:
             continue
         match = PROJECT_ALIASES.get(compact)
         if match is None:
-            raise ValueError(f"暂不支持的认定项目：{display_name}")
+            raise UnsupportedRecognitionProject(display_name)
         resolved.append((match[0], match[1], display_name))
     return list(dict.fromkeys(resolved))
 
@@ -698,9 +730,9 @@ def discover_recognized_enterprises(
     normalized_terms = _unique(subject_terms)
     normalized_regions = _unique(regions)
     if not resolved_projects:
-        raise ValueError("至少需要一个认定项目")
+        raise RecognitionQueryError("至少需要一个认定项目")
     if not normalized_terms:
-        raise ValueError("至少需要一个产品、行业或企业主题词")
+        raise RecognitionQueryError("至少需要一个产品、行业或企业主题词")
     bounded_limit = max(1, min(int(limit), 200))
     if _table_exists(connection, "recognition_records") and _table_exists(
         connection, "enterprise_subject_evidence"
@@ -1085,12 +1117,12 @@ def recognition_search(
         }
 
     if result_group not in {"all", "exact", "related", "pending"}:
-        raise ValueError("result_group必须为all、exact、related或pending")
+        raise RecognitionQueryError("result_group必须为all、exact、related或pending")
     if offset < 0 or (offset and result_group == "all"):
-        raise ValueError("翻页时请指定exact、related或pending结果组及非负offset")
+        raise RecognitionQueryError("翻页时请指定exact、related或pending结果组及非负offset")
     if result_group != "all":
         if not (_table_exists(connection, "recognition_records") and _table_exists(connection, "enterprise_subject_evidence")):
-            raise ValueError("当前索引不支持分组翻页")
+            raise RecognitionQueryError("当前索引不支持分组翻页，请保留原筛选条件并用result_group=all读取。")
         if result_group == "pending":
             page = _pending_page(connection, plan, bounded_limit, offset)
             return {

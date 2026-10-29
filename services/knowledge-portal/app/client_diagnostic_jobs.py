@@ -178,6 +178,14 @@ def _failure_analysis(context: object) -> dict | None:
         for key in ("recovery_event_seq", "blocked_by_event_seq"):
             if isinstance(item.get(key), int):
                 result[key] = item[key]
+        page_recovery = item.get("page_recovery")
+        if isinstance(page_recovery, dict):
+            requested = page_recovery.get("requested_pages")
+            covered = page_recovery.get("covered_pages")
+            requested_valid = requested == "all" or isinstance(requested, list) and 0 < len(requested) <= 200 and all(type(page) is int and page > 0 for page in requested)
+            covered_valid = isinstance(covered, list) and len(covered) <= 200 and all(type(page) is int and page > 0 for page in covered)
+            if requested_valid and covered_valid and (requested == "all" or set(covered).issubset(requested)):
+                result["page_recovery"] = dict(requested_pages=requested if requested == "all" else sorted(set(requested)), covered_pages=sorted(set(covered)))
         execution = item.get("execution")
         if isinstance(execution, dict):
             result["execution"] = {key: execution[key] for key in ("timedOut", "cancelled") if isinstance(execution.get(key), bool)}
@@ -268,6 +276,9 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
         name = key.rsplit("/", 1)[-1][:240]
         files[key] = dict(name=name, format=Path(name).suffix[1:].lower(), phase=phase, event_seq=seq, source=source)
 
+    def absolute_receipt_path(path):
+        return isinstance(path, str) and bool(re.match(r"^(?:/|[a-z]:[\\/]|\\\\)", path, re.I))
+
     events = context.get("events", [])
     for index, event in enumerate(events if isinstance(events, list) else []):
         if not isinstance(event, dict) or not isinstance(event.get("data"), dict):
@@ -335,8 +346,18 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
             targets[key] = dict(name=key.rsplit("/", 1)[-1][:240], format=Path(output).suffix[1:].lower(), event_seq=seq)
         if result.get("isError") is not False:
             continue
-        if name == "gongchuang_artifact_probe":
-            publish(args.get("artifactPath"), "published", seq, name)
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if name in {"gongchuang_deliver_pdf", "gongchuang_publish_files"} and "paths" in meta:
+            paths = meta["paths"]
+            if isinstance(paths, list) and 0 < len(paths) <= 20 and all(absolute_receipt_path(path) for path in paths) and (name != "gongchuang_deliver_pdf" or len(paths) == 1):
+                for path in paths:
+                    publish(path, "published", seq, name)
+        elif name == "gongchuang_artifact_probe":
+            if "path" in meta:
+                if absolute_receipt_path(meta["path"]):
+                    publish(meta["path"], "published", seq, name)
+            else:
+                publish(args.get("artifactPath"), "published", seq, name)
         elif name == "gongchuang_publish_files" and isinstance(args.get("paths"), list):
             for path in args["paths"]:
                 publish(path, "published", seq, name)
@@ -358,7 +379,7 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
     if isinstance(supplied.get("files"), list):
         files = {}
         for file in supplied["files"][:32]:
-            if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("event_seq"), int) and isinstance(file.get("source"), str) and file["source"] in {"professional-notice", "deliverables/presented", "gongchuang_artifact_probe", "gongchuang_publish_files"}:
+            if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("event_seq"), int) and isinstance(file.get("source"), str) and file["source"] in {"professional-notice", "deliverables/presented", "gongchuang_artifact_probe", "gongchuang_publish_files", "gongchuang_deliver_pdf"}:
                 publish(file["name"], str(file.get("phase", "unknown"))[:30], file["event_seq"], file["source"])
     request_text = (goal_request or request or {}).get("text", "")
     json_requested = bool(re.search(r"(?:只|仅)(?:输出|返回)[^。！？；;\n]{0,12}JSON\s*对象", request_text, re.I))
@@ -418,16 +439,20 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
         status = "blocked"
     elif failed_file or delivery_result == "failed" or turn_result == "blocked" and unresolved_execution or turn_result == "completed" and (formats or targets) and not context.get("omitted_event_count"):
         status = "not-delivered"
+    elif not file_requested and not targets and turn_result == "completed" and reply and reply["final"]:
+        status = "answered"
     unpublished = supplied.get("unpublished_files")
     unpublished = [dict(name=file["name"][:240], format=file["format"][:30], event_seq=file["event_seq"]) for file in unpublished[:32] if isinstance(file, dict) and isinstance(file.get("name"), str) and isinstance(file.get("format"), str) and isinstance(file.get("event_seq"), int)] if isinstance(unpublished, list) else [file for key, file in targets.items() if key not in files][:32]
-    return dict(status=status, verification_scope="json-structure-only" if json_requested else "file-delivery-only", requested_formats=formats, file_requested=file_requested,
+    return dict(status=status, verification_scope="json-structure-only" if json_requested else "text-response-only" if status == "answered" else "file-delivery-only", requested_formats=formats, file_requested=file_requested,
                 user_request=request, goal_request=goal_request, structured_reply=structured_reply,
                 last_reply=reply, files=list(files.values())[:32], unpublished_files=unpublished)
 
 
 def _outcome_lines(outcome: dict) -> list[str]:
-    labels = {"delivered": "已记录实际文件交付", "partial": "部分文件已交付，整体尚未完成确认", "not-delivered": "目标结果未达成" if outcome.get("verification_scope") == "json-structure-only" else "目标文件未交付", "answered": "回复符合单一 JSON 对象结构", "blocked": "账号条件或用户确认阻塞", "cancelled": "用户取消", "unknown": "最终结果未知"}
+    labels = {"delivered": "已记录实际文件交付", "partial": "部分文件已交付，整体尚未完成确认", "not-delivered": "目标结果未达成" if outcome.get("verification_scope") == "json-structure-only" else "目标文件未交付", "answered": "回复符合单一 JSON 对象结构" if outcome.get("verification_scope") == "json-structure-only" else "已记录最终文字回复", "blocked": "账号条件或用户确认阻塞", "cancelled": "用户取消", "unknown": "最终结果未知"}
     scope = "仅检查 JSON 结构，字段内容与计算是否正确仍需验收。" if outcome.get("verification_scope") == "json-structure-only" else "文件回执只证明交付，内容是否满足需求仍需验收。"
+    if outcome.get("verification_scope") == "text-response-only":
+        scope = "仅确认本轮已有文字回复；过程异常与恢复记录保留，内容是否准确完整仍需验收。"
     if outcome.get('verification_scope') == 'host-operation-only':
         labels['not-delivered'] = '目标操作未完成'
         scope = '宿主记录删除失败，修复后须重试并验收实际删除结果。'
@@ -468,6 +493,10 @@ def _analysis_lines(analysis: dict) -> list[str]:
             detail += f"；恢复于事件 {failure['recovery_event_seq']}"
         if "blocked_by_event_seq" in failure:
             detail += f"；同目标生成失败后的后续受阻，关联事件 {failure['blocked_by_event_seq']}"
+        page_recovery = failure.get("page_recovery")
+        if page_recovery:
+            requested = page_recovery["requested_pages"]
+            detail += "；OCR原请求为整份文件" if requested == "all" else f"；OCR后续成功页覆盖 {len(page_recovery['covered_pages'])}/{len(requested)} 页"
         lines.extend(["- " + detail, "", *["> " + line for line in failure.get("observed_reason", "未提供具体错误").splitlines()], ""])
         execution = failure.get("execution")
         if execution:

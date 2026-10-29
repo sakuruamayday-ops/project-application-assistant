@@ -49,6 +49,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from markupsafe import Markup
 from pydantic import BaseModel, Field
@@ -125,6 +126,7 @@ from app.authoritative_list_facts import (
 from app.knowledge_case_packs import case_pack_capability, query_case_packs
 from app.enterprise_identity_lineage import lookup_identity_lineage
 from app.recognized_enterprise_discovery import (
+    RecognitionQueryError,
     discover_recognized_enterprises,
     recognition_search as execute_recognition_search,
 )
@@ -20161,7 +20163,10 @@ def recognized_enterprise_discovery_api(
 ):
     del user
     with closing(content_database()) as connection:
-        return discover_recognized_enterprises(connection, **payload.model_dump())
+        try:
+            return discover_recognized_enterprises(connection, **payload.model_dump())
+        except RecognitionQueryError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @app.post("/v1/recognition/search")
@@ -20171,7 +20176,10 @@ def recognition_search_api(
 ):
     del user
     with closing(content_database()) as connection:
-        return execute_recognition_search(connection, **payload.model_dump())
+        try:
+            return execute_recognition_search(connection, **payload.model_dump())
+        except RecognitionQueryError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @app.post("/v1/enterprise/identity-lineage")
@@ -21947,6 +21955,8 @@ async def recognition_search_tool(
 ) -> dict[str, object]:
     """按产品或行业反查认定名单，区分确切、相关和待核验结果。
 
+    高新技术企业尚不支持该专用名单查询；请改用knowledge_search检索原文，
+    保留企业、地区、年度和项目关键词，核对官方来源，不把接口不支持当作企业未认定。
     明确产品可传subject_terms，不受主题词表限制。all返回分组样本；连续读取时选择
     result_group=exact、related或pending，从offset=0开始并使用返回的next_offset，
     保持项目、主题、地区和年度条件不变。分页参数单独传递，不拼入query。
@@ -21966,7 +21976,10 @@ async def recognition_search_tool(
                 result_group=result_group,
             )
 
-    return await asyncio.to_thread(search)
+    try:
+        return await asyncio.to_thread(search)
+    except RecognitionQueryError as error:
+        raise ToolError(str(error)) from error
 
 
 @knowledge_mcp.tool(name="enterprise_identity_lineage_lookup")

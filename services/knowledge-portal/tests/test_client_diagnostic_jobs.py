@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors, _turn_outcome, _failure_analysis, _analysis_lines
+from app.client_diagnostic_jobs import DiagnosticChunk, initialize, receive_chunk, review_pending, purge_reviewed, file_path, _errors, _turn_outcome, _failure_analysis, _analysis_lines, _outcome_lines
 
 
 def test_review_preserves_file_protection_without_treating_it_as_a_runtime_failure():
@@ -213,6 +213,96 @@ def test_review_retains_independent_report_preparation_failure_without_session_e
 
 def outcome_event(kind, seq, **data):
     return {'type': kind, 'seq': seq, 'data': {'turn': 1, **data}}
+
+
+@pytest.mark.parametrize('scenario,status', [
+    ('text', 'answered'), ('requested-file', 'not-delivered'),
+    ('progress', 'unknown'), ('cancelled', 'cancelled'),
+])
+def test_review_separates_final_text_from_file_delivery_and_json_structure(scenario, status):
+    failure = dict(event_seq=2, tool='web_fetch', stage='tool-execution', category='runtime',
+        status='unrecovered', observed_reason='WEB_REDIRECT_BLOCKED')
+    reply_content = [{'type': 'text', 'text': '已有资料的解释如下。'}]
+    if scenario == 'progress':
+        reply_content.append({'type': 'tool-call', 'name': 'web_fetch'})
+    context = {'failed_turn': 1, 'events': [
+        outcome_event('user/message', 1, source={'kind': 'user'}, content=[{'type': 'text',
+            'text': '生成PDF文件' if scenario == 'requested-file' else '阅读资料并解释要求。'}]),
+        outcome_event('assistant/message', 3, message={'content': reply_content}),
+        outcome_event('turn/end', 4, reason={'kind': 'aborted' if scenario == 'cancelled' else 'completed'}),
+    ], 'failure_analysis': {'turn': 1, 'turn_result': 'completed', 'failures': [failure], 'primary_failure': failure}}
+    analysis = _failure_analysis(context)
+    outcome = _turn_outcome(context, analysis)
+    assert outcome['status'] == status
+    assert outcome['files'] == []
+    assert analysis['failures'][0]['status'] == 'unrecovered'
+    if scenario == 'text':
+        assert outcome['verification_scope'] == 'text-response-only'
+        lines = '\n'.join(_outcome_lines(outcome))
+        assert '已记录最终文字回复' in lines
+        assert 'JSON 对象结构' not in lines
+        assert '文件回执只证明交付' not in lines
+
+
+def test_review_retains_only_numeric_ocr_page_recovery_observations():
+    failure = dict(event_seq=2, tool='mcp__paddle_ocr__workspace_pdf', stage='service-timeout', category='runtime',
+        status='unrecovered', observed_reason='Request timed out',
+        page_recovery={'requested_pages': [1, 2, 3, 4], 'covered_pages': [1, 2], 'document': 'do-not-copy-path'})
+    context = {'failed_turn': 1, 'failure_analysis': {'turn': 1, 'turn_result': 'completed', 'failures': [failure]}}
+    analysis = _failure_analysis(context)
+    assert analysis['failures'][0]['page_recovery'] == {'requested_pages': [1, 2, 3, 4], 'covered_pages': [1, 2]}
+    assert 'OCR后续成功页覆盖 2/4 页' in '\n'.join(_analysis_lines(analysis))
+    assert 'do-not-copy-path' not in json.dumps(analysis)
+    failure['page_recovery']['covered_pages'] = [9]
+    assert 'page_recovery' not in _failure_analysis(context)['failures'][0]
+
+
+@pytest.mark.parametrize('transport', ['native', 'ptc'])
+def test_review_uses_the_actual_pdf_delivery_receipt_path(transport):
+    arguments = {'sourceArtifactPath': '/enterprise/source.html', 'outputPath': '/enterprise/requested.pdf'}
+    meta = {'paths': ['/enterprise/current/final.pdf']}
+    context = {'failed_turn': 1, 'events': [
+        outcome_event('user/message', 1, source={'kind': 'user'}, content=[{'type': 'text', 'text': '给我生成PDF文件'}]),
+    ]}
+    if transport == 'native':
+        context['events'].extend([
+            outcome_event('tool/call', 2, callId='pdf', name='gongchuang_deliver_pdf', arguments=json.dumps(arguments)),
+            outcome_event('tool/result', 3, meta=meta, message={'toolCallId': 'pdf', 'isError': False}),
+        ])
+    else:
+        context['events'].append(outcome_event('tool/ptc-dispatch', 3, name='gongchuang_deliver_pdf',
+            arguments=arguments, isError=False, meta=meta))
+    context['events'].append(outcome_event('turn/end', 4, reason={'kind': 'completed'}))
+    outcome = _turn_outcome(context, None)
+    assert outcome['status'] == 'delivered'
+    assert outcome['verification_scope'] == 'file-delivery-only'
+    assert outcome['files'] == [{'name': 'final.pdf', 'format': 'pdf', 'phase': 'published', 'event_seq': 3, 'source': 'gongchuang_deliver_pdf'}]
+
+
+@pytest.mark.parametrize('meta,is_error', [({}, False), ({'paths': []}, False),
+    ({'paths': ['guess.pdf']}, False), ({'paths': ['/one.pdf', '/two.pdf']}, False),
+    ({'paths': ['/one.pdf']}, True), ({'paths': ['/one.pdf']}, None)])
+def test_review_does_not_invent_pdf_delivery_from_input_paths_or_invalid_receipts(meta, is_error):
+    context = {'failed_turn': 1, 'events': [
+        outcome_event('user/message', 1, source={'kind': 'user'}, content=[{'type': 'text', 'text': '生成PDF文件'}]),
+        outcome_event('tool/ptc-dispatch', 2, name='gongchuang_deliver_pdf', arguments={'outputPath': '/request.pdf'},
+            isError=is_error, meta=meta, content=[{'type': 'text', 'text': '已完成PDF'}]),
+        outcome_event('turn/end', 3, reason={'kind': 'completed'}),
+    ]}
+    assert _turn_outcome(context, None)['status'] == 'not-delivered'
+    assert _turn_outcome(context, None)['files'] == []
+
+
+def test_review_keeps_cropped_pdf_receipts_without_promoting_them_to_business_final():
+    context = {'failed_turn': 1, 'omitted_event_count': 4, 'events': [], 'failure_analysis': {
+        'turn': 1, 'turn_result': 'completed', 'failures': [], 'outcome': {
+            'goal_request': {'event_seq': 1, 'text': '生成PDF文件'}, 'requested_formats': ['pdf'], 'file_requested': True,
+            'files': [{'name': 'report.pdf', 'format': 'pdf', 'phase': 'published', 'event_seq': 3, 'source': 'gongchuang_deliver_pdf'}],
+            'unpublished_files': [],
+        }}}
+    outcome = _turn_outcome(context, _failure_analysis(context))
+    assert outcome['status'] == 'delivered'
+    assert outcome['files'][0]['phase'] == 'published'
 
 
 def test_review_checks_final_requested_pdf_not_a_model_completion_claim_or_attachment():

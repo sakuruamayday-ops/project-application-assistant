@@ -12175,6 +12175,64 @@ def test_recognition_paging_parameters_reach_all_service_entries(tmp_path, monke
     assert all(x['offset'] == 2 and x['result_group'] == result_group and x['limit'] == 2 for x in calls)
 
 
+def test_recognition_unsupported_project_is_explicit_across_service_entries(tmp_path):
+    module = load_app(tmp_path)
+    arguments = {
+        "query": "浙江电子企业有哪些高新技术企业",
+        "projects": ["高新技术企业"], "subject_terms": ["电子"],
+        "regions": ["浙江"], "years": [2025],
+    }
+    with pytest.raises(module.HTTPException) as rest:
+        module.recognition_search_api(module.RecognitionSearchRequest(**arguments), None)
+    assert rest.value.status_code == 422
+    with pytest.raises(ToolError) as mcp:
+        asyncio.run(module.knowledge_mcp.call_tool("recognition_search", arguments))
+    with pytest.raises(module.RecognitionQueryError) as assistant:
+        module.execute_assistant_tool("recognition_search", arguments)
+    for error in (rest.value.detail, str(mcp.value), str(assistant.value)):
+        assert "GC-RECOGNITION-PROJECT-UNSUPPORTED" in error
+        assert "knowledge_search" in error
+        assert "专精特新中小企业" in error
+        assert "不代表没有相关企业或知识库没有资料" in error
+        assert error != "Error executing tool recognition_search"
+
+
+@pytest.mark.parametrize("endpoint", ["/v1/recognition/search", "/v1/recognized-enterprises/discover"])
+def test_recognition_rest_preserves_account_checks_and_returns_input_scope(tmp_path, endpoint):
+    module = load_app(tmp_path)
+    payload = {"query": "电子企业高新技术企业名单", "projects": ["高新技术企业"], "subject_terms": ["电子"]}
+    with TestClient(module.app) as client:
+        assert client.post(endpoint, json=payload).status_code == 401
+        module.app.dependency_overrides[module.require_api_user] = lambda: None
+        try:
+            result = client.post(endpoint, json=payload)
+        finally:
+            module.app.dependency_overrides.clear()
+    assert result.status_code == 422
+    assert result.json()["diagnostic_code"] == "GC-REQ-422"
+    assert "GC-RECOGNITION-PROJECT-UNSUPPORTED" in result.json()["detail"]
+    assert "knowledge_search" in result.json()["detail"]
+
+
+def test_recognition_mcp_exposes_expected_paging_error_without_hiding_runtime_faults(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    with pytest.raises(ToolError, match="GC-RECOGNITION-INVALID-ARGUMENT"):
+        asyncio.run(module.knowledge_mcp.call_tool("recognition_search", {
+            "query": "工业机器人有哪些小巨人", "result_group": "invalid",
+        }))
+
+    def broken_search(connection, **arguments):
+        raise sqlite3.OperationalError("synthetic internal database failure")
+
+    monkeypatch.setattr(module, "execute_recognition_search", broken_search)
+    with pytest.raises(ToolError, match="Error executing tool recognition_search") as mcp:
+        asyncio.run(module.knowledge_mcp.call_tool("recognition_search", {"query": "工业机器人有哪些小巨人"}))
+    assert "synthetic internal database failure" not in str(mcp.value)
+    assert isinstance(mcp.value.__cause__, sqlite3.OperationalError)
+    with pytest.raises(sqlite3.OperationalError):
+        module.recognition_search_api(module.RecognitionSearchRequest(query="工业机器人有哪些小巨人"), None)
+
+
 def test_assistant_reuses_only_successful_evidence_in_one_answer(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     monkeypatch.setattr(module, "AI_API_BASE", "https://model.example.com")
