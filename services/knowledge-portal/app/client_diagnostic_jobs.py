@@ -328,7 +328,8 @@ def _turn_outcome(context: object, analysis: dict | None) -> dict:
         result = data if kind == "tool/ptc-dispatch" else data.get("message", {})
         if not isinstance(result, dict):
             continue
-        call_id = result.get("toolCallId")
+        tool_source = result.get("source")
+        call_id = tool_source.get("callId") if isinstance(tool_source, dict) and isinstance(tool_source.get("callId"), str) else result.get("toolCallId")
         name, args = (data.get("name"), data.get("arguments")) if kind == "tool/ptc-dispatch" else calls.get(call_id, (None, None)) if isinstance(call_id, str) else (None, None)
         if isinstance(args, str):
             try:

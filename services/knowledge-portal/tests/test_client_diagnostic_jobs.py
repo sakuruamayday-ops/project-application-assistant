@@ -267,7 +267,7 @@ def test_review_uses_the_actual_pdf_delivery_receipt_path(transport):
     if transport == 'native':
         context['events'].extend([
             outcome_event('tool/call', 2, callId='pdf', name='gongchuang_deliver_pdf', arguments=json.dumps(arguments)),
-            outcome_event('tool/result', 3, meta=meta, message={'toolCallId': 'pdf', 'isError': False}),
+            outcome_event('tool/result', 3, meta=meta, message={'source': {'kind': 'tool', 'callId': 'pdf'}, 'toolCallId': 'provider-field', 'isError': False}),
         ])
     else:
         context['events'].append(outcome_event('tool/ptc-dispatch', 3, name='gongchuang_deliver_pdf',
