@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "agriculture-and-rural-projects",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/agriculture-evidence-matrix.md",
@@ -22,9 +22,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "3440983bd2129a5c719840a9ac94eaef54778028901650632c7f6652948f8567",
-    "references/agriculture-evidence-matrix.md": "466ae9b19a6f6481390fb95dfe3f16b62185ed1d717b14b2a898a0d53552f96a",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "SKILL.md": "03d48afbd4e0a1abe0e8d870b0059708a5e4fbc3995fc18fcd4ad395ee767701",
+    "references/agriculture-evidence-matrix.md": "3f9e75f4c76615983d7f791d41734cb588fd9ab85b33d19f42fd355708357b75",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "quality-brand-projects",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -22,9 +22,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "4635322d5395abbb3ca8564a4c2d08463dff09c14e5b8d3dbf68a51da106c4b7",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/quality-brand-taxonomy.md": "022a75163ec9c26dca42c4b10fb77f2ba13e076b9a67214db580e4db50b2bdb0",
+    "SKILL.md": "91d4ccdb3ba998b06ca72712056769df05d8167b2b962437df88cf9e73dfe81c",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/quality-brand-taxonomy.md": "ca423f86b073ad458b3682974293283de437f8cca3389b406e14cab583ab19e3",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

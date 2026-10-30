@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "digitalization-projects",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/digital-maturity-model.md",
@@ -22,9 +22,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "f0029f7bf070abfa6c69a56170e41a8fed87558ec529a137485ceeaab89e18ec",
-    "references/digital-maturity-model.md": "d4f76712ac3516af741ac0604f00cc693e5be954691e20f7f0f44e18a7fd95d6",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "SKILL.md": "da16e9772ed216896fc7d3b66b8da668b575f4e22c9a1b869ed70224d2d98ff0",
+    "references/digital-maturity-model.md": "d8ae21f7c287b45d3eb16a9f01d024413ce0d605d7b4c5e284222a729028949b",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

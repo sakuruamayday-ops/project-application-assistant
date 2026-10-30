@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "first-run-configuration",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/first-startup-protocol.md",
@@ -23,11 +23,11 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "65e12045f87667d5c09973df0f13b9268dbe382203ba2c9135929b1b52ba8351",
-    "references/capability-delegation-protocol.md": "650ad5628f00573765a2c5345a3dd46ee6f5edd0ca7adfda2a26fb2d92f57417",
-    "references/first-startup-protocol.md": "fca955c47dc961a70fb8b9eb95b958ab5691e8aa5365cc069815575b7c6399d7",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/preference-inheritance.md": "bee4ba38866ffcdc9c9c768f181b19d07a70c8971c174c20fac6b28b67fea17f",
+    "SKILL.md": "57a10622b8185e2e5d39216a5eaf3a904b67f63a6a3744033b489bd2cf8d151a",
+    "references/capability-delegation-protocol.md": "05d3d7126d255cd0414f18747880ca46517cd60168578083e61f148ed78586c1",
+    "references/first-startup-protocol.md": "2716bf696085a89fa0d72a90185cbaabbbc8ee5062ae1ea08e6bacde09c8abd3",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/preference-inheritance.md": "6f3e5c1e6d2584deb89864c2505ff0b96055f407556d1e848d17db516f21cafc",
     "scripts/configure.py": "25fd6834c857283d33d668498ebe0617c8b2f0afb65c169a4c2f8829bc80c08c",
     "scripts/manage_preferences.py": "04f065d372970533a0347290addb79cf5d576a7d1d7c95480bf5a7a64310201e",
     "scripts/migrate_skill_preferences.py": "37207ca65a15ce88ec4061ce740eeb058ce74f3cedf793b5dc56b7ee11157783",

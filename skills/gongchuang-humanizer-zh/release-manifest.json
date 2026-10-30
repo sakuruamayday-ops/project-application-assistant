@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "gongchuang-humanizer-zh",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
@@ -34,14 +34,14 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "8044a0d66c70d6091028dc0573fbdd8d1e90dce1b630bc45095a89bc557f5155",
+    "SKILL.md": "b98cd71cdf0ba6863c3b940d81c04ffe862d73bd4cc6f179e949329221812e23",
     "agents/openai.yaml": "768dcaefb3b32fbaa66942a3a77fe5de412f97e70c4fbd35b7a9149570905abf",
-    "references/detector.md": "1daeb0da81739cf15f98f41a0b2f0a5b422b631526b508fc3c0fd5d222659da2",
-    "references/evolution.md": "a47eda822ebf5c6e3c0270261fc3ab539f74d4799677b0ecbd2c7429d5407218",
-    "references/formal-materials.md": "f02e3e8edbe6e2ca90d6bb65297c71d2a754a396dbc403f42036f5a39a4374fb",
-    "references/method-sources.md": "5e2355ff758f444538951e205657aee904cc3c94c75be13bf20a611c78d23502",
-    "references/patterns.md": "da9d7a4731806164e175243127300e4a68dd8e5aa195e460cf17095f33e4cf51",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "references/detector.md": "2aa4812afeac5eed21c87a1663819ea723f3dd2c0a9a9dbc8998f7f03181259c",
+    "references/evolution.md": "f9cac0cc5c39f6b9819760352e7406863d72dc44c719481bde299240124a133f",
+    "references/formal-materials.md": "b995d4b40c09f1c413347249e44655df05305a273b0b624b60813113fd0caf39",
+    "references/method-sources.md": "2926d0c0a473a46dbdc3b698948e819f962742e14fe56b173259f892d35610da",
+    "references/patterns.md": "d798256b1761e1a1cb727cd21323b190e396ad8699f0f8e0bcf9abf1d2b64dbf",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/audit_rewrite.py": "2ad53460b136f2640112fa9a6836a2155460408eb6b6da7282864809e622e220",
     "scripts/build_evolution_pack.py": "49afbd66f679ce87c3543b875f68296c2cee078f06c24bcae8195b54aaee82ad",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

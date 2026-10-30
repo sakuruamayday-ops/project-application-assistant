@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "standard-drafting",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "assets/compilation-note-template.md",
@@ -33,14 +33,14 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "2330c726d7a787afb505143198f167afc60eb798bcf4e0e96bcf800b72eecc53",
+    "SKILL.md": "964f3b5f50995d2a40312e384529d06bc10638f3c15c77de746026dfcb4637de",
     "assets/compilation-note-template.md": "30e1752d3016f8dd1452ed3c04bef689f1cf7b620caada5a7522dbd474a0e414",
     "assets/gbt-1-1-enterprise-standard-template-preview.png": "7e61b457b47ed35c304f51326ec431682af6a34c1ee36b525c3c999bd86c693b",
     "assets/gbt-1-1-enterprise-standard-template.docx": "5f1cccea6a2171e77081b14bb4e3439b3b3ceace302562fffce1755f75b418bf",
     "assets/standard-draft-template.md": "e53994ff0d1bc8608e95a21e5b2f3866eeeb3d7c6af41684989859b53804c94d",
-    "references/gbt-1-1-drafting-rules.md": "8695bc5381b4119cd0ee6a161723e1f36726753764e06edf2a650a9b82377c4b",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/standard-type-structures.md": "7394a525b6af53a8a6c7806fce1be62e5837e6f0204f95e1b99c8f9944cd8a0e",
+    "references/gbt-1-1-drafting-rules.md": "85509458d7cd212382c78d3454372b435602774f94d5329ed6559d32d8605205",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/standard-type-structures.md": "8b3716ce22905bd043a360102a39fab3e874212734db8993660cc54b5e5b9704",
     "scripts/audit_enterprise_standard_docx.py": "1205c7535a090c89ab84116740f1522f3892212967b301ac76f0c145c680e713",
     "scripts/audit_standard_draft.py": "5a734afc0f462e800fc39bdab20dd4fa13fae0671dcb585e9636c03362025609",
     "scripts/initialize_enterprise_standard.py": "7fe6c34d5a9933f943e78cb0bcb85bf48cf8084e25a24edbe713d7fc66925920",

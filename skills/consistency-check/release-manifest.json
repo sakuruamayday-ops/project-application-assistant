@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "consistency-check",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/consistency-gates.md",
@@ -23,9 +23,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "1cbe497409442e114b34129af98f37a494651185581db8202691f9a716429714",
-    "references/consistency-gates.md": "20301b3be40b82180ecc6eeee79d453024e42358c2593b2bd37aec1f337741c3",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "SKILL.md": "ade9d77e2f68bef226b79079fe4e37cb874d11abf9b823af5137e917c6860a0c",
+    "references/consistency-gates.md": "0ab2f44cd3112e739d423f1064ae3563816f81207a55f3b4ba7efdcaa9093e06",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/scan_formal_material.py": "717905b74a53c7d8eff29ef4123201a38d4c20527e30ae72be88227f4531d914",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

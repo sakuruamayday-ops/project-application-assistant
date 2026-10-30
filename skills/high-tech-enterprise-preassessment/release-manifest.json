@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-preassessment",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,13 +21,13 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "13c39b339c5dcec30e34242d558a3cffc3d228d4821842ceb6a45f4943190635",
+    "SKILL.md": "54b361e5d1db4944169871348559de64fa0fe281d9204f675db53dbe8733bd18",
     "assets/高企预评估双年度采集表.xlsx": "de33106ef9b183c2b7ababeca85fb09cb64ee85c0924bccfab01228d925ee252",
-    "references/policy-baseline.md": "403115db3406b1148df6ed9437de084e1646c203d4376e680543c3b7ac5e27ba",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/rd-super-deduction-strengthening.md": "454238267430501cfa71de8c041852a68738ddccc5f70f748d8fa7c3cdaa0b32",
-    "references/scoring-evidence-rubric.md": "04988b47bbe59598570904cf564e0cfee97600f09c06bd19ce89adb0ef66295b",
-    "references/timing-and-remediation.md": "d8c7eb71aa15c9ac94e9ed4fd63030279df1da303ab949c5bc8e360ec9200b5b",
+    "references/policy-baseline.md": "6be7848a8d6dba35b8c59f14a294c1ebeb19eecf2846dbb8eb7fe72e349cad17",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/rd-super-deduction-strengthening.md": "9899fdf1145bdbc7bb4e57fb20c05db8bbda1fea516394004fe1947e822639a1",
+    "references/scoring-evidence-rubric.md": "d1613642606fdc59f7b2fd443faa3be8d820fe4eebd5594719eeb2cf7f04081c",
+    "references/timing-and-remediation.md": "1fec86ddc81f7a207bdd1875d732c624fdd497c520b7ba766e1dfb69a541ff7f",
     "scripts/compare_scenarios.py": "e37faaa2f25081809d0d3f9bb963545fae5835f58f4e37f0ad48c2addaf013bc",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

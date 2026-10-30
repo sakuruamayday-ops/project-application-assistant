@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "web-task-operator",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/aiqice-browser-profile.md",
@@ -24,11 +24,11 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "746cd8190c9b5a8d9ec608064489e3276752fa711c40b19d4df06bec533f15b9",
-    "references/aiqice-browser-profile.md": "10debafcfcd385bdd80a48483fde5341e902b270a159c4f05a35bff8d3130062",
-    "references/browser-local-replay.md": "b5383e2150f5e3dd0b4ed5be375386ddaef11ed5de862a4c4b7052c17c51e64f",
-    "references/execution-protocol.md": "e19dbfa9bcda3f07ba3df632528f6663e1f282b79cdf20afe65515ce022fd5b9",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "SKILL.md": "f3bc4c415177f3a98b15fd42a1f22afa9d3d125d055caec2c3fff5fd1eeb2f29",
+    "references/aiqice-browser-profile.md": "9651fc25db2012b0525cde7c6b9c3ede7ea90d726419e8f7784746dc412a32a9",
+    "references/browser-local-replay.md": "39c4d8e1fe6fa88f2ee94aac6179c5b7130d03e5f142b997928d7b7b87c66746",
+    "references/execution-protocol.md": "d5d5a187f3982356450379f8d7d4648be9564ed6be0c5a91739490cd80d3e992",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

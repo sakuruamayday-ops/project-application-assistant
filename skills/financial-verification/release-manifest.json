@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "financial-verification",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,13 +21,13 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "88c16427d3423afa13c7fd268d393ada9e094a9ccfb674f86cbd059b3e971ea2",
-    "references/cash-flow-and-working-capital-review.md": "df32813123f0a223ffbafe8101b8eaf40c787a9e204a82f11e88c866a7acf1ee",
-    "references/financial-facts-contract.md": "efd218cf03186d11bff7189bcfd955e4645b04bad8d943cf7872f4ee74243e16",
-    "references/financial-statement-analysis.md": "374a205f6f9d0ca95bf054eac25ef2019b7ebf305699f004eae39b04a0de9a06",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/reconciliation-and-formulas.md": "167287d40230cbd26a79ffcd2acc51de659fef2b7c80d30aad1d99bb89ba3e54",
-    "references/source-and-normalization-rules.md": "49b7228bc7b416cea0a888869f26da290713c4d713282db67404bb6a831e9180",
+    "SKILL.md": "87c321fc1cc7075b634e9866bb55049082daffc8db48681ab83a30eadc9a8229",
+    "references/cash-flow-and-working-capital-review.md": "efc40625fc54358120ffcf07ead2ae1e66d969cf2ecbec11c2b314960d1148ab",
+    "references/financial-facts-contract.md": "5b53cb85c68c07d8703e460140661307c5f00c5621efa46b7eaaa1abbbb5dd01",
+    "references/financial-statement-analysis.md": "3e999a9185ed3ab6e384e072ae73429f8c2ed27b9c1f73ab4f19aa60f0755e82",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/reconciliation-and-formulas.md": "7ff14fc2eec93e3281594f994c184a22c729b90c3855beb0c6aec15b67c2e3ef",
+    "references/source-and-normalization-rules.md": "b825bd9372bf7e1826385f62ec77adf75f95ac291f1f0e7f70b43daef8f96966",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_financial_assessment.py": "b9316df486c3a10f764bd53bd0ba1b34eadeefded92defd3d1b91d8cae865568",
     "scripts/validate_financial_facts.py": "26c37d033d1b213627ee7893669adefb7ac65888decc0529d9724f7a6336bc3f",

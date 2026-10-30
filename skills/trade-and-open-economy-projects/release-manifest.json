@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "trade-and-open-economy-projects",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,9 +23,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "5b9baa2c16cc5988abd56502b23039aedd99b3f7547bdd23026209ea57a3e5d8",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/trade-data-reconciliation.md": "2b607774b0bcc8a146298eb690bcfbde2742a84a5638b0a9104f1869d24a93d5",
+    "SKILL.md": "1f1c1fc09008448ab464bdc792bcc7f6c974f8079cbfd44473910d4ed70ed73e",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/trade-data-reconciliation.md": "a14001cbbb2de23c8013c8e4752398d31116d898e60e020de41ef57e90f5fcbf",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_trade_records.py": "c16ebbe5f48ebd7e70be951a1f68be1a22dfe21083b8db3202be2a8e45e5b8fd",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

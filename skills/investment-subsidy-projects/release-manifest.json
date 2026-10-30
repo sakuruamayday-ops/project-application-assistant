@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "investment-subsidy-projects",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/investment-evidence-chain.md",
@@ -23,9 +23,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "3cf3b1dfea1c2f424663e7cf279ea293be418026363d44cd04504f6c619b309d",
-    "references/investment-evidence-chain.md": "547ee7cbaa58592f3509c04fb0c4e75a58b7a78ee9ba64e93083580ecd90632e",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "SKILL.md": "5e50c822514e36c279b511a74132f880b66ca06267c8c270a0dcc7c86077c965",
+    "references/investment-evidence-chain.md": "8eb0fce292e936597d04974a3326049b0e4978231e9255e1da32e599d4938cc1",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/reconcile_investment_ledger.py": "9182876d956d9747b55d813dac5616a432003b651c395ce14c8a320a33f130a7",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

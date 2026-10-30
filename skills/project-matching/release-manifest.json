@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-matching",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/canonical-project-index.jsonl",
@@ -32,15 +32,15 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "7f588424ec7d49b75e244f5da2da95da770307d21ad344b235190e08d59c7d14",
+    "SKILL.md": "cee9171eaec3988f54f43ca586c42ea56cbf37235ab80faa7ab426d7c400f46c",
     "references/canonical-project-index.jsonl": "368f67de07094d16d10b3e92e4ba50c70c86c058b603762c43f4655867ff4b99",
     "references/high-frequency-project-gold-standard.jsonl": "0d9de12dff6c74ea38c290cefe807c5b7726a66a11d4393b525d96308ade5a8b",
     "references/high-frequency-project-retrieval-rules.json": "7748832c135f838e103d6176260e003d020602ffc05e72a6483a0ef68d599097",
     "references/high-frequency-project-rules.jsonl": "3579591e974186d69b0a518fc87d9eafcac4948a786b37435f05591a10c51332",
     "references/policy-application-path-contract.md": "7fd6c861374293bc43bfe7bb28be099f4283cc2effeceb929b270930bbee580b",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "references/project-map.jsonl": "f912bd0ef840a67f31b88cde0288e1c5d5863e28a069a969f078b9ef9c42b909",
-    "references/project-matching-rules.md": "3471d7b8aee5e754daf60ffec43cd49f3676eac1cf2f93445e531de3f6e22900",
+    "references/project-matching-rules.md": "01b53571257781ebacdbb8f7b50a913d6803ef8467e1fbb7aeed5ca8fb976a60",
     "references/query-aliases.json": "852b6b35a3fae3798c30587a2688e8e0bce41db92afc8f9a81324ca77fb321c4",
     "scripts/build_high_frequency_rules.py": "87517f57ec565573366fcf3f10a4ffc570621f03bb3b555eddcc7b9246a4f7ee",
     "scripts/build_project_map.py": "a58c60ad5ce7f349570f7759061132fa651ce4f2381e84af67a966ec053b6008",

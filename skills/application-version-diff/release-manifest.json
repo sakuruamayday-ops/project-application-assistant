@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "application-version-diff",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,9 +23,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "e5253ad92abb964606ecfebe2c1476c1bbaf9cf2e634575c0579efd7eb4df65d",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/version-diff-rules.md": "3c8a121249fbb25dbab9b3f112f31097eae9640e851cf850702ced972c011371",
+    "SKILL.md": "9925b7377a9a2cb93936734870e3d256bed270f98db9c899d8797e37065753c1",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/version-diff-rules.md": "78f84f82ca4c55364322dbddd301231b74c97840653cab6409b5c6d54136235e",
     "scripts/compare_material_json.py": "41b685adc2b68ed503788c8eebd21cb89afed979c3895c120039f612d3f8e9fe",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

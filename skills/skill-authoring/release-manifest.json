@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "skill-authoring",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,9 +23,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "f87687f2c56e0e483e88c760f74067dd57089a9739642eff10e21daf7b4886f4",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/skill-maturity-rubric.md": "0ad22affc40c08ca09b78bc787c1b4a211a2b5d299a49b20ff429f5efc4f2403",
+    "SKILL.md": "4324ac410b25197b09e56ff6bb73315063cc4779a403cd28cc8f9653b12112a0",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/skill-maturity-rubric.md": "ab2a22b08a0ee7c7eed3aa87c06ac9bc4815bca1174d8df2c42a2348e6e1025d",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_skill_structure.py": "8a8bc439dfb239b2bb314516e79e84621c2b395212e0518346faff689c001405",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

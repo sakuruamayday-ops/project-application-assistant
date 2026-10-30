@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "industry-positioning",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/industry-positioning-assessment.md",
@@ -22,14 +22,14 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "6eed803a81b6259335bc08b8e178b575a4f14b32664c74056553356c02dec1e2",
+    "SKILL.md": "180350ac2444fe69706e005ce9634d05716c757608b1aad3da32ee563dfb1bce",
     "assets/enterprise-technical-product-revenue-matrix.template.json": "7b8e35cabedc6afca049aa806970e57b6b3c607ed2d5240b72fc02290f63864e",
-    "references/automatic-master-matrix-orchestration.md": "1c36532ab4d9990929c4fb844a21bb49336de0de36296ed9e33595ea6b243fbf",
-    "references/cross-project-technical-commercialization-gate.md": "4eed84497a6c7c9470a560da34090a735644b2c134e484b6b51fc0715603a04b",
-    "references/industry-positioning-assessment.md": "f2de7c8645a94ec9445c8842acd23d49be98b64575106818abadc95494be6b20",
-    "references/market-boundary-and-substitution-gate.md": "c8ce8cbc222da3b879fb7a18fa5e2697a2d062c872b8f8919f4a98dd400e447d",
-    "references/master-matrix-generator-guide.md": "c40f358aa907e4f4d3e5cc40128d3356d2c003f39c0b84d16d20fd40ad60512f",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "references/automatic-master-matrix-orchestration.md": "fa0d7cc09dab3c0d0fb1fec40476a7e715788be52a55aa1156a9e5c876a319f7",
+    "references/cross-project-technical-commercialization-gate.md": "b35bffa51a8bc17ad2fcf81b61aa1a3fc3e365523c43084ebf1f445e00f85696",
+    "references/industry-positioning-assessment.md": "3eab4a368b7e126d90b108f2872461b5dfd632befc4c391f3f82e899e012dbc0",
+    "references/market-boundary-and-substitution-gate.md": "3486b7c7f0e5924e36bdaa2dd25e76ee69001a2caf69fe3637700ae2352d7d65",
+    "references/master-matrix-generator-guide.md": "7c2de67e4defe64fbd22506f7a0dc69da51b1410ffa44415d087284e484c64d2",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "references/project-view-adapters.json": "cc67f6500d405eb04807b140339cbf119d104b69a803c19d00617dc649b8a047",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/technical_product_revenue_matrix.py": "f75a442be5959b828e0203d6176699e2cb7db8898c579a47674a144d8f804028",

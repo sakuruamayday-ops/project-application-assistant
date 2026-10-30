@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "local-knowledge-retrieval",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,10 +21,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "2792c53f06a463c8e847e9d12c8ca5f55c7a8d8e568b172d230e4ad86605d702",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/search-orchestration.md": "a6efc2000e63227fe9817b57b443d087948999990dca62ac6c315c26154f47f4",
-    "references/three-first-project-list-schema.md": "23f33b316a1edbbf874b908231ebe38510334d40021dc3c6904da4ee0d7b1a25",
+    "SKILL.md": "ddb1aa8ecea9317c207fa5852dca3ca3bd00ecc1dfa73f49c7aac4c49d285ce4",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/search-orchestration.md": "ab5d7a8534017c6c7d724b8f1a73fcd4d3ddc838bbc1b0a3c042759daadd039a",
+    "references/three-first-project-list-schema.md": "236e73aa813e9b834d41b345a6d91e77ce1b87abeb31321ea5c8d493acabefcc",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

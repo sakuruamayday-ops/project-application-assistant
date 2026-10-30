@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-score-preassessment",
-  "release_tag": "V1.7.8",
+  "release_tag": "V1.8.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,17 +21,17 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d8a9366734c47d5764ddb3c2bf1940f088ce55970c3bd5af6beba0f4108eaa46",
+    "SKILL.md": "7c08856b39a0792c88758c1332ab6078c8b20f04e8e33bd8fd39dd658db5a590",
     "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
     "references/current-policy-baseline-2026.json": "3828a8e370fe5560110eafe27cce8907450d002b8aaa206db4cb39c01023c8cf",
-    "references/current-policy-baseline-2026.md": "04229bd2ee6e6fbfa0278f939156432686adf52dca601c77fe45299cb1a7ca7b",
-    "references/data-contract.md": "28ee31e05f1343183184ae704bf4ff6280cae415b3a6fbd13e09ae36ad6f0ca2",
-    "references/digital-transformation-diagnostic-strengthening.md": "82e9e1045481dfa3ee2322eb44753f69516d49c7a19cca67d94baf64d6bfd74d",
-    "references/direction-card-first-template.md": "bec9a971e3aea450c740d6f9e862202d92b96470b7b1d4f0845e224a865b04f9",
+    "references/current-policy-baseline-2026.md": "3ca7a664883397f362cc67cff528ff133851ad8ebb899e23c653fc4a48c8deb0",
+    "references/data-contract.md": "ae8dce8297837578d4e0d390bcd1c1e6f29e276f92ceb4fd56d1b06872edcffe",
+    "references/digital-transformation-diagnostic-strengthening.md": "aa404ebc2cd436bd1d70a858d9d74534a4bacb1dddca0855a6399561607bdd67",
+    "references/direction-card-first-template.md": "b7044381b9d803d33ce0940f1fde2dc6b14a31b29c10baabff476ec5fa142e83",
     "references/policy-application-path-contract.md": "7fd6c861374293bc43bfe7bb28be099f4283cc2effeceb929b270930bbee580b",
-    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/pre-sale-assessment-report-contract.md": "2d4927b9b5bb8f167d516bdf8e4384ea1bd14653445880358f15a06f1067c570",
-    "references/qcc-verification.md": "5a37b72301adabd46240a9d2b641cbdcfd66b77c28d2514f555b3546fd4c5651",
+    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/pre-sale-assessment-report-contract.md": "d4dad39d44388e37bd434fc966bb7174a4865e8f2d629f41f5fa483ca5e0592a",
+    "references/qcc-verification.md": "8eadf2c7447ac2c117ab0439fc1abca1bda9fcb8b08734b444472656114c91ed",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/preflight.py": "f100d2f84ea635f38b6ad58d983f491f8cd9c74298e868cc3f08da95775146db",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
