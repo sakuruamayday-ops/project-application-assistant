@@ -50,7 +50,7 @@ def test_source_table_long_urls_cannot_resize_other_columns(tmp_path):
     assert url in table.cell(1, 3).text
 
 
-def test_long_report_file_input_preserves_all_text_and_rejects_oversize(tmp_path):
+def test_long_report_file_input_preserves_all_text_including_large_files(tmp_path):
     script = Path(__file__).resolve().parents[1] / "skills/evidence-ledger/scripts/create_docx_from_text.py"
     source = tmp_path / "正文.md"
     output = tmp_path / "报告.docx"
@@ -60,11 +60,14 @@ def test_long_report_file_input_preserves_all_text_and_rejects_oversize(tmp_path
     assert run.returncode == 0, run.stderr
     assert json.loads(run.stdout)["characters"] == len(body)
     assert "\n".join(p.text for p in Document(output).paragraphs) == body
-    source.write_bytes(b"x" * (1024 * 1024 + 1))
-    rejected = tmp_path / "oversize.docx"
-    run = subprocess.run([sys.executable, str(script), "--input-file", str(source), str(rejected)], capture_output=True, text=True)
-    assert run.returncode != 0
-    assert not rejected.exists()
+    large_body = "x" * (1024 * 1024 + 1)
+    source.write_text(large_body, encoding="utf-8")
+    large_report = tmp_path / "large-report.docx"
+    run = subprocess.run([sys.executable, str(script), "--input-file", str(source), str(large_report)], capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
+    assert json.loads(run.stdout)["characters"] == len(large_body)
+    assert "\n".join(p.text for p in Document(large_report).paragraphs) == large_body
+    assert source.read_text(encoding="utf-8") == large_body
 
 
 def test_generic_docx_brand_header_reuses_embedded_font_and_signed_dependencies(tmp_path):
