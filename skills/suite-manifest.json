@@ -462,6 +462,15 @@
     "markdown-it-py",
     "gongchuang-document-header",
     "gongchuang-cover-signature",
-    "manufacturing-tax-risk-report"
+    "manufacturing-tax-risk-report",
+    "dry-run",
+    "impact-reviewed",
+    "not-applicable",
+    "pending-device-acceptance",
+    "record-wps-review",
+    "rollback-required",
+    "sme-action-report",
+    "summary-lint",
+    "validate-delivery"
   ]
 }
