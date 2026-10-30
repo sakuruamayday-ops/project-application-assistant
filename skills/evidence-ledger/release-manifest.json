@@ -25,7 +25,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d6c5cf75a1c5ffe21bd065e39b5191428e6daa982f40eb8c336aed7c95967695",
+    "SKILL.md": "965ea7d979796a3b7e87d35ff5d77d1f3292cb78f769e62a6d0d571a690d62f9",
     "examples/market-share-enterprise-statement.json": "89f8fb5e4ace6da6cb161e42aae59f1fcdbfb476242eca5100e24459288588c5",
     "examples/normal-grounded-report.json": "be8690917cb784ce383873cd5f983bf75649902058549296e1e5d860ab26f1af",
     "examples/reference-only-market-share.json": "ccb30881e283f432b621502b597d44a5bf16ea09c3eb9358c0560191bd58755c",
@@ -35,13 +35,13 @@
     "references/market-share-grounding-contract.md": "5fc1d22ba9da37d2965386f4e1cd3701c778992e9267eb45e0fe0e8977aff6c6",
     "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
     "scripts/apply_office_branding.py": "89448233e7e761394b83c758f1c832e78e4c7a5997dd65024cedb3dc7fc30ab0",
-    "scripts/create_docx_from_text.py": "8bcefd1aa66581ea976337705e95cadb015ef242c121016347087073ab4be8f5",
+    "scripts/create_docx_from_text.py": "0ca0ee615efeb4876a9653ea9ba2a07e8dee8692120160642bb60c428f6f5309",
     "scripts/grounded_evidence.py": "c5fdbdab52940b36b980cd26c3b46fb92e79c1a8043a1dec421ffbcd18fe025f",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_evidence_ledger.py": "0e6176da14db09528ec3654fd7e7078398840a4a7c835146e325b78d60ca5f46",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
     "tests/test_apply_office_branding.py": "2597b1598e07f694ca224c7be4e840777cc32e83706910b890858a6854e1abe8",
-    "tests/test_create_docx_from_text.py": "b2a0b3eea2f14a4a07c1f933c421166d51f94af29e5c003c88596c50dd3adf93"
+    "tests/test_create_docx_from_text.py": "672ae011568718c29c5e66bfc38bd1583da6c743f462acb3ab1df14ba60860b6"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",
