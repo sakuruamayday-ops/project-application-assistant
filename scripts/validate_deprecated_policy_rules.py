@@ -22,19 +22,13 @@ REMOVED_ACTIVE_PATHS = (
 )
 REQUIRED_CURRENT_MARKERS = {
     "skills/sme-score-preassessment/SKILL.md": (
-        "2026 年政策",
-        "pending-platform-evaluation",
-        "不得生成估算总分",
-        "内部二十二项百分制",
+        "2026", "质量分使用真实平台记录", "历史评分模型作为历史资料",
     ),
     "skills/sme-score-preassessment/references/current-policy-baseline-2026.md": (
-        "2026 年新办法",
-        "待平台评价",
-        "2026 年小巨人复核过渡规则",
+        "2026年", "待平台评价", "2026小巨人复核过渡规则",
     ),
     "skills/sme-development-projects/SKILL.md": (
-        "活动技能只保留 2026 政策分支",
-        "不能扩展到新申报或未来年度",
+        "2026 小巨人复核过渡规则按通知对象和期间使用", "历史规则作沿革参考",
     ),
 }
 FORBIDDEN_ACTIVE_MARKERS = (

@@ -34,14 +34,14 @@ def amount(value):
     if isinstance(value, bool):
         raise ValueError("金额不得为布尔值")
     number = Decimal(str(value))
-    if not number.is_finite() or number < 0:
-        raise ValueError("金额须为非负有限数值")
+    if not number.is_finite():
+        raise ValueError("金额须为有限数值")
     return number
 
 
 def total(values):
     numbers = [amount(value) for value in values]
-    return None if any(value is None for value in numbers) else sum(numbers, Decimal(0))
+    return None if not numbers or any(value is None for value in numbers) else sum(numbers, Decimal(0))
 
 
 def named_cells(table):
@@ -77,8 +77,6 @@ def fill_fields(table, values, allowed):
         name = aliases.get(normalize(label).replace("（限400字）", ""))
         if name is None or name in canonical:
             raise ValueError(f"不支持或重复的字段：{label}")
-        if "限400字" in name and len("".join(text(value).split())) > 400:
-            raise ValueError(f"{name}超过400字")
         canonical[name] = value
     # Resolve every label before changing content, so values can never become labels.
     writes = [(target(table, label), text(value)) for label, value in canonical.items()]
@@ -153,6 +151,7 @@ def fill_application(input_path: Path, spec: dict, output: Path):
         raise ValueError("不支持的申请书输入字段：" + str(set(spec) - allowed))
     if "schema_version" in spec and (type(spec["schema_version"]) is not int or spec["schema_version"] != 1):
         raise ValueError("schema_version须为1或省略")
+    warnings = []
     with ZipFile(input_path) as source:
         root = etree.fromstring(source.read("word/document.xml"))
         tables = root.xpath("./w:body/w:tbl", namespaces=NS)
@@ -176,8 +175,12 @@ def fill_application(input_path: Path, spec: dict, output: Path):
         fill_fields(summary, spec.get("summary", {}), SUMMARY)
         if "annual_financials" in spec:
             years = spec["annual_financials"]
-            if len(years) != 3 or [row["year"] for row in years] != list(range(years[0]["year"], years[0]["year"] + 3)):
-                raise ValueError("annual_financials须为连续三个实际年度")
+            if not isinstance(years, list) or any(not isinstance(row, dict) or "year" not in row for row in years):
+                raise ValueError("annual_financials须为包含year的对象数组")
+            if len(years) > 3:
+                raise ValueError("母版仅有三个年度经营字段，请使用对应三个年度或另附补充年度表")
+            if len(years) != 3 or not all(type(row["year"]) is int for row in years) or [row["year"] for row in years] != list(range(years[0]["year"], years[0]["year"] + 3)):
+                warnings.append("年度资料不足三个连续年度，已按提供的年度填写，保留其余字段")
             rows = table_rows(summary)
             for index, year in enumerate(years):
                 row = next(row for row in rows if any(normalize(element_text(cell)) == f"第{'一二三'[index]}年" for cell in row))
@@ -196,10 +199,10 @@ def fill_application(input_path: Path, spec: dict, output: Path):
             for label, value in zip(["第一年", "第二年", "第三年"], values):
                 replace_cell_content(target(table, label), text(amount(value)))
             replace_cell_content(target(table, "研发经费近三年总支出（万元）"), text(total(values)))
-        if "annual_financials" in spec and "rd_financials" in spec:
+        if spec.get("annual_financials") and "rd_financials" in spec:
             rd_ids = list(rd_targets)
             if set(rd_ids) != set(spec["rd_financials"]):
-                raise ValueError("年度费用表须覆盖全部RD，不以部分RD合计替代企业总额")
+                warnings.append("部分RD费用待补；项目费用表按已提供项目分列，缺项保留空白")
             expense = find_table(tables, "研究开发费用（内、外部）小计", "委托外部研究开发费用")
             expense_rows = table_rows(expense)
             placeholder = expense.getprevious()
@@ -210,10 +213,10 @@ def fill_application(input_path: Path, spec: dict, output: Path):
                 raise ValueError("费用母版缺少项目列")
             anchor = expense
             for index, year in enumerate(spec["annual_financials"]):
-                costs = [amount(spec["rd_financials"][rd_id][index]) for rd_id in rd_ids]
+                costs = [amount(spec["rd_financials"].get(rd_id, [None] * 3)[index]) for rd_id in rd_ids]
                 aggregate = total(costs)
                 if aggregate is not None and year.get("rd") is not None and aggregate != amount(year["rd"]):
-                    raise ValueError(f"{year['year']}年度RD支出合计与企业研发费用不一致")
+                    warnings.append(f"{year['year']}年度RD支出合计与企业研发费用不同，各自原值已保留")
                 category_values = {"研究开发费用（内、外部）小计": costs}
                 for key, label in [("rd_external", "委托外部研究开发费用"),
                                    ("rd_external_domestic", "其中：境内的外部研发费用")]:
@@ -221,9 +224,9 @@ def fill_application(input_path: Path, spec: dict, output: Path):
                 outside = category_values["委托外部研究开发费用"]
                 domestic = category_values["其中：境内的外部研发费用"]
                 if any(cost is not None and external is not None and external > cost for cost, external in zip(costs, outside)):
-                    raise ValueError("委外研发费用不得超过对应项目总支出")
+                    warnings.append("委外研发费用大于对应项目总支出，原值已保留，差额按原公式列示")
                 if any(local is not None and external is not None and local > external for local, external in zip(domestic, outside)):
-                    raise ValueError("境内委外费用不得超过委外费用")
+                    warnings.append("境内委外费用大于委外费用，原值已保留")
                 category_values["内部研究开发费用"] = [None if cost is None or external is None else cost - external
                                                        for cost, external in zip(costs, outside)]
                 # Keep the approved geometry and split projects, not years, across continuation tables.
@@ -277,8 +280,10 @@ def fill_application(input_path: Path, spec: dict, output: Path):
             expense.getparent().remove(expense)
         ps_tables = [table for table in tables if normalize(PS_FIELDS[0]) in named_cells(table)]
         if "ps" in spec:
-            if len(spec["ps"]) != len(ps_tables):
-                raise ValueError("PS记录数必须等于已授权扩缩后的PS表数")
+            if len(spec["ps"]) > len(ps_tables):
+                raise ValueError("文档中未找到全部PS记录的目标表，请先扩展对应表格")
+            if len(spec["ps"]) < len(ps_tables):
+                warnings.append("部分PS表未提供新内容，已保留原表")
             for table, values in zip(ps_tables, spec["ps"]):
                 fill_fields(table, values, PS_FIELDS)
         if "innovation" in spec:
@@ -327,7 +332,13 @@ def fill_application(input_path: Path, spec: dict, output: Path):
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("xb") as handle:
             document.save(handle)
-    return {"schema_version": "hightech-application-fields/v1", "status": "passed", "artifact": str(output.resolve()),
+    warnings.extend(f"{label}超过表单400字容量，已保留全文" for values in [spec.get("innovation", {}), *spec.get("ps", [])]
+                    for label, value in values.items() if normalize(label).replace("（限400字）", "") in
+                    {normalize(item).replace("（限400字）", "") for item in (*INNOVATION, *PS_FIELDS) if "400字" in item}
+                    and len("".join(text(value).split())) > 400)
+    if any(amount(value) is not None and amount(value) < 0 for values in spec.get("rd_financials", {}).values() for value in values):
+        warnings.append("含负数研发费用，已保留原值及计算结果，请核对调整口径")
+    return {"schema_version": "hightech-application-fields/v1", "status": "passed", "artifact": str(output.resolve()), "warnings": warnings,
             "sections": list(spec), "rd_totals": {key: text(total(value)) for key, value in spec.get("rd_financials", {}).items()}}
 
 

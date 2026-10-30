@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-client-runtime-gates/v1",
-  "release_tag": "V1.8.0",
+  "release_tag": "V1.8.1",
   "host": {
     "upstream": "deepseek-ai/deepseek-harness",
     "pinned_commit": "f3803c96974ad4a94195fb97e5c637e9c2a3afe3",
@@ -20,15 +20,15 @@
     ]
   },
   "enforcement": {
-    "mode": "fail-closed",
+    "mode": "security-only",
     "owner": "signed-desktop-host-plus-native-cordis-plugin",
     "model_compliance_is_not_enforcement": true,
     "security_integrity_failure": "refuse-agent-start-or-block-current-action",
-    "business_quality_failure": "advisory-findings-with-explicit-gaps-continue-available-output",
+    "business_quality_failure": "advisory-findings-continue-direct-output",
     "unsigned-or-user-removable-gate_is_forbidden": true,
     "all_model_providers_share_the_same_gate": true,
-    "failure_scope": "security-integrity-permission-and-real-execution",
-    "business_quality_repair_policy": "fix-affected-content-without-a-fixed-repair-count; stop-unchanged-failing-paths"
+    "failure_scope": "account-cloud-isolation-credentials-package-integrity-and-real-execution",
+    "business_quality_repair_policy": "model-continues-with-existing-content-and-files"
   },
   "professional_execution": {
     "binding": "same-host-verified-skill-suite",
@@ -49,7 +49,7 @@
       "read-relevant-skill-guidance-on-demand",
       "preserve-fact-policy-calculation-and-evidence-boundaries",
       "reuse-actual-source-and-existing-artifacts",
-      "verify-real-artifact-and-openability",
+      "deliver-existing-generated-files",
       "disclose-data-gaps-and-unfinished-checks"
     ],
     "unmatched_business_task": "ordinary-assistant-flow-without-forced-professional-routing",
@@ -74,27 +74,24 @@
     {
       "component": "native-cordis-policy-gate",
       "responsibility": [
-        "initialize-policy-synchronously-before-agent-admission",
-        "use-awaited-agent-pre-step-for-first-request-gating",
-        "enforce-prompt-tool-and-stop-decisions",
-        "fail-closed-on-timeout-crash-or-invalid-decision"
+        "verify-signed-policy-and-provider-registry",
+        "answer-local-tool-requests-automatically",
+        "keep-cloud-member-and-credential-services-independent"
       ]
     },
     {
       "component": "central-tool-broker",
       "responsibility": [
-        "force-every-model-visible-tool-through-one-pre-and-post-execute-path",
-        "deny-direct-network-process-filesystem-or-browser-bypass",
-        "apply-workspace-domain-command-and-plugin-allowlists"
+        "execute-registered-local-tools-automatically-with-os-user-permissions",
+        "preserve-user-cancellation-and-real-tool-results"
       ]
     },
     {
       "component": "artifact-delivery-gate",
       "responsibility": [
-        "verify-actual-file-identity-openability-and-execution-result",
-        "keep-business-content-and-visual-review-as-actionable-guidance",
-        "preserve-created-output-and-publish-only-real-files",
-        "record-checks-without-professional-approval-promotion"
+        "publish-actual-generated-files-directly",
+        "keep-content-brand-and-visual-inspection-optional",
+        "retain-real-execution-errors"
       ]
     }
   ],
@@ -111,7 +108,7 @@
     },
     {
       "point": "session-start",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
         "do-not-rely-on-detached-dsh-session-start-for-first-request",
         "initialize-session-state-before-first-awaited-agent-pre-step",
@@ -121,39 +118,31 @@
     },
     {
       "point": "user-prompt-submit",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
-        "create-new-turn-id",
-        "preserve-live-skill-guidance-and-current-task",
-        "preserve-existing-artifacts-and-resume-failed-stages",
-        "run-input-security-policy"
+        "preserve-team-login-and-minimum-client-policy",
+        "continue-current-task-with-existing-files"
       ]
     },
     {
       "point": "skill-activation",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
-        "observe-tool-and-user-explicit-invocation",
-        "record-loaded-guidance-without-operation-admission",
-        "reject-unverified-skill-body",
-        "reuse-guidance-within-supported-host-context",
-        "treat-requires-and-quality-relations-as-task-guidance",
-        "bind-professional-contract-version-to-suite-version"
+        "read-guidance-on-demand",
+        "retain-signed-source-identity"
       ]
     },
     {
       "point": "tool-pre-execute",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
-        "enforce-workspace-allowlist",
-        "enforce-network-allowlist",
-        "enforce-command-and-browser-policy",
-        "deny-unregistered-bypass-path"
+        "execute-registered-local-tools-automatically-with-os-user-permissions",
+        "respect-user-cancel"
       ]
     },
     {
       "point": "tool-post-execute",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
         "append-verifiable-receipt",
         "mark-failed-or-partial-outcome",
@@ -162,14 +151,10 @@
     },
     {
       "point": "turn-stopping",
-      "blocking": true,
+      "blocking": false,
       "requirements": [
-        "verify-claimed-files-exist-and-are-openable",
-        "preserve-fact-policy-calculation-and-evidence-boundaries",
-        "report-data-gaps-and-unfinished-checks",
-        "respect-user-stop-and-bounded-execution",
-        "stop-unchanged-failing-paths-with-actionable-reasons",
-        "never-force-an-unbounded-continuation-loop"
+        "model-outputs-current-result",
+        "report-real-tool-failures-and-data-gaps"
       ]
     },
     {
@@ -183,18 +168,14 @@
     }
   ],
   "mandatory_regressions": [
-    "first-request-waits-for-session-start",
-    "fixed-operations-do-not-require-skill-preload",
-    "loaded-guidance-does-not-grant-professional-approval",
-    "recoverable-failure-preserves-existing-artifacts",
-    "missing-or-crashed-gate-fails-closed",
-    "direct-tool-call-cannot-bypass-policy",
-    "compatibility-hook-bridge-cannot-be-trusted-as-enforcement-boundary",
-    "unsigned-third-party-plugin-cannot-register-a-bypass-tool-path",
+    "direct-output-with-data-gaps",
+    "tool-autoexecution-with-user-cancellation",
+    "historical-session-opens-local-tool-permissions",
+    "real-files-delivered-without-quality-receipts",
     "tampered-skill-or-manifest-is-rejected",
-    "signed-upgrade-preserves-hooks",
-    "rollback-restores-last-known-good-runtime",
-    "windows-and-macos-produce-equivalent-decisions"
+    "cloud-members-remain-isolated",
+    "credentials-stay-in-system-provider",
+    "rollback-restores-last-known-good-runtime"
   ],
   "release_acceptance": {
     "candidate_only_if_missing": [

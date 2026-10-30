@@ -8,7 +8,7 @@
 
 1. 国知局公布公告适配器：发现题名、公开号、结果页摘要及页面提供的公布日线索。
 2. 国知局详情页或其他对应法域官方原文：复核公开日、说明书、权利要求、附图和著录项目。
-3. 必要时使用 Google Patents、WIPO、EPO 或商业数据库做外国文献、同族、引证和全文补全；不得把它们写成中国专利首轮默认入口。
+3. 外国文献、同族、引证和全文补全可用 Google Patents、WIPO、EPO 或商业库；中国专利首轮沿上述官方入口。
 
 ## 使用
 
@@ -18,7 +18,7 @@
 python3 scripts/cnipa_epub_search.py --type invention 知识图谱 图数据库
 ```
 
-默认每个词在交互失败后重试一次，并在 `browser_policy` 中记录 `attempts_total` 与 `retry_failures`。可用 `--retry-count` 和 `--retry-delay-seconds` 调整；重试耗尽仍返回 `INTERACTION_REQUIRED`，不能降格为零命中。
+每词交互失败后默认重试一次，`browser_policy` 记录 `attempts_total`、`retry_failures`；可用 `--retry-count`、`--retry-delay-seconds` 调整。仍需交互时返回 `INTERACTION_REQUIRED`，命中数与执行状态分别保存。
 
 可选类型为 `all`、`invention`、`utility_model`、`design`。安装可选运行依赖：
 
@@ -27,7 +27,7 @@ python3 -m pip install -r requirements-cnipa.txt
 python3 -m playwright install chromium
 ```
 
-本机已安装正式 Chrome 时可尝试 `--browser-channel chrome`。默认 `--browser-mode cnipa-compatible` 与经审计的上游实现一致，设置桌面浏览器 UA，并启动 Chromium 参数 `--disable-blink-features=AutomationControlled`，用于通过国知局对普通浏览器能力的前置识别。运行回执必须公开记录该模式。需要诊断时可用 `--browser-mode strict` 禁用这两项兼容设置。
+本机已安装正式 Chrome 时可尝试 `--browser-channel chrome`。默认 `--browser-mode cnipa-compatible` 与经审计的上游实现一致，设置桌面浏览器 UA，并启动 Chromium 参数 `--disable-blink-features=AutomationControlled`，用于通过国知局对普通浏览器能力的前置识别。运行回执公开记录该模式。需要诊断时可用 `--browser-mode strict` 禁用这两项兼容设置。
 
 离线解析已保存的结果页用于回归：
 
@@ -39,17 +39,17 @@ python3 scripts/cnipa_epub_search.py --input-html <结果页.html> 离线样例
 
 - 所有记录默认 `evidence_stage=discovery`、`prior_art_eligible=false`、`legal_status=无法确认`。
 - 结果页摘要即使完整显示，也不代替说明书、权利要求和附图原文。
-- 公开日、优先权日、申请人、权利人和法律状态必须按任务基准日回到对应官方原文复核。
-- 未完成原文定位前，不得把题名、摘要或语义相似写成“已公开全部必要技术特征”。
+- 公开日、优先权日、申请人、权利人和法律状态按任务基准日回到对应官方原文复核。
+- 题名、摘要和语义相似用于线索；必要技术特征是否公开逐项回指原文位置。
 - 零结果只表示本次词项、类型、时间和页面可达范围内未命中。
 
 ## 安全与降级
 
-- 当前入口为 HTTP，只发送脱敏短技术词；不得发送未公开交底、整段权利要求、实施例参数、客户名称、联系人、手机号、身份号码或商业秘密。
-- 国知局兼容模式会设置桌面浏览器 UA 并关闭 `AutomationControlled` 标记，这是实现自动检索的显式兼容条件；输出中的 `browser_policy` 必须记录实际模式。
-- 脚本始终保留 Chromium 沙箱，不复用用户日常浏览器配置，不破解图形、滑块、短信或登录验证。
-- 出现验证码、交互门禁、页面结构变化或超时，返回 `INTERACTION_REQUIRED`；可用 `--headed` 让用户在官方页面自行交互，或转人工官方检索，不得绕过。
-- 缺少 Playwright 或浏览器时返回 `PROVIDER_UNAVAILABLE`，不把依赖缺失写成“无结果”。
+- 当前 HTTP 入口仅发送脱敏短技术词；未公开交底、整段权利要求、实施参数、客户和个人信息留在受控任务资料中。
+- 国知局兼容模式会设置桌面浏览器 UA 并关闭 `AutomationControlled` 标记，这是实现自动检索的显式兼容条件；输出中的 `browser_policy` 记录实际模式。
+- 脚本保持 Chromium 沙箱，使用独立临时配置；验证由用户在官方页面完成。
+- 验证码、页面变化或超时返回 `INTERACTION_REQUIRED`；用 `--headed` 打开官方页面供用户交互，或转人工官方检索。
+- 依赖缺失记 `PROVIDER_UNAVAILABLE`，命中数与运行状态分开。
 
 ## 上游来源与许可
 

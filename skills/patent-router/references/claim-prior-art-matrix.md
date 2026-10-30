@@ -55,17 +55,17 @@
 }
 ```
 
-`status` 只允许在证据支持时填写 `disclosed`、`not_disclosed` 或 `uncertain`。`disclosed` 必须同时带原文和段落号、权利要求号或附图定位；缺少定位会被降为 `MAPPING_INCOMPLETE`。没有可复核原文映射时，脚本只输出 `LEXICAL_REVIEW_REQUIRED` 或 `SEMANTIC_REVIEW_REQUIRED`，不得自动升级为“已公开”。
+`status` 依证据填 `disclosed`、`not_disclosed` 或 `uncertain`；`disclosed` 同时提供原文及段落、权利要求或附图位置。缺定位时按脚本实际结果保留 `MAPPING_INCOMPLETE`、`LEXICAL_REVIEW_REQUIRED` 或 `SEMANTIC_REVIEW_REQUIRED` 并列核验动作。
 
 ## 语义等同候选
 
 - 使用 `references/technical-equivalence-rules.json` 仅扩展检索表达和发现候选。
-- 词典归一、字符相似、语义模型或大模型判断都不能直接认定技术特征已公开。
-- 语义裁决必须同时查看完整段落、上下文权利要求、相关附图及附图标记，并说明本领域技术人员为何会或不会理解为同一技术手段。
-- 功能相同但结构、步骤、条件或技术效果不同的内容保持 `uncertain`，不得因“作用类似”直接写成等同。
+- 词典、相似度和模型判断用于召回及映射候选，公开判断回指技术特征原文。
+- 语义裁决同时查看完整段落、上下文权利要求、相关附图及附图标记，并说明本领域技术人员为何会或不会理解为同一技术手段。
+- 功能近似而结构、步骤、条件或效果有差异时，保留 `uncertain`，逐项说明可比点和差异。
 
 ## 输出解释
 
 - `POTENTIAL_SINGLE_DOCUMENT_NOVELTY_RISK`：一份来源已核验、在先资格已确认的文件，对当前权利要求全部必要技术特征都有带定位的明确公开映射。
-- `NO_VERIFIED_SINGLE_DOCUMENT_FULL_MAPPING_IN_CURRENT_EVIDENCE`：当前证据没有形成单一文件完整映射，不等于已经证明具备新颖性。
+- `NO_VERIFIED_SINGLE_DOCUMENT_FULL_MAPPING_IN_CURRENT_EVIDENCE`：当前证据的单篇完整映射待形成；新颖性另据全部必要特征及公开证据分析。
 - `REQUIRES_DIFFERENCE_EFFECT_AND_TEACHING_ANALYSIS`：已经选出最接近现有技术候选，但仍需补技术效果、实际技术问题和技术启示证据。

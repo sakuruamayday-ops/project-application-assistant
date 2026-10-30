@@ -14,21 +14,21 @@
 }
 ```
 
-`sources` 和 `records` 是核心；`document` 仅在需要确定性渲染时使用；`market_share` 仅在市场占有率任务中使用。旧版记录数组和 JSONL 继续支持基础校验，但不能通过严格溯源校验。
+`sources` 和 `records` 是核心；确定性渲染使用 `document`，份额任务使用 `market_share`。旧数组及 JSONL 支持基础校验，严格溯源使用完整信封。
 
 ## 来源登记 `sources`
 
 通用字段：`id`、`kind`、`access_status`。来源编号建议使用 `S1`、`S2` 并在同一任务内保持稳定。
 
 - `access_status = obtained`：已取得并实际读取原文，必填 `retrieved_at`。
-- `access_status = reference_only`：只在另一份已取得材料中看到文件名、报告名或链接，原文未取得。必填 `registered_at` 和 `registered_via`；`registered_via` 指向已取得的登记载体。该状态不得填 `retrieved_at`，不得支撑 `verified` 记录。
+- `access_status = reference_only`：原文待取得，已在另一材料看到名称或链接。填 `registered_at`、`registered_via` 及登记载体，记录保持待核；实际取得后补 `retrieved_at` 与核验状态。
 
 `kind` 允许：`official_web`、`public_web`、`research_report`、`knowledge_base`、`user_file`、`enterprise_statement`、`database`、`other`。
 
-- 网页或研究报告必填 `title`、`publisher`、`url`；可填 `published_at`。只登记、未访问的链接对外必须显示“未访问，原文未取得”，不得渲染为“检索日期”。
-- 知识库或用户文件必填不含路径的 `file_name`。内部路径、页码、摘录哈希和版本放入 `internal`，不得用于对外渲染。
-- 企业陈述必填 `title` 或 `file_name`。它证明“企业作出该陈述”，不自动证明第三方独立验证。
-- 相同规范化 URL 不得重复登记；追踪参数和片段不构成新来源。
+- 网页或研究报告填 `title`、`publisher`、`url`，可补 `published_at`；仅登记的链接对外显示“未访问，原文未取得”。
+- 知识库和用户文件对外显示 `file_name`；内部路径、页码、摘录哈希和版本保存在 `internal`。
+- 企业陈述填 `title` 或 `file_name`，注明自述范围，独立核验另记状态。
+- 相同规范化 URL 合并登记，统一处理追踪参数和片段。
 
 ## 证据记录 `records`
 
@@ -47,8 +47,8 @@
 
 `document.blocks` 中每项包含 `text`、`claim_ids`，可选 `heading`。一个正文块可以引用多条台账记录；来源编号由脚本沿计算和推断依赖递归汇总。
 
-严格模式下正文块不得直接包含裸 URL。报告渲染使用 `[1]` 标记并把完整来源放在文末；对话模式使用内联链接或前置来源范围。
+严格模式下正文块使用来源映射。报告用 `[1]` 并在文末列完整来源；对话用内联链接或前置来源范围。
 
 ## 校验边界
 
-脚本能够确认编号、字段、引用、计算血缘、来源显示和部分词面覆盖，不能自动证明整句主张与原文在法律或专业意义上完全等价。词面重合不足进入人工复核提示，而不是由算法替代专业判断。
+脚本核对编号、字段、引用、计算血缘、来源显示和词面覆盖；主张与原文的专业含义由当前模型结合原文复核，词面覆盖不足列为复核提示。

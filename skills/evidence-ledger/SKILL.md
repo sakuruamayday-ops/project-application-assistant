@@ -1,124 +1,68 @@
 ---
 name: evidence-ledger
-description: 建立事实、计算、推断和待核验四类证据台账及统一来源登记，校验主张到来源、计算输入和市场占有率测算链，并按对话、分析报告、表格、演示文稿、申报表单或标准文件配置输出可追溯来源。
+description: 建立事实、计算、推断和待核验四类证据台账与统一来源登记，追溯主张、计算输入和市场占有率测算，按回答、报告、表格、演示、申报表及标准配置来源。
 ---
 
 # 证据链台账
 
+统一来源登记、稳定编号、主张映射、计算血缘、披露与校验。业务技能负责检索、来源等级、冲突裁决和专业判断；结构检查与专业支持程度分别记录。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 记录方法
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+- `fact`：来源直接陈述；`calculation`：公式、输入与结果；`inference`：支撑事实、推理及适用条件；`pending`：待取材料或冲突事项。
+- 为企业、政策、知识产权和项目建立主体标识，记录证据编号、主张、类型、来源、取得日期、原文位置、适用期间和核验状态。
+- 计算引用输入证据，推断引用事实、反证及限制；冲突分组保留各来源原值。确定结论对应已核事实或可复算计算，缺少依据的部分写明状态并继续形成可用稿。
+- 市场占有率参考 `references/market-share-grounding-contract.md`，登记企业分子、上位市场、逐层拆分系数、六同状态、申报值和复算值。企业自述、第三方证明分别标识；缺来源或六同冲突时记 D，受限复现值连同公式及局限披露，排名结论保持待核验。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
+## 来源呈现
 
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+配置读取共享 `report-skill-registry.json`，源配置为 `config/grounded-citations.json`，由生成器同步：
 
-## 职责
+- 对话采用贴近结论的链接，必要时说明来源范围。
+- 分析报告正文轻量编号，完整来源在文末；Excel 在最后“数据来源”工作表，PPT 在最后“数据来源”页。
+- 标准保留“规范性引用文件”原位，起草依据另交《标准数据来源说明》；原生申请书采用现有来源字段或独立说明，沿用原章节。
+- 实际访问的网页列标题、机构、发布日期、链接、检索日期。登记载体中的未取原文链接标 `access_status = reference_only`，说明“原文未取得”并指向登记载体；知识库来源对外显示文件名，内部保存路径、页码、摘录及哈希。
+- 发布机关、取得渠道分列。第三方转载注明转载渠道与地址；“官方直接取得”对应实际取得的官方页面。案例标 `case_reference`、`case_pack_id` 和文档编号，用于参考结构或证据类型。
 
-为项目匹配、可行性分析、市场占有率、写作和检查提供统一证据底稿。算法层只统一来源登记、稳定编号、主张映射、计算血缘、最小披露和校验；业务技能继续负责检索策略、来源等级、冲突裁决和专业判断。不得把证据台账当成结论生成器，也不得因结构校验通过就声称来源在专业意义上必然支持结论。
+字段与规则见 `references/evidence-ledger-schema.md`、`references/grounded-output-policy.md`。
 
-## 证据类型
-
-- `fact`：来源直接陈述的事实。
-- `calculation`：基于已列事实形成的计算结果，必须记录公式和输入项。
-- `inference`：基于事实形成的专业判断，必须说明推理边界。
-- `pending`：缺少可靠材料或存在冲突，尚不能确认。
-
-## 强制流程
-
-1. 为企业、政策、知识产权和项目建立稳定主体标识。
-2. 每条记录填写证据编号、主张、类型、来源、获取日期、原文位置、适用期间和核验状态。
-3. 计算记录必须引用输入证据编号；推断记录必须引用支撑事实并列出反证或限制。
-4. 同一字段来源冲突时建立冲突组，不覆盖、不平均、不静默选择。
-5. 正式结论只能引用状态为已核验的事实或可复算计算；待核验项不得写成确定事实。
-6. 交付时同时输出证据台账和未闭合证据缺口。
-7. 市场占有率额外读取 `references/market-share-grounding-contract.md`，登记企业分子、上位市场、每一级拆分系数、六同状态、申报值与复算值；企业陈述可以作为明确标识的来源，但不得伪装成第三方证明。
-
-## 文档配置
-
-运行时读取套件共享的 `report-skill-registry.json` 选择配置，不得把一种页面结构强加给所有文档。源码中的 `config/grounded-citations.json` 是唯一正式配置源，由生成器写入注册表；安装包不依赖仓库根目录配置文件，也不得手工维护第二份配置：
-
-- 直接回答：网页来源跟随结论内联；市场占有率、政策门槛等高风险回答可先给“数据来源范围”。
-- 分析报告 Word、PDF、Markdown：正文保留轻量编号，完整来源放在文末。
-- Excel：事实单元格保留轻量编号，完整来源放在最后的“数据来源”工作表。
-- PowerPoint：关键结论保留轻量编号，完整来源放在最后的“数据来源”页。
-- 标准：标准正文不得新增“数据来源”或“参考资料”章节，不在正文插入证据编号；保留标准自身的“规范性引用文件”，并另生成《标准数据来源说明》。
-- 原生申请书或法定结构：优先使用表单允许的来源字段；结构不允许时生成独立来源说明，不移动法定章节。
-
-已实际访问的网页来源对外列标题、机构、发布日期、链接和检索日期。只在工作簿或其他材料中登记、但未取得的链接与文件必须标记 `access_status = reference_only` 并指向登记载体；对外写“未访问，原文未取得”或“原件未取得”，不得写成“用户文件”或“检索日期”。已取得的知识库来源对外只显示文件名；内部路径、页码、摘录和哈希仍保存在台账。
-
-发布机关与实际取得渠道分别登记。政府文件从第三方转载页取得时，来源渠道写“第三方转载”，链接标为转载地址；不能因文件由政府发布就把转载域名写成官方来源或官方原文链接。只有实际取得的官方页面才能写“官方直接取得”。知识库归档中载有官方链接但本轮未访问时，不得声称已通过该链接核验。
-
-## 输出与校验
-
-台账字段、来源等级和冲突规则见 `references/evidence-ledger-schema.md`，输出边界见 `references/grounded-output-policy.md`。
+## 校验接口
 
 ```bash
 python3 scripts/validate_evidence_ledger.py <台账.json> --strict-grounded
 python3 scripts/grounded_evidence.py market-share <市场占有率台账.json>
-python3 scripts/grounded_evidence.py xlsx-dump <输入.xlsx> --output <只读内容.json>
+python3 scripts/grounded_evidence.py xlsx-dump <输入.xlsx> --output <内容.json>
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile analysis-report --artifact pdf
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile standard-native --artifact docx
-python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --state-root <当前轮次行为状态目录>
-python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --state-root <当前轮次行为状态目录> --receipt-export-dir <交付目录/validator-receipts>
-python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx> --state-root <当前轮次行为状态目录>
+python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --state-root <本轮状态目录>
+python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx> --state-root <本轮状态目录>
 ```
 
-分析与体检报告默认只交付 PDF；申报书、原生表单、标准正文和可编辑数据仍按主技能要求交付 Office 文件。共创客户端提供 `gongchuang_deliver_pdf` 时，按主技能模板形成静态 HTML 后直接调用该工具，完成导出、可打开检查和文件入口交付；不把专业审核作为生成前置。事实、计算、品牌和版式按主技能复核，缺资料时交付标明缺口的初稿，不伪造定稿。成功后复用同一文件；后续阶段失败只补该步骤，不重复生成或发布，不凭猜测要求用户重启，不交付旧稿或中间源。
+`--receipt-export-dir <交付目录/validator-receipts>` 可复制可见收据，正式回执仍由运行层消费。数组或 JSONL 台账兼容基础校验，新台账及市场占有率使用 `grounded-evidence/v1`。
 
-共创客户端生成正式 DOCX 时，主技能声明的专用模板或生成器始终优先。主技能
-没有专用模板或生成器时，优先调用已验签操作
-`evidence-ledger.create-docx-from-file`，把同一正文文件路径作为 `input`，工作区
-内一个尚不存在的 `.docx` 路径作为 `output`；不要用空正文等待不存在的审核状态。短正文也可直接传给 `evidence-ledger.create-docx`。不得改用临时 Node/Python 生成脚本、
-pandoc 或 OOXML 解压回读来绕开该操作，也不得用该通用操作替代主技能的专用模板。
+## 文件生成与复用
 
-独立来源表不能复用报告的正文检查点。可直接交付 Markdown 来源表；用户需要 Word 来源表时先独立校验其正文，不能把另一段内容交给当前报告的生成操作并期望自动切换。
+- 分析与体检默认 PDF，申报书、表单、标准和可编辑数据沿主技能格式。共创客户端以同一静态 HTML 调用 `gongchuang_deliver_pdf`，复核真实成品，已有文件及有效证据按任务复用，失败时修复对应步骤。
+- DOCX 优先采用主技能专用模板或生成器；通用正文可调用 `evidence-ledger.create-docx-from-file`，参数 `{"input":"正文文件路径","output":"新的.docx路径"}`，短正文可用 `evidence-ledger.create-docx`。
+- 完整正文保持同一 UTF-8 `.md`、`.txt` 或 `.html` 文件。文件接口支持最大 1 MiB，短文本接口上限 8192 字符。HTML 文字与原生表格按正文顺序复制，修订使用新输出路径并保留旧文件，后续检查绑定成功返回的文件路径。
+- 来源说明与各份报告分别保留正文、台账和交付结果；需要 Word 来源表时单独生成、检查。修订理由、执行步骤和校验过程留在对话，文档修订历史按用户要求或文件规定处理。
+- 文件生成与事实核验分别记录。首次 artifact 核验按接口需要传入 `evidence`、`calculations` 及实际取得片段；已有同任务、同来源的有效证据可复用。跨轮采用宿主确认有效的检查点，待复核原件按已知精确路径读取，缺项保留在稿件中。
+- 计算输入对应证据 `values` 真实片段或已复算中间值。合计用 `sum`，比例用两个输入的 `ratio` 并输出百分数。例如先记 `{"id":"c1","operator":"sum","inputs":[105,126,140],"result":371,"evidenceIds":["E1"]}`，E1 包含三个原始值，再用 371 计算比例。派生计算继续引用原始证据 ID。政策文号、年份取原文，建议年度明确标注建议。
 
-修订成品只保留读者需要的最终内容。修改理由、修订说明、执行步骤和校验状态写在对话答复，不自动加入报告正文或页眉页脚；用户明确要求变更记录或文档本身必须载明修订历史时例外。政策适用范围、来源状态和业务风险属于报告必要内容，不能以此规则删除。
+## DOCX 与品牌
 
-完整报告使用 `evidence-ledger.create-docx-from-file` 可避免短文本接口的8192字符限制。先把同一候选正文变量写入工作区 `.md` 或 `.txt`，再传 `{"input":"正文文件路径","output":"新的.docx路径"}`。已有确认的 HTML 报告时直接传同一个 `.html` 文件，操作按正文顺序复制文字和原生表格，不让模型重抄正文或数字，也不修改原 HTML。输入为 UTF-8，最大1MiB；不要把正文插入 Python 字符串或命令行重新转义。该操作不授予专业通过状态，生成后仍须沿用原任务、画像和证据检查真实文件。
+生成器依赖 `python-docx`、`markdown-it-py`。加粗、斜体和表格使用原生格式，代码字面量原样，链接保留目标。`6.4.1` 等条款编号使用正文样式，数字标题用显式 Markdown 标记；跨页重复表头，普通行尽量整行换页。
 
-修订或校验修复后的再次生成也必须使用尚不存在的新路径，保留旧文件。生成操作返回错误时，旧DOCX不会包含新的正文；不得继续校验旧文件并声称修订已生效。先按错误说明成功生成新文件，再使用该成功结果中的路径完成品牌与交付检查。
+A4、固定列宽和嵌入中文字体用于稳定布局，仍结合真实渲染检查长网址、跨页、长行和字体。`gongchuang-document-header`、`gongchuang-cover-signature`、税务 `footer.page-footer` 分别进入真实页眉、首页页脚和常规页脚，其余 header/footer 沿正文保留；`header.page-header` 转为跟随下一段的标题。正文比对排除已明确搬移的节点，署名单独读回。
 
-文件生成不会自动登记事实和计算台账。没有已通过的 chat 正文检查时，首次 artifact 专业校验同时传入 `evidence` 与 `calculations`，引用实际取得的来源片段；不能只提交文件路径并期待从 Word 自动推断已核验依据。已有同任务、同来源的有效证据可复用，不为生成器重复读取原件。
+共创客户端 DOCX、XLSX、XLSM 可用 `evidence-ledger.apply-office-branding`，参数 `{"artifact":"最终文件路径"}`。税务 Word 使用 `evidence-ledger.apply-office-branding-gold`，沿用 `manufacturing-tax-risk-report` 画像。PPTX 采用对应生成技能品牌流程。品牌应用后提供文件入口，正文变更后同步品牌；文件校验按任务需要执行。
 
-跨轮续接或修订已有报告时，历史答复中的来源名、摘录和工具编号不等于当前仍有效的受信任回执。优先复用宿主确认有效的证据检查点；需要重新核验时按已有精确路径读取客户原件或政策原文，并从实际返回结果绑定证据。不重搜已经定位的来源，不为未改变且仍有效的证据重复读取。原文无法取得时保留来源缺口和初稿，不把报告自身或中间摘录当成原件回执，也不因此停止其他内容的生成。
+## 按需检查与宿主职责
 
-计算输入必须出现于对应证据 `values` 的真实片段，或来自已复算的中间结果。三年合计先用 `sum` 登记，再计算比例；例如先登记 `{"id":"c1","operator":"sum","inputs":[105,126,140],"result":371,"evidenceIds":["E1"]}`，再将371用于比例，E1须包含三个原始值。`ratio` 仅接受两个输入并输出百分数，不能塞入多项求和；派生步骤仍引用原始证据ID，不能把计算ID当证据ID。不得用任意分数除以1、加0等恒等式冒充来源。实际政策文号与年份使用政策原文，建议年度明确标为建议，不从模板猜出新的年份。
+内容与文件生成后直接交付，深度检查按用户任务执行，结果注明实际覆盖范围。按实际格式可检查：PDF 逐页渲染、空白页和缺字；Excel 用原生引擎逐表渲染并检查公式；PPT 逐页检查；Word 使用当前可用渲染器。渲染条件待满足时标记 `pending-device-acceptance`，区分文本、结构与视觉检查结果。
 
-多份文件分别保留正文、台账和交付结果；按需专业核验，复用已有有效证据和文件检查。某份返回缺少技能时先加载所列技能；返回具体缺口时仅修该缺口，缺少依据仍可交付注明缺口的初稿。不要在同一确定性错误上变换无关参数反复重试，不用一份文件的结果冒充另一份已完成。
+宿主提供本轮状态目录时，`validate-delivery` 将台账哈希、文件哈希、结构结果和真实 `turn_id` 绑定为 `grounded-delivery/v1` 回执；状态目录采用宿主实际提供的位置及 `current-turn.json`。其他宿主记录原生验收结果，回执类型按实际能力填写。最终说明采用实际生成成品的工具与尚待完成部分。
 
-通用 DOCX 操作依赖 `python-docx` 和 `markdown-it-py`，正文与表格中的 Markdown 加粗、斜体转为原生格式，代码字面量保持原样，来源链接保留可点击目标。有空格的数字列表及 `6.4.1` 这类多级编号条款保留编号并使用正文样式，不改成整段标题；数字标题使用显式 Markdown 标题标记。表格跨页重复表头，普通行尽量整行换页。
+云渲染、在线转换、上传及凭据使用由用户指令和宿主权限处理，安全凭据通过专用接口传递，交付物使用脱敏信息。自动化未定位到渲染器时准确描述当前通道状态，继续完成可用稿。
 
-该生成器使用 A4 页面、固定表格列宽与随文件嵌入的中文字体，品牌操作沿用文档嵌入字体。长网址在单元格内换行，不应自动挤窄相邻列；实际成品仍须检查跨页、长行与字体显示，不能把字体嵌入或固定列宽等同于视觉验收通过。
-
-HTML 中明确标记的 `gongchuang-document-header`、`gongchuang-cover-signature` 和税务 `footer.page-footer` 分别进入 Word 的真实页眉、首页页脚和常规页脚，不作为正文反复插入；其他 header、footer 均保留为正文容器，包括章节标题和报告结尾的署名、说明及日期。正文中的章号、章节名及其内容保留，`header.page-header` 转为跟随下一段的标题，表格保留可编辑单元格和跨页表头。正文一致性只排除已明确搬移的节点，页眉页脚署名另行读回核验。
-
-共创客户端生成正式 DOCX、XLSX 或 XLSM 时，正文与版式完成后、首次
-artifact 校验前，调用已验签操作 `evidence-ledger.apply-office-branding`，
-参数为 `{"artifact":"工作区内最终文件路径"}`。该操作在原文件上写入签名
-技能包的统一页眉与居中水印；执行后不得再修改文件。PPTX 继续使用对应生成
-技能声明的签名品牌流程，不把本 Office 操作错误套用于演示文稿。
-
-用户明确要求税务报告 Word 时，使用同一参数的固定操作 `evidence-ledger.apply-office-branding-gold`，写入共享金色资产；保持 `manufacturing-tax-risk-report` 画像、原正文和草稿状态。其他 Office 调用继续使用原操作，不因增加 Word 支持改变默认品牌。
-
-旧版数组或 JSONL 台账继续支持基础校验；新交付和市场占有率使用 `grounded-evidence/v1` 严格模式。校验失败不得进入正式写作。
-
-生成 Word、PDF、Excel 或 PowerPoint 后，按 `config/grounded-citations.json` 的 `artifact_validation` 分格式验收。PDF 必须逐页渲染并检查空白页和缺字；Excel 使用表格原生引擎逐表渲染；PowerPoint 逐页渲染；Word 在当前宿主存在可用渲染器时逐页渲染。缺少 Word 或中文字体时记录状态 pending-device-acceptance，禁止把文本提取成功写成视觉通过，也禁止用 PDF、Excel 或 PPT 的成功代替 Word 验收。
-
-当前宿主提供受控轮次状态目录时，正式文件交付前必须运行 grounded_evidence.py 的 validate-delivery 子命令，使台账哈希、交付文件哈希、结构检查和当前 `turn_id` 形成 `grounded-delivery/v1` 回执；没有非空回执时不得宣称交付门禁通过。`--state-root`必须来自当前宿主或项目运行层实际维护的本轮状态目录，其中已有带`turn_id`的`current-turn.json`；不得猜测任何特定宿主路径。需要给用户保留一份可见收据时使用`--receipt-export-dir`，该参数只复制回执，不改变运行层消费的正式回执位置。报告生成器、读取器或渲染器发生降级时，最终答复必须写实际产生最终文件的工具，不得把早先尝试过但未生成终稿的通道写成最终来源。读取普通 XLSX 优先使用同一脚本的 xlsx-dump 子命令，不得为了只读用户文件临时联网安装 openpyxl 等依赖。
-
-其他宿主按本轮原生工具完成证据、结构和实际渲染验收；不能伪造 turn_id 或把这种验收称为共创签名回执。任务要求受控交付而宿主缺少相应设施时，只暂停受控交付步骤，保留已完成草稿。
-
-未经用户明确授权，不得把用户输入、台账或交付文件上传到 COS、云渲染、在线转换或其他外部服务。宿主找不到 WPS、Word 或 LibreOffice 自动化入口时，只能写“当前自动化通道未定位到可用渲染器”，不得据此断言用户设备未安装对应软件。
-
-历史案例证据单独标记为 `case_reference`，记录 `case_pack_id` 和文档编号；它只能证明参考结构或证据类型，不能证明当前企业事实，也不能提升政策来源等级。
-
-## 反例与拒绝
-
-- 正常：网页和知识库文件共同支撑分析结论，报告正文用编号，文末只显示网页完整信息和知识库文件名。
-- 边界：标准中的“规范性引用文件”保持原位，另生成来源说明，不得改写为报告式文末来源。
-- 拒绝：市场占有率分子、分母或拆分系数无来源，或六同边界冲突时判 D；精确值只能作为明确标注的“受限复现值”随公式披露，并同时写明不得对外使用和不作排名结论，不能标成已核验值。
+报告表达采用[报告写作规则](../_runtime/report-writing.md)。

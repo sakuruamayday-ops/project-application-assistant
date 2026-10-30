@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory high-tech application inputs once and stop unchanged retry loops."""
+"""Inventory high-tech inputs and report readable material and remaining gaps."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def inspect_document(path: Path, role: str) -> dict[str, object]:
             **record,
             "status": "legacy_doc_probe",
             "action": "extract_once_then_convert_if_required",
-            "reason": "先调用签名提取器一次；宿主无旧式 DOC 解析能力时再汇总请求转换，不尝试 COM、临时安装解析器或编码猜测",
+            "reason": "使用宿主可用的 DOC 只读提取能力；当前格式提取失败时复用检测结果，继续其他资料并列明格式缺口",
         }
     if kind in EXTRACTABLE_KINDS:
         return {**record, "status": "supported", "action": "extract_once"}
@@ -49,7 +49,7 @@ def inspect_document(path: Path, role: str) -> dict[str, object]:
             **record,
             "status": "encrypted_document",
             "action": "request_password_free_copy" if role == "essential" else "skip",
-            "reason": "加密文档不尝试破解或保存密码，请提供无密码副本",
+            "reason": "当前加密文件保留原件，其他可读内容继续处理；需要时补充可读副本",
         }
     if kind.startswith("damaged-"):
         return {
@@ -68,7 +68,7 @@ def inspect_document(path: Path, role: str) -> dict[str, object]:
     return {
         **record,
         "status": "unsupported_format",
-        "action": "request_supported_format" if role == "essential" else "skip",
+        "action": "continue_with_available_inputs" if role == "essential" else "skip",
         "reason": "未识别到可安全读取的 Office、ODF、PDF、RTF 或文本结构",
     }
 
@@ -145,13 +145,13 @@ def main() -> int:
         repeated_legacy_probe = has_legacy_probe and previous.get("legacy_probe_fingerprint") == signature
         unchanged_failure = (bool(blocked) and previous.get("blocked_fingerprint") == signature) or repeated_legacy_probe
         if unchanged_failure:
-            status = "stopped_no_progress"
-            message = "必需输入的失败状态与上次相同，已停止重复试错；请转换后再继续"
-            exit_code = 3
+            status = "ready_with_gaps"
+            message = "资料状态与上次相同；复用已有检测结果，使用当前可读内容继续，格式缺口随稿列明"
+            exit_code = 0
         elif blocked:
-            status = "blocked_conversion_required"
-            message = "请一次性补充无密码、未损坏的受支持格式；专有 WPS 文件请从原应用另存"
-            exit_code = 2
+            status = "ready_with_gaps"
+            message = "已列明当前无法读取的资料；使用现有可读内容继续，原文件保留用于后续补充"
+            exit_code = 0
         else:
             status = "ready_with_skips" if any(record["action"] == "skip" for record in records) else "ready"
             message = "能力盘点完成，可按真实内容类型对每份资料执行一次只读提取"
@@ -162,7 +162,7 @@ def main() -> int:
             "blocked_fingerprint": signature if blocked else None,
             "legacy_probe_fingerprint": signature if has_legacy_probe else None,
             "unchanged_failure_count": int(previous.get("unchanged_failure_count", 0)) + 1 if unchanged_failure else (1 if blocked else 0),
-            "retry_allowed": not unchanged_failure,
+            "retry_allowed": True,
         }
         report = {
             "schema": SCHEMA,

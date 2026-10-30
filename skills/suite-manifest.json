@@ -9,31 +9,31 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.8.0",
-    "version": "1.8.0",
-    "summary": "文档校验依赖解耦与固定PDF路径兼容",
+    "tag": "V1.8.1",
+    "version": "1.8.1",
+    "summary": "直接输出、工具自动执行与报告正文精简",
     "changes": [
-      "Word、Excel和HTML校验不再无用加载PDF原生库，保留品牌与真实文件检查。",
-      "固定经典PDF命令避免启动未使用的版面分析和模型模块，正文、品牌与像素校验继续执行。",
-      "技能按需读取，不恢复强制预加载或业务资料齐全门禁。",
-      "客户端专有执行与官方工具呈现的兼容改进由V0.8.0交付；通用技能包继续保持宿主中立。"
+      "51项预设技能改为正向工作方法，直接输出当前可完成内容。",
+      "资料、内容、品牌及版式检查按需参考，真实文件生成后直接交付。",
+      "报告正文合并重复事实、套话与材料清单，保留原章节、数据、来源和模板。",
+      "本机工具自动执行由客户端0.8.2提供；账号、云端隔离、凭据、验签与回滚继续由宿主管理。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用签名通用 Skills 包；首次使用时按本轮实际能力执行最小配置。",
       "first_party_client": "共创独立客户端内嵌同一验签技能投影，并由客户端连接管理处理外部服务。",
       "manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
-      "verification": "确认套件清单声明的全部 Skills 可识别并通过签名与逐文件完整性检查。客户端按需加载技能说明；工具目录中的已登记固定操作可直接执行，不以所属业务技能预加载、专业预校验或正式状态为前提。资料缺口标入报告；实际文件仍须生成、可打开并取得交付回执。"
+      "verification": "确认套件技能目录、签名与逐文件完整性一致。技能按任务需要读取，当前资料直接形成报告，真实文件生成后直接交付。"
     },
     "compatibility": [
       {
         "target": "通用 Skills",
         "status": "通用签名套件",
-        "note": "适用于支持SKILL.md的宿主；通用包保留专业方法和来源要求。共创客户端执行与分页改进需使用0.8.0及以上版本。"
+        "note": "支持SKILL.md的宿主可读取同一技能内容。工具和本机权限由宿主配置。"
       },
       {
         "target": "共创独立客户端",
-        "status": "共创客户端0.8.0及以上",
-        "note": "客户端使用同批验签技能内容，并继续验证内嵌运行时和真实文件；仅更新技能包不会替换旧客户端程序。"
+        "status": "共创客户端0.8.2及以上",
+        "note": "客户端内嵌同批验签技能，直接输出与工具自动执行随客户端0.8.2提供。"
       }
     ],
     "distribution_protocol": {
@@ -42,11 +42,11 @@
       "platform_specific_package": false,
       "external_service_setup": "skills-center-install-and-connect",
       "success_gate": [
-        "套件清单声明的全部 Skills 可识别并与签名索引一致",
-        "共创客户端只从已验签 V1.8.0 技能目录使用本次 Skills 和固定操作",
-        "固定操作按工具目录直接执行；技能说明按需读取，资料缺口只作报告提示，不恢复业务阻断",
-        "外部 MCP 只有完成 OAuth 或令牌交换、tools/list 和健康调用后才显示已连接",
-        "其他兼容 Agent 只下载同一通用 Skills 包并按标准 Streamable HTTP 配置 MCP"
+        "套件技能目录、签名与逐文件完整性一致",
+        "客户端使用已验签V1.8.1技能内容，技能按需读取",
+        "模型直接输出，当前真实文件生成后立即交付",
+        "外部连接按真实tools/list及健康调用显示状态",
+        "通用宿主使用相同签名技能包"
       ]
     },
     "rollback": [
@@ -124,7 +124,8 @@
     "skill-call-graph.json",
     "_runtime/task-execution.md",
     "_runtime/recognition-source-routing.md",
-    "_runtime/policy-application-path-contract.md"
+    "_runtime/policy-application-path-contract.md",
+    "_runtime/report-writing.md"
   ],
   "generic_shared_paths": [],
   "skill_call_graph": "skill-call-graph.json",

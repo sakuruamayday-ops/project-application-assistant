@@ -1,11 +1,11 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.8.0",
+  "skill_bundle_version": "1.8.1",
   "operations": [
     {
       "id": "high-tech-enterprise-application-drafting.fill-application-fields",
       "skill": "high-tech-enterprise-application-drafting",
-      "description": "按原母版物理单元格回填高新申请书，直接生成可编辑 DOCX，不生成 PDF。回填登记、封面、年度财务、RD支出、PS、人员、IP与创新能力；不使用网格列坐标，不覆盖原文件。",
+      "description": "按原母版物理单元格回填高新申请书，直接生成可编辑DOCX；回填登记、封面、年度财务、RD、PS、人员、IP与创新能力，并保留原文件。",
       "script": "high-tech-enterprise-application-drafting/scripts/fill_application_fields.py",
       "files": [
         "high-tech-enterprise-application-drafting/scripts/fill_rd_core_innovation.py",
@@ -17,15 +17,49 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 1048576,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "hightech-application-fields/v1",
       "parameters": {
-        "input": {"type": "workspace-input-file", "required": true, "extensions": [".docx"], "max_bytes": 33554432},
-        "spec": {"type": "workspace-input-file", "required": true, "extensions": [".json"], "max_bytes": 16777216},
-        "output": {"type": "workspace-output-file", "required": true, "extensions": [".docx"]}
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [
+            ".docx"
+          ],
+          "max_bytes": 33554432
+        },
+        "spec": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [
+            ".json"
+          ],
+          "max_bytes": 16777216
+        },
+        "output": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [
+            ".docx"
+          ]
+        }
       },
-      "argv": [{"parameter": "input"}, {"parameter": "spec"}, {"parameter": "output"}]
+      "argv": [
+        {
+          "parameter": "input"
+        },
+        {
+          "parameter": "spec"
+        },
+        {
+          "parameter": "output"
+        }
+      ]
     },
     {
       "id": "high-tech-enterprise-preassessment.calculate-scenarios",
@@ -37,18 +71,28 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 1048576,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "high-tech-scenario-calculation-operation/v1",
       "parameters": {
         "input": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 16777216
         }
       },
-      "argv": [{"parameter": "input"}]
+      "argv": [
+        {
+          "parameter": "input"
+        }
+      ]
     },
     {
       "id": "manufacturing-tax-risk-analysis.calculate-metrics",
@@ -181,7 +225,7 @@
     {
       "id": "evidence-ledger.create-docx",
       "skill": "evidence-ledger",
-      "description": "将本次实际正文一次写成新的原生 DOCX，保留标题、表格、行内格式、来源与待核说明。主技能有专用模板时优先使用其模板；格式转换只生成文件，不代表内容已经专业审定。",
+      "description": "将本次正文写成原生DOCX，保留标题、表格、行内格式、来源与待核说明；有专用模板时沿用主技能模板，返回真实生成结果。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
@@ -237,19 +281,48 @@
       "network": "none",
       "timeout_ms": 60000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "gongchuang-docx-generation-operation/v1",
       "parameters": {
-        "input": {"type": "workspace-input-file", "required": true, "extensions": [".md", ".txt", ".html"], "max_bytes": 1048576},
-        "output": {"type": "workspace-output-file", "required": true, "extensions": [".docx"]}
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [
+            ".md",
+            ".txt",
+            ".html"
+          ],
+          "max_bytes": 1048576
+        },
+        "output": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [
+            ".docx"
+          ]
+        }
       },
-      "argv": [{"literal": "--input-file"}, {"parameter": "input"}, {"parameter": "output"}]
+      "argv": [
+        {
+          "literal": "--input-file"
+        },
+        {
+          "parameter": "input"
+        },
+        {
+          "parameter": "output"
+        }
+      ]
     },
     {
       "id": "evidence-ledger.apply-office-branding",
       "skill": "evidence-ledger",
-      "description": "在正文与版式完成后，用已验签共享运行时为最终 DOCX 或 XLSX 写入统一品牌页眉和居中水印；必须在首次 artifact 校验前执行。",
+      "description": "用已验签共享运行时为DOCX或XLSX写入品牌页眉与居中水印，返回保存后的文件。",
       "script": "evidence-ledger/scripts/apply_office_branding.py",
       "files": [
         "_runtime/gongchuang-branding/scripts/office_watermark.py",
@@ -332,11 +405,23 @@
         "artifact": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".docx"],
+          "extensions": [
+            ".docx"
+          ],
           "max_bytes": 134217728
         }
       },
-      "argv": [{"parameter": "artifact"}, {"literal": "--variant"}, {"literal": "gold"}]
+      "argv": [
+        {
+          "parameter": "artifact"
+        },
+        {
+          "literal": "--variant"
+        },
+        {
+          "literal": "gold"
+        }
+      ]
     },
     {
       "id": "high-tech-enterprise-application-drafting.audit-application",
@@ -481,7 +566,7 @@
     {
       "id": "sme-development-projects.validate-assessment",
       "skill": "sme-development-projects",
-      "description": "校验优质中小企业诊断版本、政策状态、四项判断和平台质量分。assessment 必须直接使用技能文档给出的完整 JSON 结构和枚举；一次构造、一次调用，不得创建探针文件或猜测枚举。",
+      "description": "按结构化JSON检查优质中小企业版本、政策状态、四项判断及平台质量分，返回发现供当前任务参考。",
       "script": "sme-development-projects/scripts/validate_sme_assessment.py",
       "files": [],
       "sandbox_mode": "read-only",
@@ -514,7 +599,7 @@
     {
       "id": "sme-score-preassessment.run-preflight",
       "skill": "sme-score-preassessment",
-      "description": "按 2026 政策基线执行专精特新前期预评估遗漏扫描。参数必须来自本轮材料；返回 needs-user-input 时只向用户提出一次 blocking_question。",
+      "description": "按2026政策基线扫描申报条件和资料缺口，参数来自本轮材料，返回当前可用结果与待取事项。",
       "script": "sme-score-preassessment/scripts/preflight.py",
       "files": [
         "sme-score-preassessment/references/current-policy-baseline-2026.json"
@@ -683,7 +768,7 @@
     {
       "id": "project-feasibility.generate-report",
       "skill": "project-feasibility",
-      "description": "高新、专精及小巨人的分析、体检报告依据结构化事实直接回填固定 HTML 模板，由客户端导出 PDF，不读取 Word 母版、不生成 DOCX。申请书使用独立 Word 回填入口。其他项目保留原格式支持。双报告分别调用，保留每份完成结果。",
+      "description": "高新、专精及小巨人分析与体检依据结构化事实回填固定HTML，由客户端导出PDF；申请书沿独立Word入口，其他项目保留原格式。双报告分别生成并保留每份结果。",
       "script": "project-feasibility/scripts/generate_report.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",

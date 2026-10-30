@@ -28,10 +28,11 @@ def test_professional_routes_separate_domain_from_answer_depth() -> None:
         encoding="utf-8"
     )
     router = (SKILLS / "project-task-router/SKILL.md").read_text(encoding="utf-8")
-    for marker in ("单点查询", "局部分析", "正式交付"):
-        assert marker in orchestrator
-        assert marker in router
-    assert "领域词只决定调用哪个专业技能，不得自动扩大交付范围" in orchestrator
+    shared = (SKILLS / "_runtime/task-execution.md").read_text(encoding="utf-8")
+    assert "task-execution.md" in orchestrator and "task-execution.md" in router
+    for marker in ("单点直接回答", "局部加入直接依赖", "完整报告沿专业结构"):
+        assert marker in shared
+    assert "每项能力围绕当前目标使用" in orchestrator
 
 
 def test_ambiguous_terms_do_not_route_to_unrelated_full_deliverables() -> None:
@@ -59,7 +60,7 @@ def test_explicit_deliverables_keep_their_professional_routes() -> None:
 
 def test_single_patent_fit_question_stays_on_four_requested_outputs() -> None:
     patent = (SKILLS / "patent-router/SKILL.md").read_text(encoding="utf-8")
-    for marker in ("技术关联", "近似专利检索结果", "授权前景", "修改建议"):
-        assert marker in patent
-    assert "不主动追加“拟申请尚未授权”" in patent
-    assert "不启动完整专利案卷、企业画像或项目预评估" in patent
+    first_paragraph = patent.split("## 任务与案卷", 1)[0]
+    for marker in ("单点适配咨询", "企业及产品技术关系", "近似检索", "现有技术差异", "改进建议"):
+        assert marker in first_paragraph
+    assert "完整申请、布局、FTO、预审或综合建议按对应方法组织" in first_paragraph

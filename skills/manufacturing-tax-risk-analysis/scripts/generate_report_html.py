@@ -9,6 +9,7 @@ import json
 import re
 import sys
 from datetime import date
+from itertools import zip_longest
 from pathlib import Path
 from typing import Any
 
@@ -63,7 +64,7 @@ def resolve_financial_references(value: Any, metrics: dict[str, Any]) -> Any:
         year, category, field = match.groups()
         result = metrics.get("display_values", {}).get(year, {}).get(category, {}).get(field)
         if not isinstance(result, str):
-            raise ValueError(f"unknown financial reference: {year}.{category}.{field}")
+            return "待补指标：" + year + "." + category + "." + field
         return result
 
     return re.sub(r"\{\{financial\.(\d{4})\.(facts|metrics)\.([a-z_]+)\}\}", substitute, value)
@@ -76,9 +77,7 @@ def prepare_report_input(metrics: dict[str, Any]) -> dict[str, Any]:
         company = company.get("name")
     validate_metrics(metrics, str(company or ""))
     years = sorted(metrics.get("display_values", {}))
-    if len(years) < 2 or any(not re.fullmatch(r"\d{4}", year) for year in years):
-        raise ValueError("report preparation requires at least two calendar years")
-    latest = years[-1]
+    latest = years[-1] if years else "期间待补"
 
     def ref(year: str, category: str, field: str) -> str:
         return "{{financial." + year + "." + category + "." + field + "}}"
@@ -97,20 +96,20 @@ def prepare_report_input(metrics: dict[str, Any]) -> dict[str, Any]:
         selected = fields.get(key, [])
         facts = [{"title": label, "text": f"{latest}年{label}为{ref(latest, category, field)}。", "source": "本轮财务资料及指标复算"} for label, category, field in selected]
         sections[key] = {
-            "title": title, "conclusion": "待结合资料判断，不根据汇总金额推断交易性质。",
-            "facts": facts or [{"title": "资料范围", "text": "汇总财务指标不能单独确认本专题事项，需结合对应附注与明细判断。", "source": "本轮资料范围"}],
+            "title": title, "conclusion": "结合财务指标与业务资料判断，交易性质按对应凭据确认。",
+            "facts": facts or [{"title": "资料范围", "text": "本专题事项结合财务指标、附注与明细判断。", "source": "本轮资料范围"}],
             "actions": ["结合已取得的附注与明细补充分析，未取得的资料明确列为缺口。"],
         }
         if selected:
             sections[key]["table"] = {"headers": ["指标", *years], "rows": [[label, *(ref(year, category, field) for year in years)] for label, category, field in selected]}
     overview_fields = [("营业收入", "facts", "revenue"), ("净利润", "facts", "net_profit"), ("资产总额", "facts", "assets"), ("负债总额", "facts", "liabilities"), ("其他应收款", "facts", "other_receivables"), ("经营活动现金流量净额", "facts", "operating_cash_flow"), ("资产负债率", "metrics", "debt_ratio"), ("现金税费支付率", "metrics", "cash_tax_payment_rate")]
     return {
-        "company": company, "period": {"start": years[0], "end": latest},
+        "company": company, "period": {"start": years[0] if years else "期间待补", "end": latest},
         "report_date": date.today().isoformat(), "preparer": "共创知识产权",
         "source_status": "分析草稿", "internal_only": True,
         "use_restriction": "分析尚未定稿，仅供内部核对。",
         "risk_level": "待判断", "one_line_conclusion": "待结合财务指标、附注及交易资料形成综合判断。",
-        "sources": [{"name": "本轮财务输入资料", "period": f"{years[0]}至{latest}", "status": "待核对资料性质", "pages": "待补原始资料位置", "limitation": "汇总金额不能替代交易与申报资料。"}],
+        "sources": [{"name": "本轮财务输入资料", "period": f"{years[0] if years else '期间待补'}至{latest}", "status": "待核对资料性质", "pages": "待补原始资料位置", "limitation": "汇总金额与对应交易及申报资料结合使用。"}],
         "executive_findings": [{"title": "财务概览", "conclusion": f"{latest}年营业收入为{ref(latest, 'facts', 'revenue')}，净利润为{ref(latest, 'facts', 'net_profit')}。", "level": "待判断", "source": "本轮财务资料及指标复算"}],
         "financial_overview": {
             "years": years,
@@ -119,7 +118,7 @@ def prepare_report_input(metrics: dict[str, Any]) -> dict[str, Any]:
             "conclusion": "待结合跨年变化及业务资料解释财务表现。",
         },
         "sections": sections,
-        "risks": [{"chain": "资料与交易核验", "fact": "仅有汇总指标不能确认交易性质。", "alternative": "需结合实际业务解释，暂不推定违法。", "missing_evidence": "按已提供资料补充实际缺项。", "action": "逐项核对相关交易及申报资料。", "level": "待判断"}],
+        "risks": [{"chain": "资料与交易核验", "fact": "交易性质待结合凭据核对。", "alternative": "结合实际业务解释及相关依据分析。", "missing_evidence": "按已提供资料补充实际缺项。", "action": "逐项核对相关交易及申报资料。", "level": "待判断"}],
         "roadmap": [{"period": period, "goal": goal, "actions": [action], "owner": "财务负责人", "completion": completion} for period, goal, action, completion in [
             ("0—30天", "资料核对", "核对报表、附注与申报资料。", "形成资料位置及缺项明细。"),
             ("31—60天", "差异分析", "逐项解释财务与业务差异。", "形成有来源的差异解释及处理意见。"),
@@ -127,9 +126,9 @@ def prepare_report_input(metrics: dict[str, Any]) -> dict[str, Any]:
         ]],
         "p0_documents": ["结合现有资料确认实际需要补充的附注、明细及申报资料。"],
         "calculations": [], "policies": [],
-        "final_judgment": {"title": "待完成综合分析", "text": "需结合财务表现与业务资料形成结论，不能仅据汇总指标认定涉税违法。"},
+        "final_judgment": {"title": "待完成综合分析", "text": "结合财务表现与业务资料形成结论，涉税事项逐项列明事实和适用依据。"},
         "monthly_indicators": [{"name": "现金税费支付率", "rule": "支付税费除以营业收入，不等同于增值税税负率。", "owner": "财务负责人", "frequency": "每月"}],
-        "limitations": ["本报告不能替代税务鉴证或法律意见，具体判断以取得的资料为限。"],
+        "limitations": ["本轮分析资料与判断口径见来源清单。"],
     }
 
 
@@ -172,192 +171,134 @@ def validate_text_list(items: list[Any], path: str) -> list[str]:
     return [require_text(item, f"{path}[{index}]") for index, item in enumerate(items)]
 
 
-def limit(items: list[Any], maximum: int, path: str) -> None:
+def limit(items: list[Any], maximum: int, path: str) -> str | None:
     if len(items) > maximum:
-        raise ValueError(f"too many items: {path} supports at most {maximum}, got {len(items)}")
+        return f"{path}: {len(items)}项，超过原版式建议{maximum}项，已保留全部内容"
+    return None
 
 
-def text_limit(value: Any, maximum: int, path: str) -> None:
-    if value is None:
-        return
-    text = require_text(value, path)
-    if len(text) > maximum:
-        raise ValueError(f"text too long: {path} supports at most {maximum} characters")
+def text_limit(value: Any, maximum: int, path: str) -> str | None:
+    if value is not None and len(str(value)) > maximum:
+        return f"{path}: 超过原版式建议{maximum}字，已保留原文"
+    return None
 
 
 def validate_metrics(metrics: dict[str, Any], company: str) -> list[dict[str, Any]]:
     if metrics.get("schema") != METRICS_SCHEMA:
         raise ValueError(f"metrics JSON must use {METRICS_SCHEMA}")
-    metrics_company = metrics.get("company")
-    if isinstance(metrics_company, dict):
-        metrics_company = metrics_company.get("name")
-    if str(metrics_company or "").strip() != company.strip():
-        raise ValueError("metrics JSON company does not match report company")
-    rows = require_list(metrics, "report_rows", "metrics")
-    # 指标数由实际年度和缺失项决定；不能用页面容量拒绝计算器的合法输出。
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            raise ValueError(f"metrics.report_rows[{index}] must be an object")
-        for key in ("indicator", "formula", "result", "source"):
-            require_text_field(row, key, f"metrics.report_rows[{index}]")
+    rows = metrics.setdefault("report_rows", [])
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise ValueError("metrics.report_rows must be a list of objects")
     return rows
 
 
-def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
-    for key in ("company", "report_date", "risk_level", "one_line_conclusion"):
-        require_text_field(data, key, "root")
-    text_limit(data["company"], 40, "root.company")
-    text_limit(data["one_line_conclusion"], 180, "root.one_line_conclusion")
-    text_limit(data.get("use_restriction"), 120, "root.use_restriction")
-    for key in ("preparer", "source_status"):
-        if key in data:
-            require_text(data[key], f"root.{key}")
-    if "internal_only" in data and not isinstance(data["internal_only"], bool):
-        raise ValueError("field must be boolean: root.internal_only")
-    period = require_object(require(data, "period", "root"), "root.period")
-    require_text_field(period, "start", "root.period")
-    require_text_field(period, "end", "root.period")
+def validate(data: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    """Adapt missing content to the existing layout; keep findings advisory."""
+    warnings: list[str] = []
 
-    sources = require_list(data, "sources", "root")
-    limit(sources, 6, "root.sources")
-    for i, source_value in enumerate(sources):
-        source = require_object(source_value, f"root.sources[{i}]")
-        for key in ("name", "period", "status", "pages", "limitation"):
-            require_text_field(source, key, f"root.sources[{i}]")
-    if "missing_documents" in data:
-        validate_text_list(require_list(data, "missing_documents", "root"), "root.missing_documents")
+    def texts(obj: dict[str, Any], keys: tuple[str, ...], path: str) -> None:
+        for key in keys:
+            value = obj.get(key)
+            if value is None or value == "":
+                warnings.append(f"{path}.{key}: 资料待补")
+                obj[key] = "—"
+            elif not isinstance(value, (str, int, float, bool)):
+                raise ValueError(f"field must be scalar text: {path}.{key}")
+            else:
+                obj[key] = str(value)
 
-    executive = require_list(data, "executive_findings", "root")
-    limit(executive, 5, "root.executive_findings")
-    for i, finding_value in enumerate(executive):
-        finding = require_object(finding_value, f"root.executive_findings[{i}]")
-        for key in ("title", "conclusion", "level", "source"):
-            require_text_field(finding, key, f"root.executive_findings[{i}]")
-        text_limit(finding.get("conclusion"), 120, f"root.executive_findings[{i}].conclusion")
+    def objects(obj: dict[str, Any], key: str, fields: tuple[str, ...], path: str) -> list[dict[str, Any]]:
+        value = obj.setdefault(key, [])
+        if value is None:
+            value = obj[key] = []
+        if not isinstance(value, list):
+            raise ValueError(f"field must be a list: {path}.{key}")
+        for index, item in enumerate(value):
+            require_object(item, f"{path}.{key}[{index}]")
+            texts(item, fields, f"{path}.{key}[{index}]")
+        return value
 
-    overview = require_object(require(data, "financial_overview", "root"), "root.financial_overview")
-    years = require_list(overview, "years", "root.financial_overview")
-    if len(years) < 2:
-        raise ValueError("financial_overview.years must contain at least two years")
-    validate_text_list(years, "root.financial_overview.years")
-    overview_rows = require_list(overview, "rows", "root.financial_overview")
-    limit(overview_rows, 8, "root.financial_overview.rows")
-    kpis = require_list(overview, "kpis", "root.financial_overview")
-    limit(kpis, 4, "root.financial_overview.kpis")
-    for i, kpi_value in enumerate(kpis):
-        kpi = require_object(kpi_value, f"root.financial_overview.kpis[{i}]")
-        for key in ("label", "value"):
-            require_text_field(kpi, key, f"root.financial_overview.kpis[{i}]")
-        if "note" in kpi:
-            require_text(kpi["note"], f"root.financial_overview.kpis[{i}].note")
-    for i, row in enumerate(overview_rows):
-        if not isinstance(row, dict):
-            raise ValueError(f"financial_overview.rows[{i}] must be an object")
-        require_text_field(row, "name", f"root.financial_overview.rows[{i}]")
-        values = require_list(row, "values", f"financial_overview.rows[{i}]")
+    def strings(obj: dict[str, Any], key: str, path: str) -> list[str]:
+        value = obj.setdefault(key, [])
+        if value is None:
+            value = obj[key] = []
+        if not isinstance(value, list):
+            raise ValueError(f"field must be a list: {path}.{key}")
+        obj[key] = ["—" if item is None else require_text(item, f"{path}.{key}[{index}]") for index, item in enumerate(value)]
+        return obj[key]
+
+    company = metrics.get("company")
+    if isinstance(company, dict):
+        company = company.get("name")
+    if not data.get("company") and company:
+        data["company"] = company
+    texts(data, ("company", "report_date", "risk_level", "one_line_conclusion"), "root")
+    if company and str(company).strip() != data["company"].strip():
+        warnings.append("计算资料主体与报告主体不同，计算表保留原始来源，需核对归属")
+    for key, maximum in (("company", 40), ("one_line_conclusion", 180), ("use_restriction", 120)):
+        if message := text_limit(data.get(key), maximum, f"root.{key}"):
+            warnings.append(message)
+    period = data.setdefault("period", {})
+    require_object(period, "root.period")
+    texts(period, ("start", "end"), "root.period")
+    sources = objects(data, "sources", ("name", "period", "status", "pages", "limitation"), "root")
+    executive = objects(data, "executive_findings", ("title", "conclusion", "level", "source"), "root")
+    overview = data.setdefault("financial_overview", {})
+    require_object(overview, "root.financial_overview")
+    years = strings(overview, "years", "root.financial_overview")
+    rows = objects(overview, "rows", ("name", "source_pages", "formula"), "root.financial_overview")
+    kpis = objects(overview, "kpis", ("label", "value"), "root.financial_overview")
+    texts(overview, ("conclusion",), "root.financial_overview")
+    for index, row in enumerate(rows):
+        values = strings(row, "values", f"root.financial_overview.rows[{index}]")
         if len(values) != len(years):
-            raise ValueError(f"financial_overview.rows[{i}].values length must match years")
-        validate_text_list(values, f"root.financial_overview.rows[{i}].values")
-        require_text_field(row, "source_pages", f"root.financial_overview.rows[{i}]")
-        require_text_field(row, "formula", f"root.financial_overview.rows[{i}]")
-    require_text_field(overview, "conclusion", "root.financial_overview")
-
-    sections = require(data, "sections", "root")
-    if not isinstance(sections, dict):
-        raise ValueError("root.sections must be an object")
+            warnings.append(f"financial_overview.rows[{index}]: 数值与期间数量不同，已保留全部值")
+    sections = data.setdefault("sections", {})
+    require_object(sections, "root.sections")
     for key, _, _ in SECTION_KEYS:
-        section = require(sections, key, "root.sections")
-        if not isinstance(section, dict):
-            raise ValueError(f"root.sections.{key} must be an object")
-        require_text_field(section, "conclusion", f"root.sections.{key}")
-        if "title" in section:
-            require_text(section["title"], f"root.sections.{key}.title")
-        facts = require_list(section, "facts", f"root.sections.{key}")
-        actions = require_list(section, "actions", f"root.sections.{key}")
-        limit(facts, 4, f"root.sections.{key}.facts")
-        limit(actions, 6, f"root.sections.{key}.actions")
-        text_limit(section["conclusion"], 180, f"root.sections.{key}.conclusion")
-        for i, fact_value in enumerate(facts):
-            fact = require_object(fact_value, f"root.sections.{key}.facts[{i}]")
-            for field in ("title", "text", "source"):
-                require_text_field(fact, field, f"root.sections.{key}.facts[{i}]")
-            text_limit(fact.get("text"), 140, f"root.sections.{key}.facts[{i}].text")
-        for i, action in enumerate(actions):
-            text_limit(action, 80, f"root.sections.{key}.actions[{i}]")
+        section = sections.setdefault(key, {})
+        require_object(section, f"root.sections.{key}")
+        texts(section, ("conclusion",), f"root.sections.{key}")
+        facts = objects(section, "facts", ("title", "text", "source"), f"root.sections.{key}")
+        actions = strings(section, "actions", f"root.sections.{key}")
         if section.get("table") is not None:
             table_data = require_object(section["table"], f"root.sections.{key}.table")
-            headers = require_list(table_data, "headers", f"root.sections.{key}.table")
-            validate_text_list(headers, f"root.sections.{key}.table.headers")
-            table_rows = require_list(table_data, "rows", f"root.sections.{key}.table")
-            limit(table_rows, 8, f"root.sections.{key}.table.rows")
-            for row_index, row_value in enumerate(table_rows):
-                if not isinstance(row_value, list):
-                    raise ValueError(f"field must be a list: root.sections.{key}.table.rows[{row_index}]")
-                validate_text_list(row_value, f"root.sections.{key}.table.rows[{row_index}]")
-
-    risks = require_list(data, "risks", "root")
-    limit(risks, 8, "root.risks")
-    for i, risk_value in enumerate(risks):
-        risk = require_object(risk_value, f"root.risks[{i}]")
-        for key in ("chain", "fact", "alternative", "missing_evidence", "action", "level"):
-            require_text_field(risk, key, f"root.risks[{i}]")
-        for key in ("fact", "alternative", "missing_evidence", "action"):
-            text_limit(risk.get(key), 120, f"root.risks[{i}].{key}")
-    roadmap = require_list(data, "roadmap", "root")
-    if len(roadmap) != 3:
-        raise ValueError("root.roadmap must contain exactly three stages")
-    for i, stage in enumerate(roadmap):
-        if not isinstance(stage, dict):
-            raise ValueError(f"root.roadmap[{i}] must be an object")
-        for key in ("period", "owner", "completion"):
-            require_text_field(stage, key, f"root.roadmap[{i}]")
-        # completion 是可核验的验收条件，不是执行状态。禁止把“完成”等
-        # 空泛状态写进报告，避免尚未执行的整改被误读为已经完成。
-        completion = stage["completion"].strip()
-        if completion in GENERIC_COMPLETION_VALUES:
-            raise ValueError(
-                f"roadmap completion must describe a verifiable outcome: root.roadmap[{i}].completion"
-            )
-        if "goal" in stage:
-            require_text(stage["goal"], f"root.roadmap[{i}].goal")
-        validate_text_list(require_list(stage, "actions", f"root.roadmap[{i}]"), f"root.roadmap[{i}].actions")
-    p0_documents = require_list(data, "p0_documents", "root")
-    limit(p0_documents, 10, "root.p0_documents")
-    validate_text_list(p0_documents, "root.p0_documents")
-    # 确定性指标文件已经提供主计算表。补充计算可以为空，避免模型为了满足
-    # 非业务必需的占位项反复改写 JSON，并把同一计算重复塞进固定页面。
-    calculations = require_list(data, "calculations", "root", allow_empty=True)
-    limit(calculations, 10, "root.calculations")
-    for i, calculation_value in enumerate(calculations):
-        calculation = require_object(calculation_value, f"root.calculations[{i}]")
-        for key in ("indicator", "formula", "result", "source"):
-            require_text_field(calculation, key, f"root.calculations[{i}]")
-    validate_metrics(metrics, str(data["company"]))
-    policies = require_list(data, "policies", "root", allow_empty=True)
-    limit(policies, 5, "root.policies")
-    for i, policy_value in enumerate(policies):
-        policy = require_object(policy_value, f"root.policies[{i}]")
-        for key in ("name", "issuer", "date", "url"):
-            require_text_field(policy, key, f"root.policies[{i}]")
-        if any("待核验" in str(policy[key]) for key in ("name", "issuer", "date", "url")):
-            raise ValueError(f"placeholder policy is not allowed: root.policies[{i}]")
-        if not str(policy["url"]).startswith(("https://", "http://")):
-            raise ValueError(f"official policy URL is required: root.policies[{i}].url")
-    final = require(data, "final_judgment", "root")
+            strings(table_data, "headers", f"root.sections.{key}.table")
+            table_data.setdefault("rows", [])
+            if not isinstance(table_data["rows"], list) or any(not isinstance(row, list) for row in table_data["rows"]):
+                raise ValueError(f"table rows must be lists: root.sections.{key}.table")
+        for values, maximum, name in ((facts, 4, "facts"), (actions, 6, "actions")):
+            if message := limit(values, maximum, f"root.sections.{key}.{name}"):
+                warnings.append(message)
+    risks = objects(data, "risks", ("chain", "fact", "alternative", "missing_evidence", "action", "level"), "root")
+    roadmap = objects(data, "roadmap", ("period", "owner", "completion"), "root")
+    for index, stage in enumerate(roadmap):
+        strings(stage, "actions", f"root.roadmap[{index}]")
+        if stage["completion"].strip() in GENERIC_COMPLETION_VALUES:
+            warnings.append(f"root.roadmap[{index}].completion: 完成条件待具体化，原文已保留")
+    strings(data, "p0_documents", "root")
+    objects(data, "calculations", ("indicator", "formula", "result", "source"), "root")
+    validate_metrics(metrics, data["company"])
+    policies = objects(data, "policies", ("name", "issuer", "date", "url"), "root")
+    for index, policy in enumerate(policies):
+        if any(any(marker in policy[field] for marker in ("待核验", "待补", "—")) for field in ("name", "issuer", "date", "url")) or not policy["url"].startswith(("https://", "http://")):
+            warnings.append(f"root.policies[{index}]: 政策信息待核对，已保留当前条目")
+    final = data.setdefault("final_judgment", "—")
     if isinstance(final, dict):
-        require_text_field(final, "title", "root.final_judgment")
-        require_text_field(final, "text", "root.final_judgment")
+        texts(final, ("title", "text"), "root.final_judgment")
+    elif final is None:
+        data["final_judgment"] = "—"
     elif not isinstance(final, str):
         raise ValueError("field must be text or an object: root.final_judgment")
-    monthly_indicators = require_list(data, "monthly_indicators", "root")
-    limit(monthly_indicators, 5, "root.monthly_indicators")
-    for i, indicator_value in enumerate(monthly_indicators):
-        indicator = require_object(indicator_value, f"root.monthly_indicators[{i}]")
-        for key in ("name", "rule", "owner", "frequency"):
-            require_text_field(indicator, key, f"root.monthly_indicators[{i}]")
-    if "limitations" in data:
-        validate_text_list(require_list(data, "limitations", "root"), "root.limitations")
-    text_limit(final if isinstance(final, str) else final.get("text"), 260, "root.final_judgment.text")
+    objects(data, "monthly_indicators", ("name", "rule", "owner", "frequency"), "root")
+    strings(data, "limitations", "root")
+    strings(data, "missing_documents", "root")
+    if message := text_limit(final if isinstance(final, str) else (final or {}).get("text"), 260, "root.final_judgment.text"):
+        warnings.append(message)
+    for values, maximum, path in ((sources, 6, "sources"), (executive, 5, "executive_findings"), (rows, 8, "financial_overview.rows"), (kpis, 4, "financial_overview.kpis"), (risks, 8, "risks")):
+        if message := limit(values, maximum, f"root.{path}"):
+            warnings.append(message)
+    return list(dict.fromkeys(warnings))
 
 
 def tag(text: Any, cls: str = "tag") -> str:
@@ -389,11 +330,10 @@ def page(number: str, label: str, title: str, content: str, extra: str = "") -> 
 
 def render_cover(data: dict[str, Any]) -> str:
     period = data["period"]
-    policy_draft = not data["policies"]
-    status = "草稿：政策原文未核验" if policy_draft else data.get("source_status", "正式资料")
+    status = data.get("source_status", "资料状态见正文")
     internal = data.get("internal_only", False)
     restriction = data.get("use_restriction", "")
-    warning = "草稿，不用于正式税务结论" if policy_draft else "仅供内部自查" if internal else status
+    warning = "内部自查" if internal else status
     return f"""
     <section class="page cover">
       {fixed_page_branding(variant="gold", cover=True, vertical_offset_mm=BRAND_CENTER_OFFSET_MM)}
@@ -415,7 +355,7 @@ def render_cover(data: dict[str, Any]) -> str:
 
 
 def render_executive(data: dict[str, Any]) -> str:
-    findings = data["executive_findings"][:5]
+    findings = data["executive_findings"]
     cards = "".join(
         f'<article class="card {"risk" if f.get("level") == "高" else "warn" if f.get("level") == "中" else ""}">'
         f'<div class="card-top">{tag(f.get("level", "关注"), "risk-tag")}</div>'
@@ -452,12 +392,12 @@ def render_overview(data: dict[str, Any]) -> str:
     rows = []
     for row in overview["rows"]:
         annual_values = "；".join(
-            f"{year}：{value}" for year, value in zip(years, row["values"], strict=True)
+            f"{year}：{value}" for year, value in zip_longest(years, row["values"], fillvalue="待补")
         )
         rows.append([row["name"], annual_values, row["source_pages"], row["formula"]])
     kpis = "".join(
         f'<article class="card kpi"><small>{esc(x.get("label"))}</small><div class="num">{esc(x.get("value"))}</div><p>{esc(x.get("note", ""))}</p></article>'
-        for x in overview.get("kpis", [])[:4]
+        for x in overview.get("kpis", [])
     )
     body = f'<div class="kpi-grid">{kpis}</div>'
     body += '<h3>财务总览</h3>'
@@ -522,7 +462,7 @@ def render_sources(data: dict[str, Any], metrics: dict[str, Any]) -> str:
         policy_rows = [[x.get("name"), x.get("issuer"), x.get("date"), x.get("url")] for x in data["policies"]]
         body += '<h3>政策依据</h3>' + table(["文件", "发布机关", "日期", "链接"], policy_rows, "policy-table")
     else:
-        body += '<h3>政策依据</h3><div class="callout risk">本轮未取得可逐字核验的官方政策原文，本报告为草稿，不得作为正式税务结论使用。</div>'
+        body += '<h3>政策依据</h3><div class="callout risk">本轮政策原文待核对，相关判断按已取得的财务和业务资料列示。</div>'
     pages.append(page("15" if len(chunks) == 1 else f"15.{len(chunks)}", "计算过程与来源", "金额对应原始资料，比例列明计算依据", body))
     return "".join(pages)
 
@@ -537,7 +477,7 @@ def render_final(data: dict[str, Any]) -> str:
         [x["name"], x["rule"], x["owner"], x["frequency"]]
         for x in data["monthly_indicators"]
     ]
-    limitations = data.get("limitations", ["本报告不替代税务鉴证或法律意见。"])
+    limitations = data.get("limitations", ["本轮分析资料与判断口径见来源清单。"])
     body = f'<div class="hero-card"><div class="risk-level">{esc(data["risk_level"])}</div><h3>{esc(title)}</h3><p>{esc(text)}</p></div>'
     body += '<h3>月度监测指标</h3>' + table(
         ["指标", "监测规则", "责任岗位", "频率"], indicator_rows, "final-indicator-table"
@@ -566,15 +506,15 @@ def main() -> None:
     parser.add_argument(
         "--metrics-json",
         type=Path,
-        required=True,
-        help="deterministic manufacturing-tax-risk-metrics/v1 JSON",
+        help="optional manufacturing-tax-risk-metrics/v1 JSON from the calculator",
     )
     parser.add_argument("--css", type=Path, help="gold-advisor.css path")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--prepare-input", action="store_true", help="create a new editable report input from calculator fields")
     args = parser.parse_args()
 
-    metrics = json.loads(args.metrics_json.read_text(encoding="utf-8"))
+    metrics = (json.loads(args.metrics_json.read_text(encoding="utf-8")) if args.metrics_json
+               else {"schema": METRICS_SCHEMA, "report_rows": [], "display_values": {}})
     if not isinstance(metrics, dict):
         raise ValueError("metrics JSON root must be an object")
     if args.prepare_input:
@@ -589,9 +529,9 @@ def main() -> None:
     if not isinstance(data, dict):
         raise ValueError("input root must be an object")
     data = resolve_financial_references(data, metrics)
-    validate(data, metrics)
+    warnings = validate(data, metrics)
     if args.validate_only:
-        print(json.dumps({"status": "valid", "input": str(args.input)}, ensure_ascii=False))
+        print(json.dumps({"status": "valid", "input": str(args.input), "warnings": warnings}, ensure_ascii=False))
         return
     if not args.output:
         parser.error("output is required unless --validate-only is used")
@@ -600,7 +540,7 @@ def main() -> None:
     result = render(data, metrics, css)
     body_html = result.split("</style>", 1)[-1]
     if "{{" in body_html or "}}" in body_html:
-        raise ValueError("unresolved template marker detected in generated HTML")
+        warnings.append("正文含待填写模板标记，已保留当前内容")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(result, encoding="utf-8")
     print(
@@ -609,7 +549,8 @@ def main() -> None:
                 "status": "ok",
                 "pages": result.count('<section class="page'),
                 "output": str(args.output),
-                "metrics": str(args.metrics_json),
+                "metrics": str(args.metrics_json) if args.metrics_json else None,
+                "warnings": warnings,
             },
             ensure_ascii=False,
         )

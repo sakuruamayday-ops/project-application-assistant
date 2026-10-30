@@ -36,7 +36,7 @@ def test_contract_requires_full_path_not_current_priority_only() -> None:
     )
     required = (
         "暂不建议申报",
-        "不能删除路径",
+        "保留一行建设路径",
         "研发机构",
         "绿色工厂",
         "建设后申报",
@@ -57,18 +57,18 @@ def test_active_skills_load_or_enforce_contract() -> None:
         assert "policy-application-path-contract.md" in content
 
     orchestrator = read(ROOT / "skills" / "project-application-assistant" / "SKILL.md")
-    assert "前期评估政策路径总闸门" in orchestrator
-    assert "不得只列当前可申报" in orchestrator
-    assert "不是硬门槛" in orchestrator
+    assert "policy-application-path-contract.md" in orchestrator
+    assert "相关项目池" in orchestrator
+    assert "现状、建设后申报或长期梯度" in orchestrator
 
 
 def test_sme_preassessment_delivery_contains_policy_route_outputs() -> None:
     content = read(ROOT / "skills" / "sme-score-preassessment" / "SKILL.md")
     required = (
-        "后台建立完整相关项目池",
-        "十二字段路径卡只作内部完整性检查",
-        "研发中心、绿色工厂、数字化、知识产权和质量品牌",
-        "每项原则上只占一行",
+        "后台形成完整池",
+        "十二字段路径底稿",
+        "研发、绿色、数字化、IP 及质量品牌",
+        "前台用一张表列项目",
     )
     for phrase in required:
         assert phrase in content

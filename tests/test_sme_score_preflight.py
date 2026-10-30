@@ -124,7 +124,7 @@ def test_skill_baseline_matches_confirmed_project_rule_sources():
     )
 
 
-def test_skill_contract_requires_preflight_and_current_baseline():
+def test_skill_documents_optional_preflight_and_current_baseline():
     skill_text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
     operation_registry = json.loads(
         (ROOT / "skills/client-runtime-operations.json").read_text(encoding="utf-8")
@@ -136,7 +136,7 @@ def test_skill_contract_requires_preflight_and_current_baseline():
     )
 
     assert "scripts/preflight.py" in skill_text
-    assert "python3 <本技能实际目录>/scripts/preflight.py" in skill_text
+    assert "python3 <本技能目录>/scripts/preflight.py" in skill_text
     assert "sme-score-preassessment.run-preflight" in skill_text
     assert operation["parameters"]["taskType"]["values"] == [
         "quality-preassessment",
@@ -153,8 +153,9 @@ def test_skill_contract_requires_preflight_and_current_baseline():
     ]
     assert "--task-type quality-preassessment" in skill_text
     assert "current-policy-baseline-2026.md" in skill_text
-    assert "省级质量分门槛为 50 分" in skill_text
-    assert "内部二十二项百分制" in skill_text
+    assert "省级 50、小巨人 60" in skill_text
+    assert "历史评分模型作为历史资料" in skill_text
+    assert "真实平台记录" in skill_text
     assert "can_issue_full_score" not in skill_text
 
 

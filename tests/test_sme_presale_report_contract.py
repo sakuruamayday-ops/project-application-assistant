@@ -21,7 +21,7 @@ def test_sme_preassessment_uses_action_report_without_old_page_cap() -> None:
         "项目申报路径图",
         "补短板主导产品与专利",
         "财务情况分析",
-        "五章19个内容块",
+        "五章19块",
         "自然分页",
     )
     for phrase in required:
@@ -82,8 +82,8 @@ def test_visible_project_path_is_compact_but_complete() -> None:
         assert column in contract
 
     assert "每个项目原则上一行" in contract
-    assert "不展开成专项方案" in contract
-    assert "不把每个项目展开为十二字段路径卡" in contract
+    assert "每项目用一行路径和关键动作" in contract
+    assert "客户报告不展示内部十二字段路径卡" in contract
 
 
 def test_missing_data_and_verified_absence_are_distinguished() -> None:
@@ -103,9 +103,10 @@ def test_product_patent_and_peer_logic_is_bounded() -> None:
     )
     assert "最小充分产品单元" in contract
     assert "团队知识库已认定同行" in contract
-    assert "当前检索层未命中" in contract
-    assert "不得把相邻企业冒充同产品同行" in contract
-    assert "不补造具体专利事实" in contract
+    assert "说明当前检索范围" in contract
+    assert "注明实际可比范围" in contract
+    assert "已有专利按材料列示状态使用" in contract
+    assert "技术簇、建议数量和与主导产品的关系" in contract
 
 
 def test_presale_contract_does_not_change_other_project_analysis_skills() -> None:
@@ -121,13 +122,14 @@ def test_presale_contract_does_not_change_other_project_analysis_skills() -> Non
 
 def test_completed_application_routes_to_late_stage_checkup() -> None:
     skill = read(SKILL_DIR / "SKILL.md")
-    assert "已经形成完整申请书" in skill
-    assert "改用 `sme-development-projects`" in skill
-    assert "不适用本简版结构" in skill
+    assert "已有申请书核稿衔接 `sme-development-projects`" in skill
+    assert "合作后可行性展开实际条件、证据、动作、完成标准和年度节点" in skill
 
 
 def test_internal_preflight_metadata_is_not_customer_report_copy() -> None:
     skill = read(SKILL_DIR / "SKILL.md")
     assert "`policy_version`" in skill
-    assert "机器执行元数据，不写入客户报告" in skill
-    assert "status=calculated" in skill
+    assert "留在机器记录" in skill
+    assert "客户正文呈现事实、判断和行动" in skill
+    assert '"status":"verified-platform-score"' in skill
+    assert '"status":"pending-platform-evaluation"' in skill

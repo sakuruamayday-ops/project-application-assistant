@@ -1,59 +1,25 @@
 ---
 name: third-party-data-indexing
-description: 实验性第三方数据索引技能。将企策顾问等用户有权访问的第三方政策、申报项目、申报条件及通过或公示企业名单增量写入本地SQLite索引，支持漏采补采、断点、限速、去重、版本记录、官方链接健康检查及Markdown或JSONL导出。仅在用户明确启用并要求更新政策库、采集企策顾问、建立项目索引、查询当日申报通知、公示名单或配置定时补采时使用。
+description: 按用户任务增量索引企策顾问等已授权第三方的政策、条件、项目和公示名单，支持 SQLite、补采、断点、去重、版本、链接检查及 Markdown/JSONL 导出。
 ---
 
 # 第三方数据增量索引
 
+当前为实验性能力。离线资料直接交索引引擎处理；网页采集使用现有浏览器及授权会话，需要配置时衔接 `first-run-configuration`，官方政策判断按任务参考 `policy-retrieval`。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 采集与更新
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+1. 按用户账号权限和指定范围采集，`web-task-operator` 负责网页搜索、翻页、详情及登录交互。凭据由浏览器与宿主安全接口管理，业务导出使用脱敏字段。
+2. 将业务 JSON/JSONL 放入入箱后 `scripts/index_engine.py ingest`。申报通知提取条件，公示提取页面或附件的企业名单，新增、变更和缺原文记录展开详情。
+3. 记录批次、日期、新增、变更、重复、失败和官方链接缺失数，`scripts/quality_monitor.py` 可记录分页、限频、验证码、登录和链接情况。
+4. 登录、验证码及访问权限通过网站正常流程处理；暂未取得数据保留采集计划，已取得部分继续入库和输出。
+5. 用户要求定时任务时，由宿主按选择时间调用 `scripts/daily_update.py`，读取上次成功日补采。已有 `aiqice-YYYY-MM-DD.json/.jsonl` 可直接更新，待采部分输出请求并由可用网页能力补齐。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
+自动化参考 `references/daily-automation-prompt.md`，实际采集、计划和无人值守能力分别记录。
 
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+## 路径与命令
 
-> 当前状态：实验性。默认不启用，不作为项目匹配或正式政策判断的必需依赖。
-
-启用前读取 `first-run-configuration` 生成的能力报告；浏览器能力未确认时回到统一向导，不单独保存或重复询问企策顾问登录信息。
-
-用户已提供离线数据时，直接使用现有索引引擎处理，不为入库先启动浏览器、联网或专业政策校验。只在实际采集或作正式政策判断时执行对应步骤。
-
-## 执行边界
-
-1. 只处理用户使用自有账号和合法权限取得的数据。
-2. 调用 `web-task-operator` 完成扫码登录、列表检索、翻页、详情读取和人工接管；本Skill不保存密码、Cookie、Token或认证Header。
-3. 浏览器将脱敏业务数据导出到入箱，再运行 `scripts/index_engine.py ingest`。
-4. 第三方数据只是发现线索；进入正式推荐前调用政策检索Skill核验官方原文。
-5. 遇到登录失效、验证码、付费限制、访问拒绝或服务条款限制时停止，不规避。
-
-## 每日工作流
-
-1. 仅在用户明确配置后，由宿主自动化按用户选择的时间调用 `scripts/daily_update.py`；每日17:00只是可选示例，不是强制默认值。
-2. 读取上次成功日期，生成当日与缺失日期的补采计划。
-3. 如入箱已有 `aiqice-YYYY-MM-DD.json` 或 `.jsonl`，自动写入SQLite。
-4. 如缺少数据，输出标准采集请求；宿主自动化继续调用 `web-task-operator` 取得数据后再执行当日更新。
-5. 采集成功后写入批次、日期、新增、变更、重复、失败和官方链接缺失数。
-6. 只对新增、变更或缺少官方原文的记录打开详情页。
-7. 申报通知必须采集申报条件；公示公告必须采集页面或附件明确列出的通过、公示企业名单。
-8. 使用 `scripts/quality_monitor.py` 记录翻页、限频、验证码、登录失效和官方链接有效率。
-
-宿主自动化提示词见 `references/daily-automation-prompt.md`。宿主不支持自动化时，本地调度器会产生待采集请求并可打开企策顾问页面，但不得声称已完成无人值守取数。
-
-## 默认路径
-
-- 根目录：`~/.project-application-assistant/index/`
-- SQLite：`policy-index.sqlite3`
-- 浏览器导出入箱：`inbox/`
-- 待执行采集请求：`requests/`
-- Markdown归档视图：`markdown/`
-
-用户不需要手工编辑多份配置。需要改路径时使用命令参数或 `PROJECT_APPLICATION_ASSISTANT_INDEX_ROOT`。
-
-## 命令
+默认根 `~/.project-application-assistant/index/`，含 `policy-index.sqlite3`、`inbox/`、`requests/`、`markdown/`。可用参数或 `PROJECT_APPLICATION_ASSISTANT_INDEX_ROOT` 设置路径。
 
 ```bash
 python3 scripts/index_engine.py init
@@ -65,10 +31,8 @@ python3 scripts/index_engine.py export --format markdown
 python3 scripts/daily_update.py --open-browser
 ```
 
-## 数据规范
+## 数据方法
 
-字段、去重、版本和授权规则见 `references/index-schema.md`。企策顾问浏览器导出字段与本Skill字段一致，不包含认证信息。
+字段及去重见 `references/index-schema.md`。源 `id/year/version/status/source` 分别保存 ID、年度、源版本、申报状态及来源，URL 和发布日期取原文。`--source` 作为稳定命名空间，同来源复用；年度用 `--year`，失效记录用 `--include-inactive`，initial/update 批次依序原样导入。
 
-离线记录的 `id/year/version/status/source` 可直接导入，分别保留为源记录 ID、年度、源版本、申报状态和逐条来源。不要把 ID 伪造成网址，也不要把年度补成不存在的发布日期。`--source` 是整批采集来源的命名空间，重复导入同一来源时保持不变。按年度使用 `query --year`，不是标题关键词；检查失效记录时加 `--include-inactive`。若输入按 initial/update 分批，分别原样导出数组再依次导入，不改业务字段。
-
-采集日期默认由引擎读取当前系统日期。只有来源明确记载实际采集日或用户要求历史回填时才传 `--collection-date`；不能为 initial/update 自行编造两个历史日期。只读取指定输入和技能自身脚本说明，不借阅同目录中的旧任务结果作为输入或格式依据。
+采集日取引擎系统时钟，来源明确的历史日或用户要求回填时使用 `--collection-date`。输入采用当前指定文件，输出记录实际范围、状态和待采项。

@@ -63,7 +63,8 @@ class InstallTests(unittest.TestCase):
             self.assertFalse((skill / relative).exists(), relative)
         text = (skill / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("pending-platform-evaluation", text)
-        self.assertIn("不得生成估算总分", text)
+        self.assertIn("真实平台记录", text)
+        self.assertIn('"value":null', text)
 
     @unittest.skipUnless(
         Path(
@@ -185,9 +186,9 @@ class InstallTests(unittest.TestCase):
         retrieval = (
             repository / "skills/local-knowledge-retrieval/SKILL.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("只允许配置一个名为 `jiaotang-kb` 的 MCP", protocol)
-        self.assertIn("不得新增知识库 MCP", protocol)
-        self.assertIn("MCP `three_first_analysis`", retrieval)
+        self.assertIn("团队知识库统一复用 `jiaotang-kb` MCP 连接", protocol)
+        self.assertIn("新能力沿该连接配置并复用已有凭据", protocol)
+        self.assertIn("three_first_analysis", retrieval)
         subprocess.run(
             [sys.executable, str(repository / "tests/validate_single_knowledge_mcp.py")],
             cwd=repository,
@@ -582,7 +583,7 @@ class InstallTests(unittest.TestCase):
             / "skills/first-run-configuration/references/first-startup-protocol.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Agent", protocol)
-        self.assertIn("本轮实际工具", protocol)
+        self.assertIn("本轮工具目录和实际状态", protocol)
         self.assertNotIn("帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills", protocol)
 
     def test_standard_drafting_skill_has_rules_templates_and_audit(self):
@@ -592,7 +593,7 @@ class InstallTests(unittest.TestCase):
             repository / "skills/standard-drafting/references/gbt-1-1-drafting-rules.md"
         ).read_text(encoding="utf-8")
         self.assertIn("GB/T 1.1", skill)
-        self.assertIn("要求—试验方法—判定规则对应矩阵", skill)
+        self.assertIn("要求—试验—判定矩阵", skill)
         self.assertIn("2026-01-08复审结论：继续有效", rules)
         self.assertTrue(
             (repository / "skills/standard-drafting/assets/standard-draft-template.md").is_file()
@@ -601,7 +602,7 @@ class InstallTests(unittest.TestCase):
             (repository / "skills/standard-drafting/scripts/audit_standard_draft.py").is_file()
         )
         router = (repository / "skills/project-task-router/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("路由 `standard-drafting`", router)
+        self.assertIn("`standard-drafting`", router)
 
     def test_local_knowledge_retrieval_has_multi_path_gates(self):
         repository = Path(__file__).resolve().parents[1]
@@ -615,27 +616,27 @@ class InstallTests(unittest.TestCase):
         self.assertIn("POST /v1/lists/search", skill)
         self.assertIn("public_list_search", skill)
         self.assertIn("knowledge_search", skill)
-        self.assertIn("truncated` 输出 `true`、`false` 或 `unavailable`", skill)
+        self.assertIn("`truncated` 为 `true/false/unavailable`", skill)
         self.assertIn("prompt_hook_observable=false", skill)
-        self.assertIn("不创建宿主管理的记忆目录", skill)
-        self.assertIn("尚未取得官方最终认定名单", skill)
-        self.assertIn("同一对象出现两个计数", skill)
-        self.assertIn("年份替换为认定批次", protocol)
-        self.assertIn("不得通过企业名称判断登记城市", protocol)
-        self.assertIn("不能据此判断资料不存在", protocol)
+        self.assertIn("验收、保存、归档和日志按用户任务范围分别执行", skill)
+        self.assertIn("最终名单状态与主表覆盖分列", skill)
+        self.assertIn("显式实体、各分级合计、总计和核验调用范围相互对照", skill)
+        self.assertIn("认定批次映射", protocol)
+        self.assertIn("城市待核", protocol)
+        self.assertIn("企业身份时间轴", skill)
         self.assertIn(
             "未见复核通过，原称号需按当期通知作失效核验。还可能是更名、迁址或合并。",
             protocol,
         )
         self.assertIn("专精特新产业园", protocol)
         self.assertIn("无分页状态的路径时为 `unavailable`", protocol)
-        self.assertIn("不能证明最终名单已经形成", protocol)
+        self.assertIn("申报、推荐、公示候选和年份映射分别保留其阶段", protocol)
         three_first = (
             repository
             / "skills/local-knowledge-retrieval/references/three-first-project-list-schema.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("同一企业同年多个产品必须保留多行", three_first)
-        self.assertIn("首版次必须区分省级与市级", three_first)
+        self.assertIn("同企同年多产品逐产品保留行", three_first)
+        self.assertIn("省级与当地市级两个分组", three_first)
 
 
 if __name__ == "__main__":

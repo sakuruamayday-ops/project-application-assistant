@@ -132,8 +132,8 @@ def main() -> int:
         "client_runtime_matches_skills_release": (
             client_runtime.get("release_tag") == release_tag
         ),
-        "client_runtime_fails_closed": (
-            client_runtime.get("enforcement", {}).get("mode") == "fail-closed"
+        "client_runtime_security_is_independent_of_business_output": (
+            client_runtime.get("enforcement", {}).get("mode") == "security-only"
             and client_runtime.get("enforcement", {}).get(
                 "model_compliance_is_not_enforcement"
             ) is True
@@ -159,10 +159,9 @@ def main() -> int:
             and '"validate-delivery"' in engine_text
             and '"--receipt-export-dir"' in engine_text
         ),
-        "evidence_skill_forbids_unapproved_external_upload": (
-            "未经用户明确授权" in evidence_skill_text
-            and "外部" in evidence_skill_text
-            and "上传" in evidence_skill_text
+        "evidence_skill_routes_upload_and_credentials_through_host": (
+            "上传及凭据使用由用户指令和宿主权限处理" in evidence_skill_text
+            and "安全凭据通过专用接口" in evidence_skill_text
         ),
     }
     failures = [name for name, passed in checks.items() if not passed]

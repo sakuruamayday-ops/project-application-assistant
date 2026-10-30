@@ -183,13 +183,12 @@ def test_positive_peer_lookup_and_refusal_boundaries() -> None:
 
 
 def test_existing_report_explanation_never_creates_a_new_report() -> None:
-    # Loading the business skill for a named existing report is acceptable, but
-    # its cross-host instruction must explicitly refuse a new artifact.
+    # A named report may load its skill while the requested explanation keeps its scope.
     prompt = "解释这份高企前期评估报告的结论。"
     assert "project-feasibility" in matched_skills(prompt)
     skill = (SKILLS / "project-feasibility/SKILL.md").read_text(encoding="utf-8")
-    assert "仅解释、摘录或普通改写已有报告时不新建报告" in skill
-    assert "不得重新生成两类报告或创建新文件" in skill
+    assert "既有报告解释和改写按请求范围完成" in skill
+    assert "单点问题直接回答，完整报告按用户目标组织" in skill
 
 
 def test_cross_host_frontmatter_exposes_colloquial_triggers() -> None:
@@ -200,24 +199,23 @@ def test_cross_host_frontmatter_exposes_colloquial_triggers() -> None:
     feasibility_description = feasibility.split("---", 2)[1]
     peer_description = peer.split("---", 2)[1]
     assert "企业名称" in feasibility_description
-    assert "前期评估报告" in feasibility_description
-    assert "可行性分析报告" in feasibility_description
+    assert "前期评估" in feasibility_description
+    assert "可行性" in feasibility_description
     assert "双报告" in feasibility_description
-    assert "专精特新企业帮我查" in peer_description
-    assert "先查本地知识库" in peer_description
+    assert "查某产品专精特新同行" in peer_description
+    assert "政府公示和公开资料" in peer_description
 
 
 def test_peer_lookup_contract_is_local_first_and_web_only_on_fallback() -> None:
     peer_skill = (SKILLS / "peer-benchmarking/SKILL.md").read_text(
         encoding="utf-8"
     )
-    local = peer_skill.index("先检索本地知识库")
-    local_before_web = peer_skill.index("再进行任何联网检索", local)
-    assert local < local_before_web
+    assert "当前知识服务中的政府公示、认定、复核和原文" in peer_skill
     assert "recognition-source-routing.md" in peer_skill
     routing = (SKILLS / "_runtime/recognition-source-routing.md").read_text(encoding="utf-8")
+    assert "先复用本地知识库" in routing
     assert "直接定位政府公示及附件" in routing
-    assert "不是读取政府名单的前置条件" in routing
+    assert "已定位原文可直接读取" in routing
     assert "主体歧义" in routing
     assert "enterprise-source-fallback.md" in routing
 

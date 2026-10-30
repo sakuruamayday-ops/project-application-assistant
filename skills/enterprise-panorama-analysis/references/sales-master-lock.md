@@ -5,7 +5,7 @@
 - 当前母版为浙江巨能样式的中性母版预览，随包路径仍为 `assets/sales-master-reference.pdf`。
 - 私有原件只在本机用于视觉核对，套件不包含原客户报告和其企业、财务或经营事实。
 - 固定生成源 `assets/sales-master-template.html` 与 `assets/sales-style.css` 配套，模型只提供[业务数据](sales-html-input.md)。
-- `assets/sales-preview-cover.png`、`assets/sales-preview-basic-info.png`、`assets/sales-preview-assessment.png` 为中性母版PDF第1、2、7页的实际渲染；支持图像时用 `read_image` 读取这三张图片，不把PDF当作图片，文本模型使用人工核验的固定模板源。
+- 三张 `assets/sales-preview-cover.png`、`assets/sales-preview-basic-info.png`、`assets/sales-preview-assessment.png` 为实际母版渲染；图像模型读取 PNG，文本模型沿固定模板源填稿。
 - 报告机构署名固定为共创知识产权；A永久免主水印及角标水印，仍执行原品牌与交付检查。
 
 ## 章节与内容
@@ -27,4 +27,4 @@
 | 字体 | Noto Sans CJK SC 2.004、DejaVu Sans 2.37完整常规/粗体 |
 | 状态 | 验证用CSS真圆点与文字，严重程度用原彩色底标签 |
 
-封面保留橙色独立布局、公司名原字距及橙底白字保密片。图标按原像素大小/比例与标题推进槽布局，不能方形拉伸或换emoji字体。真实PDF像素对照用于复核当前候选；普通输入测试、源码参数和同源打印预览一致不代表母版1:1已经通过。不得缩字或增加留白凑固定页数。
+封面沿用橙色独立布局、公司名字距和保密片，图标保持原像素比例及标题槽位。以实际 PDF 像素对照核验母版、字体、图标和分页；页数随内容自然形成。

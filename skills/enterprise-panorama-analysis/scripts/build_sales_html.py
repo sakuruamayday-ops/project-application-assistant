@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fill the sales master from business data; the model cannot supply layout."""
+"""Fill the existing sales master with supplied business content and status dots."""
 from __future__ import annotations
 
 import argparse
@@ -7,7 +7,6 @@ import base64
 import html
 import json
 import re
-import unicodedata
 from pathlib import Path
 
 
@@ -79,26 +78,37 @@ def text(value: object) -> str:
     if not isinstance(value, (str, int, float)) or isinstance(value, bool):
         raise ValueError("业务文字必须是字符串或用户提供的数值")
     result = str(value)
-    if re.search(r"\(\s*[绿黄黃⻩红]\s*\)", unicodedata.normalize("NFKC", result)):
-        raise ValueError("颜色状态使用 {text,status} 业务数据，不能用括号色名替代圆点")
     return result
+
+
+COLOR_MARKER = re.compile(r"[（(]\s*([绿綠黄黃⻩红紅])\s*[）)]")
+COLOR_LEVEL = {"绿": "low", "綠": "low", "黄": "medium", "黃": "medium", "⻩": "medium", "红": "high", "紅": "high"}
+
+
+def marked_text(value: object) -> str:
+    """Use the master's existing circle component for supplied color markers."""
+    label = text(value)
+    parts: list[str] = []
+    start = 0
+    for marker in COLOR_MARKER.finditer(label):
+        parts.append(f'<span class="risk {COLOR_LEVEL[marker[1]]}">{html.escape(label[start:marker.start()])}</span>')
+        start = marker.end()
+    parts.append(html.escape(label[start:]))
+    return "".join(parts)
 
 
 def cell(value: object) -> str:
     if not isinstance(value, dict):
-        return html.escape(text(value))
-    if set(value) - {"text", "status", "severity"} or "status" in value and "severity" in value:
-        raise ValueError("单元格使用 text 加 status 或 severity，不能传 HTML 或样式")
-    label = html.escape(text(value.get("text")))
-    if "severity" in value:
-        level = value["severity"]
-        if level not in {"low", "medium", "high", "pending"}:
-            raise ValueError("severity 必须是 low、medium、high 或 pending")
-        return f'<span class="severity {level}">{label}</span>'
-    level = value.get("status")
-    if level not in {"low", "medium", "high"}:
-        raise ValueError("status 必须是 low、medium 或 high，说明文字保留实际业务含义")
-    return f'<span class="risk {level}">{label}</span>'
+        return marked_text(value)
+    label = text(value.get("text"))
+    severity = value.get("severity")
+    status = value.get("status")
+    if isinstance(severity, str) and severity in {"low", "medium", "high", "pending"}:
+        return f'<span class="severity {severity}">{marked_text(label)}</span>'
+    if isinstance(status, str) and status in {"low", "medium", "high"}:
+        label = COLOR_MARKER.sub(lambda marker: "" if COLOR_LEVEL[marker[1]] == status else marker[0], label)
+        return f'<span class="risk {status}">{marked_text(label)}</span>'
+    return marked_text(label)
 
 
 def table(kind: str, rows: list, *, source_kind: str | None = None) -> str:
@@ -107,29 +117,13 @@ def table(kind: str, rows: list, *, source_kind: str | None = None) -> str:
     caption, headers = TABLES[kind]
     if not isinstance(rows, list):
         raise ValueError("表格 rows 必须是数组")
-    if kind == "operating-metrics" and source_kind != "customer-file":
-        # Public registration and staffing fields are not customer financials.
-        # Unsupported financial inputs become explicit gaps without blocking the report.
-        public_metrics = {"注册资本", "实缴资本", "成立日期", "成立时间", "员工人数", "员工规模",
-                          "人员规模", "参保人数", "所属行业", "主营业务", "经营范围", "纳税信用等级"}
-        normalized = []
-        for row in rows:
-            if not isinstance(row, list) or len(row) != len(headers):
-                raise ValueError(f"表格 {kind} 每行必须有 {len(headers)} 列")
-            label = row[0].get("text") if isinstance(row[0], dict) else row[0]
-            value = row[1].get("text") if isinstance(row[1], dict) else row[1]
-            pending = value in (None, "") or (isinstance(value, str)
-                and not re.search(r"[0-9一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾]", value)
-                and re.search(r"待(?:核|提供|补|确认)|尚未|未取得|未提供|请企业提供", value))
-            public = label in public_metrics and source_kind in {"government-source", "third-party-platform", "public-source"}
-            normalized.append(row if pending or public else [row[0], PENDING, "仅采用用户提供的财务资料，当前未取得"])
-        rows = normalized
     if not rows:
         rows = [[PENDING for _ in headers]]
     rendered = []
     for row in rows:
-        if not isinstance(row, list) or len(row) != len(headers):
-            raise ValueError(f"表格 {kind} 每行必须有 {len(headers)} 列")
+        if not isinstance(row, list) or len(row) > len(headers):
+            raise ValueError(f"表格 {kind} 行数据需与 {len(headers)} 个现有栏目对应")
+        row = [*row, *([None] * (len(headers) - len(row)))]
         rendered.append("<tr>" + "".join(f"<td>{cell(value)}</td>" for value in row) + "</tr>")
     return (f'<h2>{caption}</h2><table data-table-type="{kind}"><thead><tr>'
             + "".join(f"<th>{header}</th>" for header in headers)
@@ -137,28 +131,25 @@ def table(kind: str, rows: list, *, source_kind: str | None = None) -> str:
 
 
 def summary_card(value: dict) -> str:
-    if not isinstance(value, dict) or set(value) - {"title", "text"}:
+    if not isinstance(value, dict):
         raise ValueError("摘要只接受 title、text 业务文字")
     return f'<div class="summary-card"><h3>{cell(value.get("title"))}</h3><p>{cell(value.get("text"))}</p></div>'
 
 
 def callout(value: dict) -> str:
-    if not isinstance(value, dict) or set(value) - {"kind", "title", "text"}:
+    if not isinstance(value, dict):
         raise ValueError("提示只接受 kind、title、text")
     kind = value.get("kind")
     if kind not in {"warning", "success", "info", "danger"}:
-        raise ValueError("提示 kind 必须是 warning、success、info 或 danger")
+        kind = "info"
     source = "data:image/png;base64," + base64.b64encode((ASSETS / "icons" / f"callout-{kind}.png").read_bytes()).decode("ascii")
     return (f'<div class="callout {kind}"><img class="callout-icon" alt="" src="{source}">'
             f'<strong>{cell(value.get("title"))}：</strong>{cell(value.get("text"))}</div>')
 
 
 def section(number: str, data: dict, company: dict) -> str:
-    allowed = {"paragraphs", "tables", "notes", "summary", "callouts", "points"}
-    if number == "08": allowed.add("comparison")
-    if number == "12": allowed.add("assessment")
-    if not isinstance(data, dict) or set(data) - allowed:
-        raise ValueError("章节只接受已说明的业务字段，不能传 HTML/CSS")
+    if not isinstance(data, dict):
+        raise ValueError("章节内容需为业务数据对象")
     parts = []
     if number == "01":
         parts.append('<table class="basic-info"><thead><tr><th>项目</th><th>内容</th></tr></thead><tbody>'
@@ -166,7 +157,7 @@ def section(number: str, data: dict, company: dict) -> str:
                      + "</tbody></table>")
         parts.append('<p class="scope-note">企业主体核验以本次来源为限，待核字段请企业提供相应资料后判断。</p>')
     if number == "07":
-        parts.append('<p class="scope-note">只填写用户提供的经营、财务资料，不估算营收、利润、研发费、产能或未分配利润。</p>')
+        parts.append('<p class="scope-note">经营、财务数据按本次提供内容及来源列示，待核实口径随相应条目注明。</p>')
     paragraphs = data.get("paragraphs", [])
     notes = data.get("notes", [])
     tables = data.get("tables", [])
@@ -183,21 +174,32 @@ def section(number: str, data: dict, company: dict) -> str:
         parts.extend(callout(value) for value in data["callouts"])
     supplied_tables = {}
     for item in tables:
-        if not isinstance(item, dict) or set(item) - {"type", "rows", "source_kind", "summary", "callouts"}:
-            raise ValueError("表格只接受固定 type、rows、source_kind 与摘要/提示业务数据，不能改列或 DOM")
+        if not isinstance(item, dict):
+            raise ValueError("表格内容需为业务数据对象")
         kind = item.get("type")
-        if kind not in SECTION_TABLES[number] or kind in supplied_tables:
-            raise ValueError(f"章节 {number} 只使用其固定表格类型，每种提供一次完整数据")
-        supplied_tables[kind] = item
+        if kind is None and not item.get("rows"):
+            continue
+        if kind not in TABLES:
+            raise ValueError(f"表格type无法匹配现有列定义：{kind}")
+        if kind in supplied_tables:
+            previous = supplied_tables[kind]
+            if not isinstance(previous.get("rows", []), list) or not isinstance(item.get("rows", []), list):
+                raise ValueError("表格rows需为数组")
+            previous["rows"] = [*previous.get("rows", []), *item.get("rows", [])]
+            previous.setdefault("_continuations", []).append(item)
+        else:
+            supplied_tables[kind] = {key: item[key] for key in ("type", "rows", "source_kind", "summary", "callouts") if key in item}
     required = REQUIRED_TABLES.get(number)
-    for kind in SECTION_TABLES[number]:
+    for kind in (*SECTION_TABLES[number], *(kind for kind in supplied_tables if kind not in SECTION_TABLES[number])):
         item = supplied_tables.get(kind)
         if item is not None:
             parts.append(table(kind, item.get("rows", []), source_kind=item.get("source_kind")))
-            if "summary" in item: parts.append(summary_card(item["summary"]))
-            if "callouts" in item:
-                if not isinstance(item["callouts"], list): raise ValueError("callouts 必须是数组")
-                parts.extend(callout(value) for value in item["callouts"])
+            for detail in (item, *item.get("_continuations", [])):
+                if "summary" in detail:
+                    parts.append(summary_card(detail["summary"]))
+                if "callouts" in detail:
+                    if not isinstance(detail["callouts"], list): raise ValueError("callouts 必须是数组")
+                    parts.extend(callout(value) for value in detail["callouts"])
         elif kind == required or number == "07" and kind == "operating-metrics":
             parts.append(table(kind, []))
     parts.extend(f'<p class="notice">{cell(value)}</p>' for value in notes)
@@ -211,21 +213,21 @@ def font_uri(path: Path) -> str:
 
 def build_sales_html(input_path: Path, output_path: Path) -> dict:
     data = json.loads(input_path.read_text(encoding="utf-8-sig"))
-    if not isinstance(data, dict) or set(data) - {"company", "report_date", "data_as_of", "sections", "sources"}:
-        raise ValueError("输入只接受 company、report_date、data_as_of、sections、sources 业务数据")
-    company = data.get("company")
-    if not isinstance(company, dict) or not isinstance(company.get("name"), str) or not company["name"].strip():
-        raise ValueError("company.name 必须是当前企业名称")
-    if set(company) - {key for key, _ in COMPANY_FIELDS}:
-        raise ValueError("company 只接受固定工商字段，不能传样式或 HTML")
+    if not isinstance(data, dict):
+        raise ValueError("输入需为业务数据对象")
+    company = data.get("company", {})
+    if not isinstance(company, dict):
+        raise ValueError("company需为工商信息对象")
+    company = {**company, "name": text(company.get("name"))}
     output_path = output_path.expanduser().resolve()
     if output_path.suffix.lower() != ".html" or output_path.is_relative_to(SKILL_ROOT):
         raise ValueError("输出必须是技能目录之外的新 .html 文件")
     if output_path.exists():
         raise FileExistsError("已有输出不覆盖，请使用新的 HTML 路径")
     sections = data.get("sections", {})
-    if not isinstance(sections, dict) or set(sections) - {f"{number:02}" for number in range(1, 14)}:
-        raise ValueError("sections 使用固定章节编号 01 至 13")
+    if not isinstance(sections, dict):
+        raise ValueError("sections需为章节业务数据对象")
+    sections = {key: value for key, value in sections.items() if key in {f"{number:02}" for number in range(1, 14)}}
     if any(not isinstance(value, dict) for value in sections.values()):
         raise ValueError("每章内容必须是业务数据对象")
     css = (ASSETS / "sales-style.css").read_text(encoding="utf-8")
@@ -239,13 +241,13 @@ def build_sales_html(input_path: Path, output_path: Path) -> dict:
         "DATA_AS_OF": html.escape(text(data.get("data_as_of"))),
     }
     assessment = sections.get("12", {}).get("assessment", {})
-    if not isinstance(assessment, dict) or set(assessment) - {"level", "description", "summary"}:
+    if not isinstance(assessment, dict):
         raise ValueError("assessment 只接受本企业的 level、description、summary，不自动评分")
     replacements.update({"ASSESSMENT_LEVEL": html.escape(text(assessment.get("level", "待核"))),
                          "ASSESSMENT_DESCRIPTION": html.escape(text(assessment.get("description"))),
                          "ASSESSMENT_SUMMARY": html.escape(text(assessment.get("summary")))})
     comparison = sections.get("08", {}).get("comparison", {})
-    if not isinstance(comparison, dict) or set(comparison) - {"advantages", "limitations"}:
+    if not isinstance(comparison, dict):
         raise ValueError("comparison 只接受本企业 advantages、limitations 要点")
     for field in ("advantages", "limitations"):
         values = comparison.get(field, [PENDING])
@@ -264,7 +266,7 @@ def build_sales_html(input_path: Path, output_path: Path) -> dict:
         raise ValueError("sources 必须是实际来源数组")
     source_rows = []
     for item in sources:
-        if not isinstance(item, dict) or set(item) - {"name", "url", "queried_at"}:
+        if not isinstance(item, dict):
             raise ValueError("来源只接受 name、url、queried_at，不能传 HTML")
         source_rows.append("<tr>" + "".join(f"<td>{cell(item.get(key))}</td>" for key in ("name", "url", "queried_at")) + "</tr>")
     replacements["SOURCES"] = "\n".join(source_rows) or '<tr><td colspan="3">请补充本企业实际来源，当前未提供来源清单。</td></tr>'

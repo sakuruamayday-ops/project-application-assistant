@@ -27,12 +27,13 @@ def test_document_catalog_does_not_require_business_receipts(operation_id):
 
 def test_shared_guidance_separates_code_ownership_from_skill_loading():
     guidance = (SKILLS / "_runtime/task-execution.md").read_text()
-    assert "操作名前缀只表示代码归属" in guidance
-    assert "不以先加载所属业务技能为执行前提" in guidance
-    assert "不等待业务画像、专业预校验或正式状态回执" in guidance
-    assert "不编造来源或结论" in guidance
-    assert "后台上传失败不阻断本地文件交付" in guidance
+    assert "前缀表示代码归属" in guidance
+    assert "客户端工具目录已登记操作可直接使用" in guidance
+    assert "先生成并交付可用产物" in guidance
+    assert "资料缺失时继续生成可用稿" in guidance
+    assert "登录、隔离、密钥、验签和回滚" in guidance
     manifest = json.loads((SKILLS / "suite-manifest.json").read_text())
     contract = manifest["release"]["installation"]["verification"]
-    assert "不以所属业务技能预加载" in contract
-    assert "固定操作先加载所属技能" not in contract
+    assert "签名与逐文件完整性一致" in contract
+    assert "技能按任务需要读取" in contract
+    assert "真实文件生成后直接交付" in contract

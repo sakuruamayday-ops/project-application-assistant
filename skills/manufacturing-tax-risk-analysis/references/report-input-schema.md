@@ -2,7 +2,7 @@
 
 ## 使用方法
 
-按本文字段表整理指标输入，不要在首次运行前读取或复制同目录的示例文件。先用确定性计算器生成共享事实与报告指标，再用 `--prepare-input` 创建本轮新 `report-data.json`。它按真实年度预置财务表格和数值引用；模型补充分析、来源及动作后再生成报告，不从空 JSON 手抄数值。已有输入直接局部修改，不重新初始化；只有生成器真实返回字段结构错误且错误信息不足时，才定向查看相关示例片段：
+先用本轮财务数据运行确定性计算器，再以 `--prepare-input` 创建新的 `report-data.json`，沿真实年度预置表格和引用，补分析、来源和动作后生成。已有输入直接局部修订；字段问题定向查本文及相应示例。
 
 ```bash
 python3 scripts/calculate_metrics.py metrics-input.json enterprise-financial-facts.v1.json \
@@ -32,23 +32,23 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | risk_level | string | 高关注、中关注、一般关注 |
 | one_line_conclusion | string | 执行摘要总判断 |
 | sources | array | name、period、status、pages、limitation |
-| executive_findings | array | title、conclusion、level、source，最多取5项 |
-| financial_overview | object | years、kpis、rows、conclusion；kpis 最多4项，KPI 必填 label、value，可选 note；每行含 name、values、source_pages、formula |
+| executive_findings | array | title、conclusion、level、source，集中呈现本企业主要发现 |
+| financial_overview | object | years、kpis、rows、conclusion；KPI 含 label、value、可选 note，表行含 name、values、source_pages、formula |
 | sections | object | 固定9个专题 |
 | risks | array | 风险地图 |
-| roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion；completion 必须写可核验的完成条件，不是当前执行状态 |
+| roadmap | array | 按实际行动阶段组织；period、actions、owner、completion，其中 completion 写可观察验收结果 |
 | p0_documents | array | 高优先补充资料 |
 | calculations | array | 可为空；仅填写确定性指标文件尚未覆盖的补充计算，每项含 indicator、formula、result、source |
-| policies | array | 本轮已核验的现行官方政策；每项含非空 name、issuer、date、官方直达 url。无法取得官方原文时必须为空数组，生成器自动输出明确标注的草稿 |
+| policies | array | 本轮已核验的现行官方政策；每项含非空 name、issuer、date、官方直达 url。官方原文未取得时可留空数组，状态沿用当前模型判断并列出来源缺口 |
 | final_judgment | object/string | 最终判断 |
 | monthly_indicators | array | name、rule、owner、frequency |
-| limitations | array | 资料缺口、政策核验范围与鉴证责任边界；不放水印、文件格式、产物数量及工具执行说明 |
+| limitations | array | 资料缺口、政策范围及鉴证责任；执行过程留内部记录 |
 
-所有面向正文的列表项都必须使用纯字符串。`missing_documents`、各专题的 `actions`、`roadmap[*].actions`、`p0_documents` 和 `limitations` 不接受 `{ "text": "..." }`、`{ "owner": "..." }` 等对象形式。生成器会在渲染前拒绝类型不符的数据，避免把 Python/JSON 对象字面量写进正式报告。
+正文列表使用字符串数组：`missing_documents`、专题及路线 `actions`、`p0_documents`、`limitations`。责任岗位另填 `owner`，其他对象按字段表归位。
 
 ## 九个固定专题
 
-`sections` 必须包含：
+`sections` 可按当前资料填写以下专题：
 
 1. `profitability`
 2. `cash_flow`
@@ -60,38 +60,38 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 8. `income_tax_rd`
 9. `accrual_revenue`
 
-每个专题必须包含 `conclusion`、`facts` 和 `actions`。可选 `title` 与 `table`。`facts` 每项使用 `title`、`text`、`source`；表格使用 `headers` 和 `rows`。
+每个专题可填写 `conclusion`、`facts` 和 `actions`。可选 `title` 与 `table`。`facts` 每项使用 `title`、`text`、`source`；表格使用 `headers` 和 `rows`。
 
-`actions` 是字符串数组，例如 `["补齐期后回款凭证", "逐笔复核关联往来"]`。整改责任岗位写入 `roadmap[*].owner`，不要把动作改成对象数组。
+`actions` 填字符串数组，例如 `["补齐期后回款凭证", "逐笔复核关联往来"]`；责任岗位填 `roadmap[*].owner`。
 
-`roadmap[*].completion` 必须描述验收结果，例如“P0资料齐备并形成签收清单”或“差异清单逐项闭合并由负责人复核”。不得只写“完成”“已完成”“通过”“达标”“待完成”等状态词；报告生成时整改尚未执行，不能把建议动作误标成已完成。
+`roadmap[*].completion` 写可观察的验收结果，例如“差异逐项闭合并经负责人复核”；建议动作、执行状态及已完成证据分别记录。
 
-为保证基础页面不溢出：执行判断不超过5项；KPI 卡片不超过4项；总览指标行不超过8行；每个专题事实不超过4项、动作不超过6项、专题表格不超过8行；风险地图不超过8项；补充计算不超过10项；政策不超过5项；月度指标不超过5项。确定性指标不受补充计算数量限制，来源表自动增加续页。按 `risk-gates.md` 列示的十项风险闸门检查，但报告只汇总最重要的8项风险链。
+按原布局集中表达判断、KPI、事实、动作与风险，来源和必要明细自然续页。可参考 `risk-gates.md` 核对相关风险，正文按本企业实际问题展开。
 
-生成器同时执行文字长度门禁：公司名称不超过40字；总判断和专题结论分别不超过180字；单项事实不超过140字；单项动作不超过80字；风险矩阵单元不超过120字；最终判断正文不超过260字。超过限制时先压缩表达，不要缩小字号。
+内容长度按实际版式调整：优先压缩重复背景，保持关键事实、来源、风险含义和动作；字体和表格沿母版。
 
 ## 财务总览
 
-`financial_overview.years` 至少两个年度。每个 `rows` 项的 `values` 数量必须与年度数量一致，并提供 `source_pages` 与 `formula`。展示值应提前格式化为“13,515.26万元”“99.21%”等，生成器不猜测金额单位。
+`financial_overview.years` 填实际年度，`rows.values` 与之对应，提供 `source_pages`、`formula`；数值格式注明金额单位和百分比。
 
-KPI、结论和专题正文中的数字只允许直接取自原始年度数据，或取自确定性指标文件已经输出的展示值。不得自行计算三年复合增长率、累计净利润、均值、合计值或其他计算器尚未覆盖的派生数值；例如不得把三年收入改写为 CAGR，也不得把各年净利润相加后写成累计净利润。确有业务需要时，先扩展确定性计算器及测试，再用于报告。
+KPI、结论和专题优先引用原始年度数据或确定性指标展示值；确有新增派生指标时，使用同源输入、清楚公式、单位和可复算结果，按生成器支持的字段或独立计算说明呈现。
 
 ## 确定性指标文件
 
-年度键使用四位年份，例如 `2025`。营业收入和应收账款同比只与上一自然年度比较；缺少上一年度时输出无法计算及缺失年度，不用更早年度替代，不按零补齐。其他年度及可计算指标继续输出。
+年度键用四位年份；同比与上一自然年比较，缺期显示缺失年度及计算状态，其余年度继续输出。
 
-`--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
+可选 `--metrics-json` 指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
-共创客户端通过 `manufacturing-tax-risk-analysis.calculate-metrics` 的已验签回执覆盖报告里的确定性展示形式。同一差额同时显示为万元和元时，由计算器生成两种可绑定数值；不得让模型重新读取成品、枚举全部数字或手工复制复算数组。政策表只有在本轮官方原文已核验并进入证据时才填写，且至少包含一项现行政策的名称、发布机关、日期和官方直达链接。不从示例或记忆补齐；无法核验时把 `policies` 写为空数组并继续生成，生成器会在封面和来源页明确标注草稿。不要用空链接或“现行状态待核验”占位冒充正式政策证据，也不要为此重复联网或停止交付。
+共创客户端复用 `manufacturing-tax-risk-analysis.calculate-metrics` 已验签回执绑定展示值，元与万元按计算器对应值填写。政策表据本轮已核验官方原文填名称、机关、日期和直达链接；暂缺政策依据时 `policies` 填空数组并继续生成，封面与来源页保留草稿状态。
 
 `calculations` 默认写 `[]`。确定性指标文件的 `report_rows` 会自动进入“计算过程与来源”页；只有确有新增、已绑定的计算且未被确定性文件覆盖时才添加补充行。所有指标与补充计算完整保留，来源表每10行增加续页，不截断内容。报告保留17个基础页面，实际页数以生成器返回的 `pages` 为准，PDF验收使用该页数。
 
-报告中的比例、增长率和阈值优先使用确定性指标文件已经输出的结果。不要自行增加当前计算器或专业校验器无法复算的复合指标，例如未提供连续年度复合增长率计算链时直接写 CAGR；确需增加时，应先扩展确定性计算器及其测试。月度规则中的硬阈值只有在本轮证据或复算参数能够绑定时才填写具体数字，否则改写为不含虚构阈值的趋势监测或核验动作。
+比例、增长率和阈值优先引用确定性指标；新增复合指标按同源输入与公式复算。月度阈值绑定本轮证据或计算参数，参数待核时先给趋势监测和核验动作。
 
 ## 已提供政策文件的保留
 
-`policies` 是已核验现行官方政策的专用槽，不是全部材料清单。用户提供且已读取的政策文件，无论官方网页是否命中，都登记在 `sources`：`name` 写文件标题，`period` 写适用期，`status` 如实区分用户提供、已读和官方核验状态，`pages` 标出原文位置，`limitation` 记录用户已确认的采用范围与剩余核验缺口。对结论的影响写入 `limitations`。官方现行性不足时维持草稿，不丢弃该文件或再次要求用户提供同一材料；也不将用户提供伪标为官方网页核验。
+`policies` 存本轮已核验官方现行文件；用户已提供文件登记 `sources` 的名称、适用期、状态、位置与采用范围。官方现行性待核时保留草稿及缺口，继续使用已取得内容并交付。
 
 ## 风险表达
 
-每项风险固定填写 `chain`、`fact`、`alternative`、`missing_evidence`、`action`、`level`。缺交易级证据时用“需核验”，不得直接写违法结论。
+风险项填 `chain`、`fact`、`alternative`、`missing_evidence`、`action`、`level`；交易证据待取得时用“需核验”，法律结论据完整证据判断。

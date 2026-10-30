@@ -434,10 +434,10 @@ def test_sme_skill_documents_the_signed_validator_contract():
         if item["id"] == "sme-development-projects.validate-assessment"
     )
 
-    assert '"assessment":"<工作区内结果.json>"' in skill_text
-    assert "一次构造、一次调用" in operation["description"]
-    assert "不创建无关探针或反复猜测枚举" in skill_text
-    assert "未通过校验不得交付正式结论" in skill_text
+    assert "sme-development-projects.validate-assessment" in skill_text
+    assert operation["parameters"]["assessment"]["type"] == "workspace-input-file"
+    assert operation["parameters"]["assessment"]["extensions"] == [".json"]
+    assert "生成内容或文件直接交付" in skill_text
     for token in (
         "application_context",
         "overall_conclusion",
@@ -536,7 +536,7 @@ def test_policy_freshness_current_manifest_passes():
 
 
 @requires_policy_freshness_host
-def test_policy_freshness_blocks_after_review_date():
+def test_policy_freshness_reports_review_due_without_blocking_output():
     result = subprocess.run(
         [
             sys.executable,
@@ -550,8 +550,11 @@ def test_policy_freshness_blocks_after_review_date():
         capture_output=True,
         text=True,
     )
-    assert result.returncode != 0
-    assert "超过下次复核日期" in result.stdout
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "pass"
+    assert payload["errors"] == []
+    assert any("超过下次复核日期" in warning for warning in payload["warnings"])
 
 
 def load_collection_module():

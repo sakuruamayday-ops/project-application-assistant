@@ -1,154 +1,55 @@
 ---
 name: manufacturing-tax-risk-analysis
-description: 基于制造企业近三年审计报告、财务报表及税务资料，完成三表复算、财务健康分析、金税四期与智慧税务风险筛查、订单和往来穿透、研发及所得税核验，默认生成带金色居中水印的专业顾问版 PDF；用户明确要求时交付同正文的可编辑 Word。用于用户提出制造企业金税四期分析、税务风险体检、审计报告财务分析、账票税款货一致性检查、税务整改方案或同类金色顾问报告时。
+description: 基于制造企业财务与税务资料，复算三表、分析现金流和财务健康、筛查智慧税务及账票税款货一致性，形成整改建议。完整报告默认金色顾问版 PDF，按请求交付同正文 Word；单指标咨询按问题范围处理。
 ---
 
-# 制造企业金税财务体检
+# 制造企业财税体检
 
+以可复算、可追溯的财务事实支持风险判断，风险信号与违法认定分别表述。完整分析、整改方案和报告按下列方法组织，单点咨询直接核验对应问题。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 资料与复算
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+1. 锚定企业、年度、单位及连续性，使用用户提供的合作客户财务资料。登记纳税申报、发票、流水、库存、合同、个税社保和研发辅助账的取得状态。
+2. PDF、OCR、联网及排版使用当前宿主能力；扫描关键金额回看原页，保留提取结果和修正记录。三表分析按需采用 `financial-verification`。
+3. 提取资产负债表的资金、应收预付其他应收、存货、资产、借款、应付预收、税费、负债与权益；利润表的收入成本、费用、利润、所得税及滞纳金；现金流的收现、采购、薪酬、税费、经营、资本和筹资；附注的税率优惠、账龄、库存、进项、关联、抵押担保和意见。
+4. 复算主表合计、期初期末与现金净变动。数据结构见 [data-schema.md](references/data-schema.md)。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
-
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
-
-用户只问一个财务指标、税务风险信号或账务现象时，只核验并解释该问题，不自动要求近三年全套资料，也不生成九专题、风险地图、整改路线或顾问报告。以下完整体检流程只在用户明确要求财税体检、完整分析、整改方案或正式报告时执行。
-
-## 目标
-
-把审计报告中的三年财务事实转换为可复算、可追溯的财务与税务风险报告。先判断数据一致性，再讨论税务风险；风险提示不等于违法认定。
-
-## 必须联用的能力
-
-- 读取既有 PDF：使用宿主 PDF 能力。
-- 扫描审计报告：使用宿主 OCR 能力，保留 Markdown、结构化结果和原始输出。
-- 三表分析：调用 `financial-verification`，按其三表联读、指标复算和现金流规则形成共享财务事实。
-- 正式交付：默认使用宿主 PDF 排版能力与包内金色顾问模板；用户明确要 Word 时复用下述原生 DOCX 与金色品牌操作。
-- 事实性和政策性断言：执行防幻觉自检。
-- 查询现行政策：使用联网检索；后端不可用时改用官方域名限定搜索。
-
-## 工作流
-
-### 1. 锁定资料与期间
-
-1. 确认企业名称、分析年度和审计报告是否连续。
-2. 只使用用户提供的合作客户财务数据，不用第三方过期财务数据补造。
-3. 记录缺失资料。通常包括纳税申报表、发票明细、银行流水、存货台账、合同履约、个税社保和研发辅助账。
-4. 审计报告为扫描件时必须 OCR；关键金额回看原页。
-
-### 2. 提取并复核财务数据
-
-至少提取：
-
-- 资产负债表：货币资金、应收账款、预付款项、其他应收款、存货、流动资产、总资产、短期借款、应付账款、预收账款、应交税费、流动负债、总负债、权益。
-- 利润表：收入、成本、税金附加、销售费用、管理费用、研发或研究费用、财务费用、利息、营业利润、利润总额、所得税费用、净利润、滞纳金。
-- 现金流量表：销售收现、采购付现、职工薪酬、支付税费、经营现金流、资本开支、筹资现金流。
-- 附注：税率及优惠、往来账龄、存货构成、进项税、关联方余额、抵押担保、审计意见。
-
-主表合计、期初期末衔接和现金净变动必须复算。OCR 金额与原页不一致时以原页为准并记录修正。
-
-### 3. 计算指标
-
-按 [数据结构与公式](references/data-schema.md) 准备 JSON。共创客户端提供
-`gongchuang_skill_operation` 时，必须调用已验签操作
-`manufacturing-tax-risk-analysis.calculate-metrics`，参数依次使用当前工作区内的
-`input`、`financialFactsOutput` 和 `metricsOutput` 路径，不得改用 Bash 重跑同一计算。
-该操作回执已包含宿主可直接绑定的全部确定性展示值；专业校验时用一条
-`calculated` 证据引用此操作，不得重新扫描 HTML、逐页枚举数字或手抄计算数组。
-
-随后用本技能 `scripts/generate_report_html.py report-data.json --metrics-json metrics.json --prepare-input` 准备本轮新报告输入，路径替换为当前工作区实际路径。程序按真实年度生成财务表格和具名数值引用；读取后仅补分析文字、来源与行动，不从空 JSON 重新抄写全部财务数值。已有输入直接局部修改，不重复初始化。准备出的内容是分析草稿，尚未形成业务结论，不能直接当作完成报告。
-
-其他宿主没有上述固定操作时，使用便携命令：
+客户端可用 `manufacturing-tax-risk-analysis.calculate-metrics`，参数为工作区 `input`、`financialFactsOutput`、`metricsOutput`。专业核验可用一条 `calculated` 证据绑定实际计算回执及展示值。其他宿主运行：
 
 ```bash
-python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-facts.v1.json \
-  --metrics-output artifacts/manufacturing-tax-risk-metrics.v1.json
+python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-facts.v1.json --metrics-output artifacts/manufacturing-tax-risk-metrics.v1.json
 ```
 
-`enterprise-financial-facts.v1.json` 必须使用 `enterprise-financial-facts/v1` 共享事实契约，保留企业身份、年度、单位、合并口径、原始数值、计算指标、证据页和质量状态。`manufacturing-tax-risk-metrics.v1.json` 由同一确定性计算器生成，固定包含跨年收入与应收增速、研发费用率、资产负债表恒等式差额，以及缺少输入时无法计算的指标和原因。不得手工重写这两份计算结果。共享事实文件可供 `financial-verification`、`project-feasibility`、专精特新体检和其他申报技能复用，但不把税务风险判断自动传递为项目资格结论。
+共享事实使用 `enterprise-financial-facts/v1`，保留主体、年度、单位、合并范围、原值、指标、证据和质量；指标文件包含收入与应收增速、研发费率、恒等式差额及待算原因。其他技能复用事实及质量状态，资格和税务判断另据专业分析形成。
 
-文档已经给出连续命令时，在同一个 `run_code` 中按依赖顺序执行相邻的输入校验、生成、导出和成品检查；除非前一步结果会改变下一步参数，不要每成功一个命令就返回模型重新规划。报告同时展示同一结果的元、万元或百分比形式时，已验签计算回执会生成对应展示变体。便携宿主需要自行校验这些单位换算，但不得让模型从成品全文反向抄录数字台账。
+“支付税费÷收入”称现金税费支付率；行业经验结合订单周期与可比样本使用。单位展示取计算器 `display_values`，便携宿主核对元、万元和百分比换算。
 
-禁止把现金流量表“支付的税费 ÷ 收入”称为增值税税负率；统一称“现金税费支付率”。制造业经验基准只作提示，不能代替企业订单周期和行业对标。
+## 风险分析与政策
 
-### 4. 执行风险闸门
+参考 [risk-gates.md](references/risk-gates.md)，核对预收、收现、开票及收入；库存、采购、领用及成本；往来账龄、对象与用途；关联交易和定价；会计利润、税申报、亏损与优惠；核算、高企、加计扣除三套研发口径；工资个税社保代发；发票红冲税率品名及票货款合同；出口报关收汇退税；滞纳金、逾期及更正。
 
-读取 [风险判断与证据闸门](references/risk-gates.md)。至少检查：
+每项用“事实—计算—风险及替代解释—待取证据—动作”表达，交易级事实待取时写需核验。政策采用税务总局、财政部、政府和属地税务官方原文，参考 [policy-baseline.md](references/policy-baseline.md)、[tax-calculation-and-freshness-protocol.md](references/tax-calculation-and-freshness-protocol.md) 动态核验。
 
-1. 预收款、销售收现、开票和收入确认。
-2. 存货、采购进项、生产领用和成本结转。
-3. 应收账款与其他应收款账龄、对象和资金用途。
-4. 关联交易真实性、定价和资金闭环。
-5. 会计利润、所得税申报、亏损弥补和优惠扣除。
-6. 会计研发、高企研发、加计扣除研发三套口径。
-7. 工资、个税、社保和银行代发一致性。
-8. 发票作废红冲、税率、品名、票货款合同一致性。
-9. 出口收入、报关、收汇、退税和进项分配。
-10. 滞纳金、逾期申报和历史更正。
+精确文号、日期和链接对应实际取得的官方文本。原文待取时 `policies` 使用空数组，继续生成标注“政策原文未核验”的分析草稿，来源定位按实际年度、科目、文件或页码。网络状态按工具真实返回说明。标题、段落小修沿用原资料和政策状态，数字、画像及其他正文保持对应版本。
 
-对每项输出“事实—计算—风险解释—替代解释—缺失证据—动作”。没有交易级证据时写“需核验”，不得写“存在偷税、虚开或股东借款”。
+“金税四期”按智慧税务、以数治税的通俗称谓使用，经验预警阈值标明来源性质。
 
-### 5. 核验政策
+## 写作与生成
 
-每次任务重新核验现行官方来源。优先国家税务总局政策法规库、财政部、政府门户和企业所在地税务局。参考 [政策基线](references/policy-baseline.md)，但不得假定其中状态永久有效。
+采用 [report-spec.md](references/report-spec.md)，按经营变化、资产现金流、税务一致性、重点核验和 30/60/90 天动作组织。封面为“完成人：共创知识产权”；正文面向读者，资料说明使用财报、科目和计算口径，执行过程留在对话。
 
-只有本轮已打开的官方原文能够逐字支持时，报告才列精确政策年份、文号、成文日期和直达链接，并把对应原文纳入证据。无法访问官方原文时，不在 `policies` 中填写占位项，也不得依据示例、记忆或通用首页补写精确文号和日期；直接使用空数组继续生成。生成器会把成品明确标为“政策原文未核验”的草稿，先交付可用分析，不再让联网失败阻塞或反复重跑正式报告链。文件入口与最终回复均称“分析草稿”或“待完善稿”，不能因格式、数字或品牌检查通过称为“正式版”。
-
-用户只修改既有报告标题或段落时，沿用原资料状态，不因开启新轮次补写政策。`policies` 为空的报告不提交 `official-policy` 已核验证据；旧消息、示例或记忆中的政策名和网址不是本轮回执。需要绑定财务数字时执行一次已签名 `calculate-metrics` 并引用其空 `values` 的 `calculated` 证据，不添加无意义的人工复算。保持当前报告画像，不通过省略画像来消除校验提示；保留未修改正文和数值。
-
-未执行官方原文访问时，只写“政策原文尚未核验”，不能声称网络失败、无法打开或被拦截；只有实际工具返回该失败时才说明对应原因。输入为科目汇总或无页码表格时，来源定位到年度、科目和文件，不承诺存在原始报表页码。
-
-涉及具体税种、税率、优惠、计税依据或申报期限时，同时读取 [税种计算与政策时效协议](references/tax-calculation-and-freshness-protocol.md)。不得把外部通用税务技能中的历史税率、优惠期限、截止日或处罚金额复制为正式常量。
-
-“金税四期”作为智慧税务和以数治税的通俗称谓。课件中的百分比阈值、预警描述和案例仅作内部筛查，不写成全国统一法定标准。
-
-### 6. 撰写报告
-
-采用 [报告结构与视觉规范](references/report-spec.md)。默认结论顺序：
-
-1. 经营改善或恶化。
-2. 资产质量和现金流。
-3. 税务数据一致性。
-4. 高优先核验事项。
-5. 30天、60天、90天整改路线。
-
-关键数字必须给来源页码和计算公式。报告封面固定列示“完成人：共创知识产权”。
-
-正文只面向报告读者。摘要写企业经营判断，不写“共享财务事实”“九个固定专题”；资料来源写财务报表、科目汇总及指标复算，不写程序或工具执行状态。`limitations` 只写资料缺口、政策核验范围和鉴证责任边界，不写水印、品牌检查、文件格式、交付产物数量、JSON、OCR执行过程或生成步骤。这些执行结果仅在会话回复说明，不能作为报告免责声明。保留程序准备的业务化说明，按企业资料补充，不用交付检查清单替换。
-
-按 [自动报告输入规范](references/report-input-schema.md) 补完程序准备的 `report-data.json` 分析字段，然后运行：
-
-财务正文按[数值回填段落模板](references/financial-paragraph-templates.md)仿写。金额、比例与周转天数在 `report-data.json` 中保留具名财务引用，由生成器从计算器的 `display_values` 回填；模型只选对应字段与组织分析，不自行换算元、万元或重抄财务数字。原始企业资料及用户编辑不被回写覆盖。
+按 [report-input-schema.md](references/report-input-schema.md) 准备分析字段，财务段落参考 [financial-paragraph-templates.md](references/financial-paragraph-templates.md)。金额、比例和周转天数保留具名引用，生成器从计算结果回填，已有输入可局部修订。
 
 ```bash
-python3 scripts/generate_report_html.py report-data.json report.html \
-  --metrics-json artifacts/manufacturing-tax-risk-metrics.v1.json
+python3 scripts/generate_report_html.py report-data.json --metrics-json metrics.json --prepare-input
+python3 scripts/generate_report_html.py report-data.json report.html --metrics-json artifacts/manufacturing-tax-risk-metrics.v1.json
 ```
 
-运行生成器前先解析工作区和技能脚本的绝对路径，并在第一次调用时直接传入绝对路径；不要先用不确定的相对路径试错。整改路线的 `completion` 表示可核验的完成条件，不是执行状态，禁止写成“完成”“已完成”“通过”或“达标”。
+运行时使用工作区及脚本实际绝对路径。`completion` 写可核验完成条件。生成器采用金色顾问模板，输出 17 个基础页面区块，来源超过 10 行自动续页；财务总览、风险地图、90 天路线、计算来源四表与必填、长度、主体及占位检查由生成器处理。实际页数取返回 `pages`，错误定向修复，成功结果继续渲染交付。
 
-生成器必须读取确定性指标文件，输出17个基础页面区块，来源表超过10行时自动增加续页，并完成必填字段、字段长度、报告主体一致性和未解析占位符检查。财务总览、风险地图、90天整改路线、计算过程与来源四张表由生成器固定输出；跨年增速、研发费用率、资产负债表恒等式差额和无法计算原因直接来自指标文件，不能由模型省略或改写。
-不得用模型临时拼接的普通HTML替代该生成器。
+## 文件与验收
 
-生成器返回 `status: ok` 后，记录返回的 `pages` 实际页数，直接进入 PDF 渲染和共享交付闸门。不得重新读取完整 HTML、逐词 `grep`、人工统计页面区块或另写脚本复核固定章节；这些检查已经由生成器和交付闸门负责。只有生成器或交付闸门明确报错时，才按报错字段定向读取对应输入或输出片段并修复一次，避免把成功成品误判为截断后进入重复检查。
-
-`references/report-data.example.json` 仅供测试与人工理解，不是运行前置资料。首次生成不得读取或复制该示例；字段规范已经足够时直接生成。只有生成器真实返回某个字段结构错误，且错误信息仍不足以修正时，才定向读取与该字段直接相关的示例片段，避免把整份示例反复带入上下文。
-
-### 7. 生成金色顾问版成品
-
-默认执行下方 PDF 流程。只有用户明确要求 Word、DOCX 或可编辑 Word 时，才改走同正文 Word；只要 Word 时不附加 PDF。用户要求修改既有报告并转成 Word 时，直接复用当前已确认的 HTML，不重写正文、不重算数字，也不重新生成一份不同的报告输入。
-
-#### 用户明确要 Word 时
-
-1. 沿用当前任务、同一 HTML 正文及已核验的事实，不重新抄写 body，也不把专业审核作为生成 Word 的前置。原有九专题、四张表、财务数字、单位、来源、缺项及政策核验状态继续生效；关键依据或政策原文未核验时保持初稿，不因换格式升级为正式结论。
-2. 调用已验签 `evidence-ledger.create-docx-from-file`，`input` 使用同一工作区 HTML 的绝对路径，`output` 使用尚不存在的 `.docx` 路径。该操作直接复制 HTML 正文和表格，不把财务正文交给模型重写成 Markdown，不反向抄录数值，也不修改原 HTML。
-3. 调用已验签 `evidence-ledger.apply-office-branding-gold`，`artifact` 使用该 DOCX 路径。该固定操作使用共享金色资产写入页眉和居中水印；随后检查本次 Word 能否打开、正文和品牌是否保留；需要专业复核时另行检查同一份文件。只交付本次实际生成的 Word，不用旧文件回执替代，也不把初稿冒称完整定稿。
-
-其他宿主没有上述操作时，从当前 Skill 目录执行同一现有脚本：
+默认 PDF，可按用户请求生成 Word 或两种格式；HTML、指标和共享事实作为任务源文件保留。Word 复用同一 HTML 和资料状态，使用 `evidence-ledger.create-docx-from-file` 的 `input`、新 `output`，再用 `evidence-ledger.apply-office-branding-gold`。其他宿主：
 
 ```bash
 python3 ../evidence-ledger/scripts/create_docx_from_text.py --input-file /abs/report.html /abs/report.docx
@@ -156,39 +57,15 @@ python3 ../evidence-ledger/scripts/apply_office_branding.py /abs/report.docx --v
 python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.docx
 ```
 
-#### 默认 PDF
-
-1. 固定使用 `assets/gold-advisor.css` 与包内生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
-   生成器已从共享品牌运行时向每个固定页面写入金色水印、品牌抬头及封面署名，作者也在 HTML 元数据中声明。品牌不由模型拼写或另行决定。
-2. 在提供 `gongchuang_deliver_pdf` 的共创客户端内，以生成器返回的同一 HTML 调用该工具，完成导出、可打开检查和文件入口交付，不先等待业务审核。事实、计算、正文、品牌和版式按本技能复核，缺关键依据时明确交付初稿。已有品牌由客户端保留，不重复叠加；成功后复用 PDF，后续阶段失败只补该步骤，不再调用 `brand_gold_pdf.py` 改写同一成品或另出同正文副本，也不重复运行下方其他宿主的交付流程。
-3. 以下内存管道仅用于没有上述宿主渲染器的兼容宿主；已有品牌会由共享运行时保留，不得重复叠加。
-   确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。以内存管道渲染并调用同一技能包内 `skills/_runtime/gongchuang-branding` 共享运行时：
+PDF 沿用 `assets/gold-advisor.css` 的深棕黑、香槟金、米金体系及共享金色水印、署名和元数据。客户端以同一 HTML 调用 `gongchuang_deliver_pdf`；其他宿主使用当前 Node、Playwright、Chromium 和 PyMuPDF 能力：
 
 ```bash
-node scripts/render_pdf_stdout.js /abs/report.html \
-  | python3 scripts/brand_gold_pdf.py /abs/report.pdf --audit-json /abs/brand-audit.json
+node scripts/render_pdf_stdout.js /abs/report.html | python3 scripts/brand_gold_pdf.py /abs/report.pdf --audit-json /abs/brand-audit.json
+python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.pdf --expected-pages "$REPORT_PAGES" --expected-author 共创知识产权 --expected-title-contains 金税四期
 ```
 
-4. 禁止把无水印底稿或中间版本写入交付目录。
+`REPORT_PAGES` 取本次生成器返回值。已有品牌及成品直接复用交付；用户需要深度检查时核对页数、作者、每页一个同尺寸居中金色水印，并渲染核对封面、正文、风险矩阵、长表和来源的裁切、重叠、空白、乱码及断表。Word 和 PDF 分别绑定各自检查结果。
 
-### 8. 交付闸门
+交付说明实际稿件状态、资料缺口与 OCR 不确定性，鉴证及法律结论衔接相应专业审查；归档和模板沉淀按用户要求办理。
 
-共创客户端由上述对应格式的工具完成检查。Word 使用上方原生 DOCX 与品牌检查，不套用 PDF 页数；其他宿主生成 PDF 后，从当前 Skill 目录执行共享交付闸门。`REPORT_PAGES` 使用本次生成器 JSON 返回的 `pages` 数值，不能固定为17：
-
-```bash
-python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py \
-  /abs/report.pdf \
-  --expected-pages "$REPORT_PAGES" \
-  --expected-author 共创知识产权 \
-  --expected-title-contains 金税四期
-```
-
-闸门必须确认页数与生成器返回值一致、作者元数据正确、每页恰有一个居中金色水印且全文尺寸一致。
-随后渲染全部页面为图片，抽查封面、普通正文、风险矩阵、最长表格和来源页，确认无裁切、重叠、空白页、乱码和表格断裂。
-
-## 交付要求
-
-- 默认只交付 PDF；用户明确只要 Word 时只交付同正文 DOCX，明确两种格式时才同时交付。HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件保留在本地供计算、修订和证据复用；用户明确需要可编辑数据或源文件时才追加交付。
-- 说明数据缺口和 OCR 不确定性。
-- 不承诺不存在其他税务风险，不替代税务鉴证或法律意见。
-- 任务结束询问是否归档报告，并询问是否把本次结构继续沉淀为行业模板。
+报告表达采用[报告写作规则](../_runtime/report-writing.md)。

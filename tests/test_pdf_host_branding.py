@@ -70,3 +70,19 @@ def test_shifted_existing_watermark_fails_placement_check():
         doc[0].insert_image(fitz.Rect(40, 40, 140, 140), filename=str(asset))
         with pytest.raises(GateFailure, match="未水平居中"):
             validate_pdf_document(doc)
+
+
+def test_saved_pdf_does_not_wait_for_optional_brand_validation(tmp_path, monkeypatch):
+    import delivery_gate
+    from pdf_two_pass import brand_pdf_bytes
+
+    def rejected(*args, **kwargs):
+        raise GateFailure("optional brand review unavailable")
+
+    monkeypatch.setattr(delivery_gate, "validate_artifact", rejected)
+    with document(1) as source:
+        output = tmp_path / "saved.pdf"
+        audit = brand_pdf_bytes(source.tobytes(), output)
+    assert len(audit) == 1
+    with fitz.open(output) as reopened:
+        assert "Synthetic report body" in reopened[0].get_text()

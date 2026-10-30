@@ -91,7 +91,6 @@ def test_missing_cost_is_not_zero(tmp_path):
 @pytest.mark.parametrize("data", [
     {"registration": {"不存在的字段": "value"}},
     {"rd_financials": {"RD99": [1, 2, 3]}},
-    {"rd_financials": {"RD01": [1, -2, 3]}},
     {"ps": [{}, {}]},
 ])
 def test_bad_input_does_not_write_partial_file(tmp_path, data):
@@ -131,14 +130,18 @@ def test_seventeen_rd_projects_split_without_losing_totals(tmp_path):
 @pytest.mark.parametrize("external,domestic,annual", [([2, 0, 0], [0, 0, 0], 1),
                                                            ([1, 0, 0], [2, 0, 0], 1),
                                                            ([0, 0, 0], [0, 0, 0], 2)])
-def test_inconsistent_expense_relationships_do_not_generate(tmp_path, external, domestic, annual):
+def test_inconsistent_expense_relationships_preserve_values_and_generate(tmp_path, external, domestic, annual):
     result, output = run_fill(tmp_path, {
         "annual_financials": [{"year": 2023 + n, "rd": annual if n == 0 else 0} for n in range(3)],
         "rd_financials": {"RD01": [1, 0, 0]},
         "rd_external": {"RD01": external}, "rd_external_domestic": {"RD01": domestic},
     })
-    assert result.returncode != 0
-    assert not output.exists()
+    assert result.returncode == 0, result.stderr
+    assert output.is_file()
+    assert json.loads(result.stdout)["warnings"]
+    document = Document(output)
+    expense = next(table for table in document.tables if "研究开发费用（内、外部）小计" in table._tbl.xml)
+    assert physical(expense, 11, 6) == "1"
 
 
 def test_ps_innovation_and_ip_are_written_to_named_fields(tmp_path):
@@ -169,9 +172,49 @@ def test_short_field_names_and_embedded_cjk_font(tmp_path):
 @pytest.mark.parametrize("data", [
     {"schema_version": 2}, {"schema_version": True},
     {"innovation": {"科技成果转化情况": "甲", "科技成果转化情况（限400字）": "乙"}},
-    {"innovation": {"科技成果转化情况": "甲" * 401}},
 ])
-def test_bad_version_duplicate_or_overlong_field_is_rejected(tmp_path, data):
+def test_bad_version_or_duplicate_target_is_rejected(tmp_path, data):
     result, output = run_fill(tmp_path, data)
     assert result.returncode != 0
     assert not output.exists()
+
+
+def test_overlong_fields_and_negative_adjustments_generate_without_losing_text(tmp_path):
+    long_text = "完整原文" * 120
+    result, output = run_fill(tmp_path, {
+        "innovation": {"科技成果转化情况": long_text},
+        "rd_financials": {"RD01": [1, -2, 3]},
+    })
+    assert result.returncode == 0, result.stderr
+    document = Document(output)
+    assert long_text in "".join(document.element.xpath("//w:t/text()"))
+    assert physical(document.tables[5], 3, 3) == "2"
+    assert physical(document.tables[5], 4, 6) == "-2"
+    assert any("400字" in warning for warning in json.loads(result.stdout)["warnings"])
+    assert any("负数" in warning for warning in json.loads(result.stdout)["warnings"])
+
+
+def test_incomplete_years_and_partial_rd_fill_existing_fields(tmp_path):
+    source = tmp_path / "two-rd.docx"
+    document = Document(TEMPLATE)
+    EXPAND.resize_kind(document, "rd", 2, "RD")
+    EXPAND.resize_kind(document, "ps", 1, "PS")
+    document.save(source)
+    result, output = run_fill(tmp_path, {
+        "annual_financials": [{"year": 2024, "rd": 20}],
+        "rd_financials": {"RD01": [10, None, None]},
+    }, template=source)
+    assert result.returncode == 0, result.stderr
+    assert output.is_file()
+    payload = json.loads(result.stdout)
+    assert any("年度资料" in warning for warning in payload["warnings"])
+    assert any("部分RD" in warning for warning in payload["warnings"])
+
+
+def test_empty_annual_input_keeps_missing_values_blank(tmp_path):
+    result, output = run_fill(tmp_path, {"annual_financials": [], "rd_financials": {"RD01": [None, None, None]}})
+    assert result.returncode == 0, result.stderr
+    document = Document(output)
+    assert physical(document.tables[1], 7, 1) == ""
+    assert physical(document.tables[1], 7, 4) == ""
+    assert any("研究开发费用（内、外部）小计" in table._tbl.xml for table in document.tables)

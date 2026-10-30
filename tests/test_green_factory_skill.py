@@ -228,7 +228,7 @@ def test_green_factory_ledger_blocks_recommendation_when_basic_gate_unknown(tmp_
     assert "基本要求未全部通过时不得形成推荐结论" in result.stdout
 
 
-def test_green_factory_skill_has_version_score_and_attachment_gates():
+def test_green_factory_skill_retains_version_scoring_and_attachment_methods():
     skill_text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
     reference = (SKILL / "references" / "green-factory-self-evaluation.md").read_text(
         encoding="utf-8"
@@ -237,19 +237,20 @@ def test_green_factory_skill_has_version_score_and_attachment_gates():
         encoding="utf-8"
     )
     for phrase in (
-        "国家绿色工厂、省级绿色低碳工厂、市级或区县绿色工厂、零碳或近零碳工厂不是同一项目",
-        "确认得分只使用已核验证据",
+        "国家、省、市区县绿色工厂及零碳、近零碳工厂分别记录",
+        "确认分使用已核依据",
         "scripts/validate_green_factory_ledger.py",
     ):
         assert phrase in skill_text
     for phrase in (
-        "政策版本未知或评分证据未闭合时，不得写“可以推荐”",
-        "附件编号在内容定稿后生成，不从其他企业报告复制",
+        "得分、推荐、截止日和年度清单列待核",
+        "编号按本企业定稿材料生成",
         "确认分",
         "条件分",
+        "继续形成自评价稿",
     ):
         assert phrase in reference
-    assert "行业协会咨询" in metrics_reference
+    assert "仅有咨询表述的结果列为待核依据" in metrics_reference
 
 
 def test_green_factory_skill_contains_no_customer_sample_identifiers():

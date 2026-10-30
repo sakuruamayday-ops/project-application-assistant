@@ -193,8 +193,8 @@ def test_cross_skill_financial_reuse_is_declared():
     expected = {
         "skills/manufacturing-tax-risk-analysis/SKILL.md": "enterprise-financial-facts/v1",
         "skills/financial-verification/SKILL.md": "validate_financial_facts.py",
-        "skills/project-feasibility/SKILL.md": "artifacts/enterprise-financial-facts.v1.json",
-        "skills/project-task-router/SKILL.md": "enterprise-financial-facts/v1",
+        "skills/project-feasibility/SKILL.md": "enterprise-financial-facts/v1",
+        "skills/project-task-router/SKILL.md": "共享财务事实核验主体、期间及口径后复用",
         "skills/project-application-assistant/SKILL.md": "enterprise-financial-facts/v1",
         "skills/sme-development-projects/SKILL.md": "enterprise-financial-facts/v1",
     }

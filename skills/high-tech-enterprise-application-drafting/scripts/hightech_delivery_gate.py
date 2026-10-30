@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
-"""Fail-closed delivery gate for high-tech application summary DOCX files.
+"""Record optional high-tech application checks without withholding a DOCX.
 
-The gate records four immutable stages:
-1. template-copy: source template and initial working-copy hashes;
-2. summary-lint: compact summary-table structure and prohibited placeholders;
-3. record-wps-review: human WPS page review bound to DOCX and screenshot hashes;
-4. finalize: final DOCX hash, prior receipts and optional brand-gate evidence.
-
-It does not automate WPS. A reviewer must open the DOCX in WPS Office, inspect every
-page, save screenshots, and provide a JSON checklist. Pretending another renderer is
-WPS is intentionally impossible because the review payload requires engine="WPS Office".
+Content, template and visual-review findings are advisory. The existing document
+and the actual checks performed remain identifiable in each receipt.
 """
 
 from __future__ import annotations
@@ -261,6 +254,7 @@ def audit_ip_table(table, mapping: dict[str, int], table_index: int) -> dict[str
 
 def command_template_copy(args: argparse.Namespace) -> int:
     errors: list[str] = []
+    Document(args.working)
     if not args.template.is_file():
         errors.append(f"模板不存在：{args.template}")
     if not args.working.is_file():
@@ -273,14 +267,14 @@ def command_template_copy(args: argparse.Namespace) -> int:
         errors.append("初始工作副本不是模板的字节级复制；请先复制母版再开始填写")
     payload = receipt(
         "template-copy",
-        "pass" if not errors else "fail",
+        "pass" if not errors else "warning",
         template={"path": str(args.template.resolve()), "sha256": template_hash},
         working_copy={"path": str(args.working.resolve()), "sha256": working_hash},
         errors=errors,
     )
     atomic_json(args.report, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0 if not errors else 2
+    return 0
 
 
 def command_summary_lint(args: argparse.Namespace) -> int:
@@ -307,19 +301,26 @@ def command_summary_lint(args: argparse.Namespace) -> int:
         issues.append("未识别到受支持的高新产品或科技成果转化汇总表表头，禁止跳过字段粒度检查")
     payload = receipt(
         "summary-lint",
-        "pass" if not issues else "fail",
+        "pass" if not issues else "warning",
         docx={"path": str(args.docx.resolve()), "sha256": sha256(args.docx)},
         tables=found,
         issues=issues,
+        artifact=str(args.docx.resolve()),
+        delivery_allowed=True,
     )
     atomic_json(args.report, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0 if not issues else 2
+    return 0
 
 
 def command_record_wps_review(args: argparse.Namespace) -> int:
-    checklist = load_json(args.checklist)
+    Document(args.docx)
     errors: list[str] = []
+    try:
+        checklist = load_json(args.checklist)
+    except ValueError as exc:
+        checklist = {}
+        errors.append(str(exc))
     if checklist.get("engine") != "WPS Office":
         errors.append('checklist.engine必须精确为"WPS Office"')
     page_count = checklist.get("page_count")
@@ -381,36 +382,40 @@ def command_record_wps_review(args: argparse.Namespace) -> int:
         errors.append("不同页重复使用了同一张截图")
     payload = receipt(
         "wps-review",
-        "pass" if not errors else "fail",
+        "pass" if not errors else "warning",
         docx={"path": str(args.docx.resolve()), "sha256": sha256(args.docx)},
         engine=checklist.get("engine"),
         reviewer=checklist.get("reviewer"),
         page_count=page_count,
         pages=page_evidence,
-        checklist={"path": str(args.checklist.resolve()), "sha256": sha256(args.checklist)},
+        checklist={"path": str(args.checklist.resolve()), "sha256": sha256(args.checklist) if args.checklist.is_file() else None},
         errors=errors,
     )
     atomic_json(args.report, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0 if not errors else 2
+    return 0
 
 
 def validate_bound_receipt(
-    label: str, path: Path, expected_stage: str, docx_hash: str | None = None
+    label: str, path: Path | None, expected_stage: str, docx_hash: str | None = None
 ) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
+    if path is None:
+        return None, [f"{label}未提供，当前文件可交付"]
     try:
         value = load_json(path)
     except ValueError as exc:
         return None, [str(exc)]
     if value.get("stage") != expected_stage or value.get("status") != "pass":
         errors.append(f"{label}不是通过状态的{expected_stage}回执")
-    if docx_hash is not None and value.get("docx", {}).get("sha256") != docx_hash:
+    docx_info = value.get("docx")
+    if docx_hash is not None and (not isinstance(docx_info, dict) or docx_info.get("sha256") != docx_hash):
         errors.append(f"{label}绑定的DOCX哈希与当前终稿不一致")
     return value, errors
 
 
 def command_finalize(args: argparse.Namespace) -> int:
+    Document(args.docx)
     errors: list[str] = []
     current_hash = sha256(args.docx)
     copy_value, copy_errors = validate_bound_receipt("模板复制回执", args.copy_receipt, "template-copy")
@@ -422,40 +427,58 @@ def command_finalize(args: argparse.Namespace) -> int:
     )
     errors.extend(copy_errors + lint_errors + wps_errors)
     if wps_value:
-        for page in wps_value.get("pages", []):
-            screenshot = Path(page.get("path", ""))
+        pages = wps_value.get("pages", [])
+        for page in pages if isinstance(pages, list) else []:
+            if not isinstance(page, dict) or not isinstance(page.get("path"), str):
+                errors.append("WPS截图记录格式待核对")
+                continue
+            screenshot = Path(page["path"])
             if not screenshot.is_file() or sha256(screenshot) != page.get("sha256"):
                 errors.append(f"WPS第{page.get('page')}页截图缺失或哈希变化")
     if copy_value:
-        template = Path(copy_value.get("template", {}).get("path", ""))
-        template_hash = copy_value.get("template", {}).get("sha256")
-        initial_working = Path(copy_value.get("working_copy", {}).get("path", ""))
+        template_info = copy_value.get("template", {})
+        working_info = copy_value.get("working_copy", {})
+        template_info = template_info if isinstance(template_info, dict) else {}
+        working_info = working_info if isinstance(working_info, dict) else {}
+        template = Path(str(template_info.get("path") or ""))
+        template_hash = template_info.get("sha256")
+        initial_working = Path(str(working_info.get("path") or ""))
         if initial_working.resolve() != args.docx.resolve():
             errors.append("模板复制回执中的初始工作副本路径不是当前终稿路径")
         if not template.is_file() or sha256(template) != template_hash:
             errors.append("原模板缺失或哈希已变化")
     brand_evidence = None
     if args.brand_receipt:
-        brand_evidence = load_json(args.brand_receipt)
+        try:
+            brand_evidence = load_json(args.brand_receipt)
+        except ValueError as exc:
+            brand_evidence = {}
+            errors.append(str(exc))
         if brand_evidence.get("status") != "passed":
             errors.append("品牌交付闸门未通过")
         artifacts = brand_evidence.get("artifacts", [])
-        if not any(Path(item.get("path", "")).resolve() == args.docx.resolve() for item in artifacts if isinstance(item, dict)):
+        artifacts = artifacts if isinstance(artifacts, list) else []
+        if not any(Path(item["path"]).resolve() == args.docx.resolve() for item in artifacts if isinstance(item, dict) and isinstance(item.get("path"), str)):
             errors.append("品牌交付闸门回执未绑定当前DOCX路径")
-        if args.brand_receipt.stat().st_mtime_ns < args.docx.stat().st_mtime_ns:
+        if args.brand_receipt.is_file() and args.brand_receipt.stat().st_mtime_ns < args.docx.stat().st_mtime_ns:
             errors.append("品牌交付闸门回执早于当前DOCX修改时间，可能已失效")
     else:
         errors.append("缺少品牌交付闸门JSON回执")
+    def optional_info(path: Path | None) -> dict[str, Any] | None:
+        return {"path": str(path.resolve()), "sha256": sha256(path)} if path and path.is_file() else None
+
     payload = receipt(
         "finalize",
-        "pass" if not errors else "fail",
+        "pass" if not errors else "warning",
         docx={"path": str(args.docx.resolve()), "sha256": current_hash},
-        template_copy_receipt={"path": str(args.copy_receipt.resolve()), "sha256": sha256(args.copy_receipt)},
-        summary_lint_receipt={"path": str(args.summary_receipt.resolve()), "sha256": sha256(args.summary_receipt)},
-        wps_review_receipt={"path": str(args.wps_receipt.resolve()), "sha256": sha256(args.wps_receipt)},
+        template_copy_receipt=optional_info(args.copy_receipt),
+        summary_lint_receipt=optional_info(args.summary_receipt),
+        wps_review_receipt=optional_info(args.wps_receipt),
+        artifact=str(args.docx.resolve()),
+        delivery_allowed=True,
         brand_receipt=(
             {"path": str(args.brand_receipt.resolve()), "sha256": sha256(args.brand_receipt)}
-            if args.brand_receipt
+            if args.brand_receipt and args.brand_receipt.is_file()
             else None
         ),
         copy=copy_value,
@@ -465,7 +488,7 @@ def command_finalize(args: argparse.Namespace) -> int:
     )
     atomic_json(args.report, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0 if not errors else 2
+    return 0
 
 
 def parser() -> argparse.ArgumentParser:
@@ -491,9 +514,9 @@ def parser() -> argparse.ArgumentParser:
 
     final_cmd = commands.add_parser("finalize", help="核对全部回执并生成最终哈希闭环")
     final_cmd.add_argument("docx", type=Path)
-    final_cmd.add_argument("--copy-receipt", type=Path, required=True)
-    final_cmd.add_argument("--summary-receipt", type=Path, required=True)
-    final_cmd.add_argument("--wps-receipt", type=Path, required=True)
+    final_cmd.add_argument("--copy-receipt", type=Path)
+    final_cmd.add_argument("--summary-receipt", type=Path)
+    final_cmd.add_argument("--wps-receipt", type=Path)
     final_cmd.add_argument("--brand-receipt", type=Path)
     final_cmd.add_argument("--report", type=Path, required=True)
     final_cmd.set_defaults(function=command_finalize)

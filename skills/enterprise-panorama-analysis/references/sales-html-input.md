@@ -1,6 +1,6 @@
 # 标准销售版结构化输入
 
-客户端调用真实固定操作 `enterprise-panorama-analysis.build-sales-html`。参数 `input` 为企业工作区内 UTF-8 JSON，`output` 为尚不存在的 `.html` 路径。生成成功只表示中间源已创建，不能据此声称专业、来源或视觉检查通过；随后用返回的同一 HTML 做预校验并调用 `gongchuang_deliver_pdf`。
+客户端调用固定操作 `enterprise-panorama-analysis.build-sales-html`，`input` 为工作区 UTF-8 JSON，`output` 为新 `.html` 路径。生成后沿用同一 HTML 完成来源、内容和版式复核，再调用 `gongchuang_deliver_pdf`；各项状态按实际结果记录。
 
 ```json
 {
@@ -17,23 +17,23 @@
 }
 ```
 
-此例仅说明字段，不提供任何企业事实。未知内容留待补，不用零值或模板企业数据填满。
+示例说明字段。正文填本轮事实，未知内容集中列待补。
 
 ## 工商字段
 
-`company.name` 必须是本企业名称。其他字段按原两列表顺序保留：`former_name` 曾用名、`credit_code` 统一社会信用代码、`founded_date` 成立日期、`registered_capital` 注册资本、`paid_in_capital` 实缴资本、`legal_representative` 法定代表人、`company_type` 企业类型、`registration_status` 登记状态、`address` 注册地址、`business_scope` 经营范围、`tax_qualification` 纳税人资质、`industry` 所属行业、`registration_authority` 登记机关、`website` 官网。登记字段可引用本次已核验的公开原文；不能从视觉样张抄取。
+`company.name` 填本企业名称。原两列表字段和顺序沿用：`former_name`、`credit_code`、`founded_date`、`registered_capital`、`paid_in_capital`、`legal_representative`、`company_type`、`registration_status`、`address`、`business_scope`、`tax_qualification`、`industry`、`registration_authority`、`website`。登记字段填本轮已核验公开原文；视觉样张仅供版式参考。
 
 ## 章节内容
 
 `sections` 使用 `01` 至 `13` 的固定编号；顺序、章节标题、图标、DOM、列和 CSS 由程序决定。每章可填 `paragraphs` 文字数组、`points` 业务要点数组、`notes` 核验说明数组、`summary` 摘要对象、`callouts` 提示数组及 `tables` 数据数组。
 
-`summary` 只填 `title` 与 `text`。`callouts` 每项只填 `kind`、`title`、`text`，固定 `kind` 为 `warning`、`success`、`info`、`danger`，分别沿用原黄色关注、绿色亮点、蓝色分析与红色重大风险布局及原图标。风险须有本企业依据；缺资料不能自动成为重大风险。
+`summary` 填 `title`、`text`；`callouts` 填 `kind`、`title`、`text`。`kind` 使用 `warning`、`success`、`info`、`danger`，沿用原图标和配色。风险回指本企业依据，资料缺口以待核说明呈现。
 
 第八章 `comparison` 固定为 `advantages`、`limitations` 两个要点数组，形成原绿色与红色并排卡。第十二章 `assessment` 只填本企业 `level`、`description`、`summary`，形成原渐变评级卡；未提供级别显示“待核”，程序不评分。
 
 ## 固定表格
 
-表格每项填 `type` 与二维 `rows`，行列数须与固定表头相同；可在该表后填 `summary`、`callouts`。不能传入 HTML、CSS、列名或重排其他章节的表型。
+表格项填 `type` 和二维 `rows`，行列数匹配固定表头；表后可填 `summary`、`callouts`。沿用模板的 HTML、CSS、列名和章节表型。
 
 | 章节 | 表型及固定列 |
 |---|---|
@@ -50,12 +50,12 @@
 | 12 | summary-risks 4列、positive-factors 3列 |
 | 13 | recommendations 3列 |
 
-实际表头由生成器固定声明。既有风险整改表、同行项目对比表、可申报项目表、五年规划表始终保留；缺数据只填待补，不伪造风险、同行、项目或年度数字。
+表头沿生成器，风险、同行、项目及五年表按实际内容填写，缺项集中说明并保留原表结构。
 
-`operating-metrics` 中的营收、利润、研发费、产能、未分配利润等内部经营财务资料只采用用户提供的可靠资料，注明 `source_kind="customer-file"`；来源标记不等于数据已验真，仍须在本轮核对实际依据。没有资料时写待提供；非用户资料中的财务值会转为明确缺口提示，不因这一项拒绝生成整份报告。工商登记、实缴、人员/参保规模、行业和主营业务可按本次真实公开来源填写，来源用 `government-source`、`third-party-platform` 或 `public-source`，不与内部经营财务混同。不得估算或补造缺失数据。
+`operating-metrics` 的营收、利润、研发费、产能和未分配利润采用用户提供的可靠资料，注明 `source_kind="customer-file"` 并核对实际依据；缺项标为待提供，继续生成其余正文。工商登记、实缴、人员/参保、行业和主营业务可据本轮公开来源填写，标记 `government-source`、`third-party-platform` 或 `public-source`，与内部经营财务分别呈现。
 
 ## 状态与来源
 
-普通单元格为文字或用户提供数值。验证状态使用 `{"text":"已核验说明","status":"low"}`、`medium` 待核、`high` 风险说明，程序绘制真圆点；颜色不会替代说明或自动改变事实等级。风险严重程度使用 `{"text":"风险等级说明","severity":"high"}`，还支持 `medium`、`low` 与 `pending` 待核，沿用原彩色底状态片。不能用“（绿）”“（黄）”“（红）”及等价括号标注代替状态对象。
+普通单元格填文字或用户提供数值。验证状态用 `{"text":"已核验说明","status":"low"}`，或 `medium` 待核、`high` 风险，由程序绘制圆点；风险严重程度用 `severity` 对象，支持 `high`、`medium`、`low`、`pending`，沿用原状态片。说明文字保留实际证据和状态。
 
 `sources` 每项只填本企业实际 `name`、`url`、`queried_at`，保留本次真实来源和查询日。图标、样张与样式只作视觉参考，不登记为本企业业务证据。模板内没有可借用的客户事实；生成操作不会替代来源台账、事实与数字校验。

@@ -1,83 +1,59 @@
 ---
 name: project-feasibility
-description: 对单个政府项目执行完整可行性分析。用户只给企业名称和高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、智能工厂或科技计划等项目名，并说“前期评估报告”“可行性分析报告”“双报告”或“专精的前期报告和中期分析”时也必须使用；不要求用户另填企业基本信息表。仅解释、摘录或普通改写已有报告时不新建报告。
+description: 分析单个政府项目的条件、企业证据和实施路径，支持企业名称加项目名启动前期评估、可行性或双报告；单条件咨询、既有报告解释和改写按请求范围完成。
 ---
 
 # 可行性分析
 
+企业名称与目标项目可启动分析，主体、地区、年度、批次和申报类型从现有材料及可用来源补齐，未知项标状态。单点问题直接回答，完整报告按用户目标组织。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 判断方法
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+1. 政策核验使用 `policy-retrieval`，规则台账参考 `references/feasibility-decision-model.md`，记录规则类型、原文、来源、范围、时间与排除情形。征求意见、历史和异地规则作为对应参考。
+2. 按 `references/evidence-state-model.md` 记录 `verified`、`computed`、`claimed`、`missing`、`conflicting`、`not-applicable`。业务现状与证明完整度分列，专精特新和小巨人沿用本轮已确认版本及材料事实。
+3. 分别检查资格、排除情形、评分和实施动作，已核规则与事实支持确定判断，缺项用情景和待核说明。评分按正式细则逐项映射，确定分、条件分分列。
+4. 财务采用当前企业 `enterprise-financial-facts/v1`，由 `financial-verification` 核对主体、期间、单位、币种、合并及证据，公式见 `references/calculation-review-rules.md`。
+5. 结论参考 `references/conclusion-contract.md`：可申报、有条件申报、不可申报、暂无法判断；分别对应已具备条件、尚待补证或确认、明确条件差距、核心信息待核。风险按当期政策及实际影响解释，动作说明成立条件和时间。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
+## 报告结构
 
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+前期评估、培育规划参考 `references/policy-application-path-contract.md`，报告类型参考 `references/two-report-contract.md`、`references/report-template-registry.json`。前期突出核心条件、企业值、关键差距、建设路径和动作；可行性展开适用条件、正式评分、证据、复算、补强、完成标准与节点。“双报告”“前期报告和中期分析”等按 `preassessment`、`feasibility` 两份组织。
 
-用户只问“能不能申报”、某一项硬门槛、单个差距或一条政策条件时，只核验并回答该问题，不自动生成完整门槛矩阵、评分映射、行动清单或报告文件。以下完整流程只在用户明确要求前期评估、可行性分析、报告或完整项目判断时执行。
+高企、专精、小巨人分析采用固定 HTML 模板；其他项目沿既有母版，申请书采用独立原生 Word 回填。模板保留章节、表格、对象、补强入口及品牌，条件数值取现行政策。
 
-## 客户端固定成稿调用
+专精或小巨人的企业现状与培育报告采用 `sme-development-projects/references/material-checkup-report-template.md` 五章 19 内容块，`report_layout: "sme-action"` 和 `report_sections`，画像 `sme-action-report`。省级专精按当期申请条件，小巨人核对省级资格；产品按业务技术资料给具体建议。详细申请书体检按委托范围逐字段展开。研发设备筛选由 `research_equipment_screen` 输入和生成器计算，金额元、未知固定资产 `null`。
 
-专精或小巨人的企业现状体检与培育报告使用 `sme-development-projects/references/material-checkup-report-template.md` 的五章及19个内容块，事实 JSON 指定 `report_layout: "sme-action"` 并提供对应 report_sections。此布局替代通用占位回填。两类项目不展示条件触发项目、资格与专注、评分、分数门槛或获取说明。省级专精报告删除前置称号，小巨人保留省级专精特新资格状态核对。主导产品根据企业业务和技术资料提出具体建议及边界，不停留在待定占位。已有申请书逐字段体检仍执行其详细检查范围；其他项目与双报告类型不变。
+## 生成接口
 
-行动型结果返回 `delivery_profile=sme-action-report`，后续报告画像使用此值，不再套旧可行性报告的章节或评分表。该布局不代表已完成申请书逐字段体检；用户委托详细体检时仍输出详细发现，不能以此简版替代。
+共创客户端操作 `project-feasibility.generate-report` 参数为 `input` 工作区事实 JSON、`output` 新 HTML 路径、`reportType`。成功后取返回 `delivery_profile`，同一 HTML 调用 `gongchuang_deliver_pdf`。其他宿主参考 `references/report-cli-generation.md`。按当前可用资料生成草稿，后续复用已完成文件与有效检查结果。
 
-行动型报告按 [算法流程](references/sme-action-workflow.md) 执行。研发机构推荐由生成器读取 `research_equipment_screen` 计算，不由模型口算或改比例；金额统一为元，缺固定资产写 null，不用资产总额替代。其他项目推荐、定性加分作用和具体同行对照按已确认业务资料填写，不能把程序排版通过声称为政策或企业事实全部核验。
+```json
+{"operation":"project-feasibility.generate-report","parameters":{"input":"工作区事实.json","output":"前期评估.html","reportType":"preassessment"}}
+```
 
-共创客户端直接调用工具目录中的 `project-feasibility.generate-report` 签名操作，由客户端内置 Python 执行，不使用系统 Python 或临时安装依赖。操作名前缀表示代码归属，不要求先加载所属业务技能。参数为工作区事实 JSON `input`、尚不存在的 HTML 路径 `output`、报告类型 `reportType`。高企、专精及小巨人的分析和行动体检报告直接回填索引中的固定HTML模板，保留章节顺序、表格、强调和来源链接，不读取或序列化Word报告母版。其他项目保留既有受控成稿方式，不让模型重新抄写正文或拼接版式。生成成功后使用返回的 `delivery_profile` 对同一 HTML 调用 `gongchuang_deliver_pdf`，由客户端导出、检查可打开性并显示 PDF 文件入口。专业复核用于识别结论依据和缺口，不作为文件生成前置；缺资料时明确交付初稿，保留已有文件，只续接失败阶段。高新、专精申请书使用独立Word回填入口，只生成可编辑DOCX，不生成PDF副本，不调用本报告操作。事实 JSON 使用下方回填器既有格式；回填成功不代表分析结论或实际版式通过。此调用替代下方的模板复制和回填两条 CLI 命令，不先复制空白模板。
+输入字段：
 
-输入字段：`project_id` 使用模板索引项目 id；`enterprise` 企业名称，`project_object` 申报对象，`suggested_year` 建议年度，`deadline` 截止信息，`conclusion` 为可申报、有条件申报、不可申报或暂无法判断；`conclusion_basis`、`primary_gap`、`next_action` 分别为判断依据、主要差距与下一步。`materials` 为数组，每项含实际工作区文件绝对路径 `path`、至少一个四字以上逐字原文片段 `anchors`，来源知识库时标注 `source_type=knowledge-base`，其他来源按资料实际属性填写。`policies` 为数组，每项含实际政策名称 `title`、条款或原文位置 `locator`；未取得当期政策时如实注明资料缺口，不编造名称、条文或确定资格结论。已有该格式 JSON 时直接复用，不重写同一份事实。资料未提供的成果保留为待确认，不推断企业尚未形成；同行指标没有数据时标注待核验，不用资料文件名或本企业产品替代同行数据和对标对象。
+- `project_id` 为索引项目 ID，`enterprise` 为企业；`project_object`、`suggested_year`、`deadline`、`conclusion`、`conclusion_basis`、`primary_gap`、`next_action` 对应本轮已知事实与判断。
+- `materials` 数组使用真实文件绝对 `path` 和逐字原文 `anchors`；知识库标 `source_type=knowledge-base`，客户原件标 `source_type=customer-file`、`source=用户提供`。
+- `policies` 数组列实际 `title`、`locator`。资料待取时使用空数组，生成器返回 `report_stage=draft` 及 `warnings`；`status=pass` 记录文件生成成功，专业结论和定稿状态另列。
+- `conditions` 可逐项填 `match`、`value`、`state`、`gap`、`action`。待确认事项如实填写，原件已说明的事实沿用输入状态。
+- `table_content` 按母版原表头及实际行回填评分、口径、同行、补强、节点、资源和风险。格式 `{"columns":["表头"],"rows":[["内容"]]}`，支持单表或数组；表头映射待核的表保留为补充分析。
+- 高企 `core_associations` 六列为 RD、核心技术、IP 及状态、转化、PS 及收入、依据缺口，覆盖输入 RD；同 PS 收入统一核算。
 
-没有客户资料或政策原文时使用空数组，不为满足输入格式虚构文件、锚点或政策。生成器继续输出标有“初稿说明与待补事项”的文件，并以 `report_stage=draft`、`warnings` 返回缺口；只影响定稿归集，不阻断本机交付。只有 `project_id` 和企业名称是选择实际对象所需的输入，其他缺失项保留待核提示。`status=pass` 只代表文件生成成功，不代表内容已核实或报告已定稿。
+主任务、事实和来源复用，双报告分别保存输出及状态，已完成部分保留并继续其他报告或失败步骤。案例借鉴结构、指标组织和证据类型，企业事实与政策条件使用本案来源。
 
-可选 `conditions` 为逐项条件数组，每项含 `match` 条件、`value` 企业值、`state` 证据状态、`gap` 差距及 `action` 动作。缺项明确待确认，不能用示例数据补齐。输入格式与字段已经明确，不读取脚本来猜接口。使用 `gongchuang_skill_operation`，例如 `{"operation":"project-feasibility.generate-report","parameters":{"input":"工作区事实.json","output":"前期评估.html","reportType":"preassessment"}}`。返回成功后按上方流程交付 PDF；失败保留原始错误，不切换为系统 Python。
+## 按需检查与交付
 
-通用母版的评分、数据口径、同行对照、补强、倒排、资源和风险表通过 `table_content` 逐表填写，不能只填总体结论而将已有数据改成“待企业确认”。每项格式为 `{"columns":["母版原表头逐列"],"rows":[["对应各列内容"]]}`，数组或单张表格对象均可；已知表头别名自动适配，不能对应母版但列数正确的表格保留在补充分析并提示定稿前核对，不反复猜改表头。行按实际数量生成，未提供事项逐项说明，不用同一段总述重复填满。政策表与条件表仍使用上面的专用字段。高企可行性报告另提供 `core_associations`，每行六列依次为研发项目、核心技术、知识产权及状态、成果转化、高新产品及收入、对应依据与缺口。输入列明的全部 RD 均须覆盖；同一 PS 关联多个 RD 不重复计收入。生成后逐表核对输入已有数据是否真实写入，结构完整不等于事实核验完成。
+内容与文件生成后直接提供入口，深度检查按用户任务需要执行。`python3 scripts/validate_feasibility_assessment.py <结果.json>` 检查结构化分析，按实际结果修复问题。报告画像验证示例：
 
-双报告按 `preassessment`、`feasibility` 分别调用，沿用当前任务记录保存各自输出及完成状态。第一份完成后发生中止或第二份失败，保留第一份文件与回执，恢复时先检查已完成文件，只继续未完成项。未调用成功的报告不得写为已交付；不能把空模板、空渲染目录或工具返回的路径当作成品。企业数据查询仍按企业 MCP 降级协议执行，资料读取与成稿使用已有内置工具，不把客户原件上传到新的服务。
+```bash
+python3 scripts/validate_report_profile_delivery.py --plugin-root <实际技能包根目录> --state-root <本轮状态目录> --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <实际成品路径>
+```
 
-## 强制执行顺序
+客户端采用统一交付结果；其他宿主核对实际最终文件。检查章节、表格、中文字体、品牌、可打开性和真实版式，缺检查条件时说明待完成范围。内置模板使用 OFL Noto Sans SC，字体及许可在 `assets/fonts/`。申请书 DOCX 与分析 PDF 分别验收。
 
-1. 企业名称加项目名和报告意图即可启动，现有资料可同时提供但不是启动前提，不要求用户重复填写企业基本信息。先以企业名称作为主体检索键，按 [企业数据源有限降级协议](../_runtime/enterprise-source-fallback.md) 补齐统一社会信用代码、现名、曾用名、登记地区和主体状态；无法核验的字段在报告中明确标为待核验，不因缺少单独的“企业基本信息表”拒绝出具前期评估或可行性分析。“双报告”以及“专精的前期报告和中期分析”等受控别名，只映射为“项目前期评估报告”和“项目申报可行性分析报告”两份交付；不新增“中期报告”第三种报告。分别以 `preassessment` 和 `feasibility` 运行受控模板选择。仅解释、摘录或普通改写已有报告时，不得重新生成两类报告或创建新文件。项目全称、地区、申报年度、批次以及新申报或复核类型仍从用户资料、团队知识库和政策原文中提取；任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人分析报告命中索引后使用固定HTML模板；三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类保留既有受控母版回填。各项目不得脱离既有结构重新排版。共创客户端按上方固定成稿调用执行；其他未提供该操作的宿主才读取 `references/report-cli-generation.md` 使用命令行流程。引用已取得客户资料时必须核对真实原文锚点；未取得资料不阻断初稿生成，且不得将客户原件、绝对路径或客户成稿放入公共候选包。夹具中的公开来源必须显式提供官方链接，或将知识库资料标为 `source_type=knowledge-base`；不得把内部校验值、原文锚点、绝对路径、候选验收标记或培训版本字样写入对外交付。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
-2. 读取 `references/feasibility-decision-model.md`，建立规则台账。每条规则标明规则类型、原文、来源、适用范围、时间状态和是否一票否决；不得把历史政策或同类项目规则拼入当期规则。
-3. 读取 `references/evidence-state-model.md`，将企业事实逐项映射为“verified、computed、claimed、missing、conflicting、not-applicable”。只有 verified 和复算通过的 computed 可以直接支撑硬门槛。专精特新和小巨人先承接已确认审核版本及申请材料事实锁，按该证据模型的领域说明映射本轮推导事实，不重复索要已提供材料，也不把本轮推导事实写成外部独立核验。
-4. 先判断排除项和硬门槛，再处理评分项。硬门槛出现 `failed` 时结论为不可申报；出现 `missing`、`conflicting` 或关键 `claimed` 时不得给出确定达标结论。
-5. 财务门槛先查找 `artifacts/enterprise-financial-facts.v1.json` 或同契约文件，调用 `financial-verification` 核验企业、期间、单位、币种、合并范围和证据。按 `references/calculation-review-rules.md` 展示公式、原始值、单位、结果和复核状态。
-6. 将评分细则逐项映射到事实，不以企业入选案例反推评分，不把同一证据重复计入互斥评分项，不将可能得分计入确定得分。政策未公布评分细则时只分析条件和竞争力，不虚构分值。
-7. 按 `references/conclusion-contract.md` 生成结论、依据、风险和行动。先给三档结论，再给逐项依据；不承诺获批。
+对外来源附录采用“序号、文件名称、链接”；官方原文可点击，知识库链接列“来源共创知识库”。哈希、锚点、回执、内部路径等存入执行记录，正文呈现读者需要的事实、判断、来源和行动。
 
-## 结论规则
+报告表达采用[报告写作规则](../_runtime/report-writing.md)。
 
-- `可申报`：所有硬门槛均为 `passed`，不存在一票否决，关键证据已核验；评分项如有，只将确定分计入。
-- `有条件申报`：未发现明确硬门槛失败，但存在可在申报前补齐的关键证据、口径冲突或待确认规则。
-- `不可申报`：任一适用硬门槛明确失败，或命中当期政策的一票否决项。
-- `暂无法判断`：项目版本、政策原文、企业主体或关键数据不足，无法安全落入前三档。此状态不是“有条件申报”。
-
-## 停止与降级
-
-- 同时命中多个政策版本、缺少当期官方通知或政策时效清单标为 `stale` 时，停止形成正式资格结论，先补政策。
-- 财务事实属于其他主体、期间不足、口径不一致或质量为 `unverified` 时，停止复用并列出补证要求。
-- 一般未核企业自述、媒体报道或历史入选名单不升级为硬门槛事实。专精特新和小巨人已确认申请书列示的数据按领域事实锁及证据状态模型使用；未列示事项和实际冲突仍按缺口或冲突处理，不扩展推导范围。
-- 税务、司法或舆情风险只有在当期政策明确规定为排除项时才转化为资格判断。
-
-## 交付与自检
-
-输出固定包含：项目版本、总体结论、硬门槛矩阵、评分映射、计算复核、证据缺口、不确定性、风险和按截止时间倒排的行动清单。两类报告按双报告合同分别控制深度：前期评估只呈现决定谈单判断的核心条件、现有数据和补强动作；可行性分析在取得现行评分表时完整拆分评分项。前期评估另须按政策路径合同写清主管部门、政策状态、当前起点、先行建设、梯度依赖、建议年度、典型流程、材料证据、停项条件和责任动作；即使当前不可申报或优先级较低也不得省略。形成结构化结果时运行：
-
-`python3 scripts/validate_feasibility_assessment.py <结果.json>`
-
-校验失败时不得交付确定性结论。
-
-生成两类正式报告时，应分别运行报告画像校验。共创客户端会提供当前已验签技能包根目录；其他兼容宿主可显式传入技能包根目录：
-
-`python3 scripts/validate_report_profile_delivery.py --plugin-root "${GONGCHUANG_SKILL_PLUGIN_ROOT}" --state-root <当前企业空间/.gongchuang/report-validation> --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx>`
-
-画像校验按本轮实际交付对象核对必备章节、表格、可打开性、中文字体和品牌水印。高新、专精分析和体检报告只校验最终PDF；对应申请书独立校验原生Word，不附带PDF。共创客户端使用上述统一交付工具，不重复运行 CLI 检查；其他宿主把实际最终文件传给 CLI。报告回填器与客户端 PDF 渲染器均使用随包 OFL 开源 Noto Sans SC，不修改系统字体；DOCX 仍嵌入完整字体供继续编辑。字体文件与许可位于 `assets/fonts/`。实际内容或版式不合格时先修复再交付；内部状态目录或回执写入不可用时如实说明，不得把内部回执编号、校验值或本机路径写入对外交付，也不得据此拒绝用户继续修改已经生成的文件。
-
-高新、专精及小巨人使用固定HTML报告模板；其他项目保留其既有受控报告结构。模板固定章节、表格、核心对象、补强入口和品牌，不固化政策数值，模板条件不得当作现行政策证据。分析和体检报告只交付PDF，不追加Word副本；申请书使用独立原生Word模板回填，不附加PDF。HTML和内部完成回执不作为客户成品发布。
-
-对外报告的数据来源附录只保留“序号、文件名称、链接”三列。官方网页使用可点击原文链接；来源于共创知识库时，链接列写“来源共创知识库”。用户上传或工作区读取的企业原始文件使用 `source_type: customer-file`、`source: 用户提供`，不能因为本任务还查询了知识库就标为 `knowledge-base`；生成用 JSON 和中间文本不改变原始资料的来源类别。文件哈希、读取回执、命中锚点和本机路径只保存在内部校验回执中，不得出现在 Word、PDF、对话正文或文件卡片说明里。
-
-案例包可用于比较材料结构、指标分布和证据类型，但不得把案例值当成政策阈值或当前企业事实。可行性结论仍以当期政策和当前企业证据为准。
+企业数据取证参考[来源接续方法](../_runtime/enterprise-source-fallback.md)，复用成功结果，缺口随稿说明。

@@ -33,8 +33,8 @@ def test_classification_sources_have_explicit_roles() -> None:
     text = GATE.read_text(encoding="utf-8")
 
     assert "优先采用当期申请表要求的《国民经济行业分类》或《统计用产品分类目录》" in text
-    assert "海关商品编码用于核对进出口统计口径" in text
-    assert "不能代替项目指定的行业或产品分类" in text
+    assert "海关商品编码用于进出口统计" in text
+    assert "项目行业或产品分类另按指定目录核对" in text
     assert "行业标准和协会分类可用于解释行业惯例" in text
     assert "人为缩窄" in text
 
@@ -43,12 +43,12 @@ def test_substitution_evidence_is_strong_but_not_universally_mandatory() -> None
     text = GATE.read_text(encoding="utf-8")
 
     for phrase in (
-        "国外企业、产品或具体型号",
+        "国外企业、产品或型号",
         "同口径性能矩阵",
-        "客户验收",
-        "第三方检测",
-        "不得把第三方检测设为企业自述成立的前提",
-        "不得反推日期",
+        "客户、项目或应用场景及验证状态",
+        "采购合同、报关、验收、检测和认证按其证明范围使用",
+        "企业自述先检查内部逻辑及现有依据",
+        "采购时间据合同、订单、发票、验收或明确陈述填写",
     ):
         assert phrase in text
     assert "补短板" in text

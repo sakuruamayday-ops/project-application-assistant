@@ -64,3 +64,28 @@ print(json.dumps({"formats": results, "pdfImported": False, "mlImported": False,
     assert json.loads(result.stdout) == {
         "formats": ["docx", "xlsx"], "pdfImported": False, "mlImported": False, "unbrandedRejected": True,
     }
+
+
+def test_saved_office_files_do_not_wait_for_optional_brand_validation(tmp_path, monkeypatch):
+    sys.path.insert(0, str(ROOT / "skills/_runtime/gongchuang-branding/scripts"))
+    from docx import Document
+    from openpyxl import Workbook, load_workbook
+    import delivery_gate
+    from office_watermark import apply_office_watermark
+
+    def rejected(*args, **kwargs):
+        raise delivery_gate.GateFailure("optional brand review unavailable")
+
+    monkeypatch.setattr(delivery_gate, "validate_artifact", rejected)
+    word = tmp_path / "saved.docx"
+    document = Document()
+    document.add_paragraph("Synthetic Word body")
+    document.save(word)
+    sheet = tmp_path / "saved.xlsx"
+    workbook = Workbook()
+    workbook.active["A1"] = "Synthetic spreadsheet body"
+    workbook.save(sheet)
+    assert apply_office_watermark(word) == word
+    assert apply_office_watermark(sheet) == sheet
+    assert Document(word).paragraphs[0].text == "Synthetic Word body"
+    assert load_workbook(sheet).active["A1"].value == "Synthetic spreadsheet body"

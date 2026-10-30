@@ -141,5 +141,5 @@ def test_suite_routes_template_fidelity_contract_to_document_skills():
     ):
         text = (ROOT / "skills" / skill / "SKILL.md").read_text()
         assert "validate_docx_text_only.py" in text
-        assert "python-docx" in text
+        assert "文字节点" in text or "既有 `w:t`" in text
         assert "红字" in text

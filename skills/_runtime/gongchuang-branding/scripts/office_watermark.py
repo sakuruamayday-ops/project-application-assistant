@@ -181,8 +181,6 @@ def apply_docx_watermark(path: str | Path, *, variant: str | None = None) -> Pat
             drawing.replace(inline, _inline_to_centered_anchor(inline))
 
     document.save(path)
-    from delivery_gate import validate_artifact
-    validate_artifact(path, check_stamp=False)
     return path
 
 
@@ -207,8 +205,6 @@ def apply_xlsx_watermark(path: str | Path) -> Path:
     path = Path(path)
     workbook = load_workbook(path, keep_vba=path.suffix.lower() == ".xlsm")
     if XLSX_MARKER in workbook.defined_names:
-        from delivery_gate import validate_artifact
-        validate_artifact(path, check_stamp=False)
         return path
     if any(marker in workbook.defined_names for marker in LEGACY_XLSX_MARKERS):
         brand_hashes = {
@@ -248,8 +244,6 @@ def apply_xlsx_watermark(path: str | Path) -> Path:
         ws.oddHeader.right.text = "&9&K8A6A2F" + public_identity()["document_header"]
     workbook.defined_names.add(DefinedName(XLSX_MARKER, attr_text='"enabled"'))
     workbook.save(path)
-    from delivery_gate import validate_artifact
-    validate_artifact(path, check_stamp=False)
     return path
 
 

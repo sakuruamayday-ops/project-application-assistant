@@ -11,7 +11,7 @@ def require_text(path: Path, phrases: tuple[str, ...]) -> None:
     content = path.read_text(encoding="utf-8")
     missing = [phrase for phrase in phrases if phrase not in content]
     if missing:
-        raise SystemExit(f"{path.relative_to(ROOT)} 缺少门禁语句：{missing}")
+        raise SystemExit(f"{path.relative_to(ROOT)} 缺少连接说明：{missing}")
 
 
 def main() -> None:
@@ -30,22 +30,22 @@ def main() -> None:
     require_text(
         ROOT / "skills/first-run-configuration/references/first-startup-protocol.md",
         (
-            "只允许配置一个名为 `jiaotang-kb` 的 MCP",
-            "不得新增知识库 MCP",
+            "团队知识库统一复用 `jiaotang-kb` MCP 连接",
+            "新能力沿该连接配置并复用已有凭据",
         ),
     )
     require_text(
         ROOT / "skills/local-knowledge-retrieval/SKILL.md",
         (
-            "MCP `three_first_analysis`",
-            "不让用户新增第二个 MCP",
+            "three_first_analysis",
+            "三首与反向发现使用同一连接",
         ),
     )
     require_text(
         ROOT / "skills/project-task-router/SKILL.md",
         (
-            "`three_first_analysis` 统一入口",
-            "不得要求用户新增 MCP",
+            "同一知识连接的 `three_first_analysis`",
+            "recognition_search",
         ),
     )
     print(

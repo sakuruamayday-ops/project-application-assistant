@@ -16,16 +16,18 @@ OPERATIONAL_SKILLS = (
 )
 
 
-def test_enterprise_source_protocol_is_finite_and_preserves_partial_delivery() -> None:
+def test_enterprise_source_protocol_reuses_success_and_preserves_partial_delivery() -> None:
     content = PROTOCOL.read_text(encoding="utf-8")
 
-    assert "天眼查 → 企查查 → 用户当前提供且可核验的资料 → 政府或法定机构官方来源" in content
-    assert "最多重试一次" in content
-    assert "取消授权" in content
-    assert "不重试" in content
-    assert "待完善" in content
-    assert "未核验" in content
-    assert "不得因校验失败自动重新开始整条采集链" in content
+    for source in ("天眼查", "企查查", "本轮可核验资料", "政府或法定机构"):
+        assert source in content
+    assert "重试一次" in content
+    assert "授权、401/403、额度、限流或工具受限" in content
+    assert "直接沿替代来源继续" in content
+    assert "成功结果直接复用" in content
+    assert "待完善" in content and "未核验" in content
+    assert "只复查失败或冲突的环节" in content
+
 
 
 def test_every_operational_enterprise_data_skill_uses_shared_protocol() -> None:

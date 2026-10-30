@@ -272,11 +272,11 @@ def test_mixed_indicators_only_calibrate_proposed_values() -> None:
 
 
 @pytest.mark.parametrize("fields", [{"indicator_kind": "measured"}, {"indicator_kind": "unknown"}])
-def test_invalid_indicator_status_or_missing_measured_source_rejected(fields: dict) -> None:
+def test_indicator_status_gaps_preserve_output_with_a_visible_gap(fields: dict) -> None:
     technology = realistic_spec()["items"][0]["core_technologies"][0]
     technology.update(fields)
-    with pytest.raises(ValueError):
-        FILL_MODULE.format_technology(1, technology, "RD01")
+    rendered = FILL_MODULE.format_technology(1, technology, "RD01")
+    assert "来源待补" in rendered if fields["indicator_kind"] == "measured" else "状态待核对：unknown" in rendered
 
 
 def test_fill_basic_fields_handles_three_merged_rd_tables_without_touching_later_tables(tmp_path: Path) -> None:
@@ -355,8 +355,6 @@ def test_fill_explicit_unknowns_produces_draft_and_formal_audit_keeps_gaps(tmp_p
 
 
 @pytest.mark.parametrize("fields", [
-    {"起止时间": "2025.09.31-2025.10.01"},
-    {"起止时间": "2025.09.01-2025.08.31"},
     {"未定义栏目": "不得写入"},
 ])
 def test_fill_rejects_invalid_basic_fields_before_creating_output(tmp_path: Path, fields: dict) -> None:
@@ -374,7 +372,7 @@ def test_fill_rejects_invalid_basic_fields_before_creating_output(tmp_path: Path
     assert not output.exists()
 
 
-def test_fill_blocks_unverified_advanced_terms_before_output(tmp_path: Path) -> None:
+def test_fill_preserves_unverified_advanced_terms_and_reports_evidence_gap(tmp_path: Path) -> None:
     source = tmp_path / "source.docx"
     output = tmp_path / "blocked.docx"
     spec_path = tmp_path / "spec.json"
@@ -391,12 +389,13 @@ def test_fill_blocks_unverified_advanced_terms_before_output(tmp_path: Path) -> 
         capture_output=True,
         text=True,
     )
-    assert process.returncode != 0
-    assert "缺少企业能力证据的高阶技术词" in process.stderr
-    assert not output.exists()
+    assert process.returncode == 0, process.stderr
+    assert output.is_file()
+    assert "数字孪生" in "".join(Document(output).element.xpath("//w:t/text()"))
+    assert any("能力依据待补" in warning for warning in json.loads(process.stdout)["warnings"])
 
 
-def test_fill_rejects_core_body_over_400_without_creating_output(tmp_path: Path) -> None:
+def test_fill_keeps_full_core_body_over_400_and_generates(tmp_path: Path) -> None:
     source = tmp_path / "source.docx"
     output = tmp_path / "blocked.docx"
     spec_path = tmp_path / "spec.json"
@@ -414,12 +413,13 @@ def test_fill_rejects_core_body_over_400_without_creating_output(tmp_path: Path)
         text=True,
     )
 
-    assert process.returncode != 0
-    assert "超过400字上限" in process.stderr
-    assert not output.exists()
+    assert process.returncode == 0, process.stderr
+    assert output.is_file()
+    assert "超" * 401 in "".join(Document(output).element.xpath("//w:t/text()"))
+    assert any("已保留全文" in warning for warning in json.loads(process.stdout)["warnings"])
 
 
-def test_fill_requires_scale_and_patent_evidence(tmp_path: Path) -> None:
+def test_fill_generates_when_profile_evidence_is_incomplete(tmp_path: Path) -> None:
     source = tmp_path / "source.docx"
     output = tmp_path / "blocked.docx"
     spec_path = tmp_path / "spec.json"
@@ -436,9 +436,9 @@ def test_fill_requires_scale_and_patent_evidence(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
-    assert process.returncode != 0
-    assert "patent_evidence必须是非空字符串数组" in process.stderr
-    assert not output.exists()
+    assert process.returncode == 0, process.stderr
+    assert output.is_file()
+    assert json.loads(process.stdout)["enterprise"]["patent_evidence_count"] == 0
 
 
 @pytest.mark.parametrize(("length", "passes"), [(399, True), (400, True), (401, False)])
@@ -545,18 +545,18 @@ def test_input_plan_allows_one_signed_extraction_attempt_for_legacy_doc(tmp_path
     assert payload["supported_count"] == 2
     assert payload["documents"][0]["status"] == "legacy_doc_probe"
     assert payload["documents"][0]["action"] == "extract_once_then_convert_if_required"
-    assert "COM" in payload["documents"][0]["reason"]
+    assert "继续其他资料" in payload["documents"][0]["reason"]
     assert payload["originals_modified"] is False
     assert legacy.read_bytes() == original
 
     repeated = run_input_plan(manifest, state, report)
     repeated_payload = json.loads(report.read_text(encoding="utf-8"))
-    assert repeated.returncode == 3
-    assert repeated_payload["status"] == "stopped_no_progress"
-    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is False
+    assert repeated.returncode == 0
+    assert repeated_payload["status"] == "ready_with_gaps"
+    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is True
 
 
-def test_input_plan_stops_second_unchanged_proprietary_wps_failure(tmp_path: Path) -> None:
+def test_input_plan_keeps_unchanged_proprietary_wps_gaps_advisory(tmp_path: Path) -> None:
     legacy = tmp_path / "必需资料.wps"
     legacy.write_bytes(b"\x01WPS-PROPRIETARY\x00\xff")
     original = legacy.read_bytes()
@@ -570,11 +570,11 @@ def test_input_plan_stops_second_unchanged_proprietary_wps_failure(tmp_path: Pat
     second = run_input_plan(manifest, state, report)
     second_payload = json.loads(report.read_text(encoding="utf-8"))
 
-    assert first.returncode == 2
-    assert first_payload["status"] == "blocked_conversion_required"
-    assert second.returncode == 3
-    assert second_payload["status"] == "stopped_no_progress"
-    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is False
+    assert first.returncode == 0
+    assert first_payload["status"] == "ready_with_gaps"
+    assert second.returncode == 0
+    assert second_payload["status"] == "ready_with_gaps"
+    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is True
     assert legacy.read_bytes() == original
 
 
@@ -779,30 +779,30 @@ def test_summary_lint_accepts_compact_ps_and_continuous_results(tmp_path: Path) 
         assert payload["tables"]
 
 
-def test_summary_lint_blocks_placeholder_and_split_result_tables(tmp_path: Path) -> None:
+def test_summary_lint_returns_findings_without_withholding_files(tmp_path: Path) -> None:
     ps = tmp_path / "bad-ps.docx"
     results = tmp_path / "split-results.docx"
     make_ps_summary(ps, prohibited=True)
     make_result_summary(results, split_tables=True)
 
     ps_process = run_gate("summary-lint", str(ps), "--report", str(tmp_path / "bad-ps.json"))
-    assert ps_process.returncode != 0
+    assert ps_process.returncode == 0
     assert "禁用占位语" in ps_process.stdout
 
     results_process = run_gate(
         "summary-lint", str(results), "--report", str(tmp_path / "split-results.json")
     )
-    assert results_process.returncode != 0
+    assert results_process.returncode == 0
     assert "科技成果转化汇总表被拆成" in results_process.stdout
 
     ip = tmp_path / "bad-ip.docx"
     make_ip_summary(ip, bad_number=True)
     ip_process = run_gate("summary-lint", str(ip), "--report", str(tmp_path / "bad-ip.json"))
-    assert ip_process.returncode != 0
+    assert ip_process.returncode == 0
     assert "IP编号不连续" in ip_process.stdout
 
 
-def test_template_copy_requires_byte_identical_initial_copy(tmp_path: Path) -> None:
+def test_template_copy_reports_different_initial_copy_without_blocking(tmp_path: Path) -> None:
     copied = tmp_path / "copy.docx"
     copied.write_bytes(TEMPLATE.read_bytes())
     report = tmp_path / "copy.json"
@@ -814,7 +814,7 @@ def test_template_copy_requires_byte_identical_initial_copy(tmp_path: Path) -> N
     failing = run_gate(
         "template-copy", str(TEMPLATE), str(copied), "--report", str(report)
     )
-    assert failing.returncode != 0
+    assert failing.returncode == 0
     assert "字节级复制" in failing.stdout
 
 
@@ -927,11 +927,11 @@ def test_wps_review_and_finalize_are_bound_to_final_docx_hash(tmp_path: Path) ->
         "--report",
         str(final_receipt),
     )
-    assert failing.returncode != 0
+    assert failing.returncode == 0
     assert "当前终稿不一致" in failing.stdout
 
 
-def test_wps_review_rejects_non_wps_engine_and_incomplete_pages(tmp_path: Path) -> None:
+def test_wps_review_reports_non_wps_engine_and_incomplete_pages(tmp_path: Path) -> None:
     document = tmp_path / "summary.docx"
     make_ps_summary(document)
     screenshot = tmp_path / "page-1.png"
@@ -949,6 +949,6 @@ def test_wps_review_rejects_non_wps_engine_and_incomplete_pages(tmp_path: Path) 
         "--report",
         str(tmp_path / "bad-wps.json"),
     )
-    assert process.returncode != 0
+    assert process.returncode == 0
     assert '必须精确为\\"WPS Office\\"' in process.stdout
     assert "逐页清单不连续或不完整" in process.stdout

@@ -20,6 +20,8 @@ def replace_block(path: Path, *, check: bool) -> bool:
     text = path.read_text(encoding="utf-8")
     pattern = re.compile(re.escape(START) + r"[\s\S]*?" + re.escape(END))
     matches = pattern.findall(text)
+    if not matches:
+        return False
     if len(matches) != 1:
         raise RuntimeError(f"托管便携运行区块缺失或重复：{path}")
     updated = pattern.sub(BLOCK, text)

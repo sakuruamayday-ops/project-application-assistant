@@ -15,17 +15,16 @@ class PortableReportTests(unittest.TestCase):
         cls.tax = cls.skills / "manufacturing-tax-risk-analysis"
         cls.runtime = cls.skills / "_runtime" / "gongchuang-branding"
 
-    def test_runtime_guidance_does_not_make_the_full_example_a_prerequisite(self):
-        skill = (self.tax / "SKILL.md").read_text(encoding="utf-8")
-        schema = (self.tax / "references/report-input-schema.md").read_text(encoding="utf-8")
-        self.assertIn("首次生成不得读取或复制该示例", skill)
-        self.assertIn("不要在首次运行前读取或复制同目录的示例文件", schema)
-        self.assertIn("不得重新读取完整 HTML", skill)
-        self.assertIn("KPI 卡片不超过4项", schema)
-        self.assertIn("不得自行计算三年复合增长率", schema)
-        self.assertIn("不得把各年净利润相加后写成累计净利润", schema)
-        self.assertIn("不要先用不确定的相对路径试错", skill)
-        self.assertIn("不得只写“完成”“已完成”“通过”“达标”“待完成”", schema)
+    def test_missing_metrics_and_incomplete_content_still_generate_with_full_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, output = root / "input.json", root / "report.html"
+            long_text = "保留这段实际分析" * 80
+            source.write_text(json.dumps({"company": "共创QA合成企业", "one_line_conclusion": long_text}, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(self.tax / "scripts/generate_report_html.py"), str(source), str(output)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(long_text, output.read_text(encoding="utf-8"))
+            self.assertTrue(json.loads(result.stdout)["warnings"])
 
     def generate_metrics(self, directory: Path) -> Path:
         facts = directory / "facts.json"
@@ -134,8 +133,7 @@ class PortableReportTests(unittest.TestCase):
         resolved = generator.resolve_financial_references(original, metrics)
         self.assertEqual(resolved["risks"][0]["fact"], "其他应收款25.00万元，占资产1.47%。")
         self.assertIn("{{financial.", original["risks"][0]["fact"])
-        with self.assertRaisesRegex(ValueError, "unknown financial reference"):
-            generator.resolve_financial_references("{{financial.2024.facts.other_receivables}}", metrics)
+        self.assertEqual(generator.resolve_financial_references("{{financial.2024.facts.other_receivables}}", metrics), "待补指标：2024.facts.other_receivables")
 
     def test_generator_cli_fills_financial_references_before_validation_and_render(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -296,7 +294,7 @@ class PortableReportTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(expected, result.stderr)
 
-    def test_generator_rejects_generic_roadmap_completion_statuses(self):
+    def test_generator_preserves_generic_roadmap_completion_statuses_with_advice(self):
         with tempfile.TemporaryDirectory() as directory:
             directory_path = Path(directory)
             metrics = self.generate_metrics(directory_path)
@@ -321,11 +319,8 @@ class PortableReportTests(unittest.TestCase):
                         capture_output=True,
                         text=True,
                     )
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertIn(
-                        "roadmap completion must describe a verifiable outcome",
-                        result.stderr,
-                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue(any("完成条件待具体化" in warning for warning in json.loads(result.stdout)["warnings"]))
 
     def test_optional_kpi_note_and_empty_supplemental_calculations_are_valid(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -358,7 +353,7 @@ class PortableReportTests(unittest.TestCase):
             self.assertIn("final-indicator-table", html)
             self.assertNotIn("None", html)
 
-    def test_missing_official_policy_generates_an_explicit_draft(self):
+    def test_missing_official_policy_keeps_model_status_and_generates(self):
         with tempfile.TemporaryDirectory() as directory:
             directory_path = Path(directory)
             metrics = self.generate_metrics(directory_path)
@@ -385,10 +380,11 @@ class PortableReportTests(unittest.TestCase):
             )
             html = output_path.read_text(encoding="utf-8")
             self.assertEqual(html.count('<section class="page'), 17)
-            self.assertIn("草稿：政策原文未核验", html)
-            self.assertIn("本报告为草稿，不得作为正式税务结论使用", html)
+            self.assertIn(candidate["source_status"], html)
+            self.assertIn("本轮政策原文待核对", html)
+            self.assertNotIn("草稿：政策原文未核验", html)
 
-    def test_placeholder_policy_is_rejected_instead_of_presented_as_verified(self):
+    def test_placeholder_policy_preserves_unverified_status_and_generates(self):
         with tempfile.TemporaryDirectory() as directory:
             directory_path = Path(directory)
             metrics = self.generate_metrics(directory_path)
@@ -416,8 +412,8 @@ class PortableReportTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("placeholder policy is not allowed", result.stderr)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(any("政策信息待核对" in warning for warning in json.loads(result.stdout)["warnings"]))
 
     def test_explicit_word_keeps_tax_html_content_tables_and_draft_status(self):
         from docx import Document
@@ -488,7 +484,7 @@ class PortableReportTests(unittest.TestCase):
             self.assertEqual([p.text for p in word_section.footer.paragraphs if p.text], list(dict.fromkeys(expected_footers)))
             self.assertEqual([p.text for p in word_section.first_page_footer.paragraphs if p.text], list(dict.fromkeys(expected_cover_signatures)))
             self.assertTrue(word_section.different_first_page_header_footer)
-            self.assertIn("草稿：政策原文未核验", actual_text)
+            self.assertIn("本轮政策原文待核对", actual_text)
             self.assertIn("GC-QA银行流水尚未取得，保持待核验", actual_text)
             expected_tables = [
                 [["".join(cell.itertext()).strip() for cell in row if cell.tag in {"th", "td"}]

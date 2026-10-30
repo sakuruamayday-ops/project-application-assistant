@@ -17,7 +17,7 @@ def test_panorama_analysis_and_report_phrases_keep_primary_ownership() -> None:
     assert "enterprise-panorama-analysis" in contract["route_resolution_skills"]
     assert not {"全景分析", "全景报告"} & set(contract["peer_task_markers"])
     skill = (SKILLS / "enterprise-panorama-analysis" / "SKILL.md").read_text(encoding="utf-8")
-    assert "不得以同行对比报告替代全景报告" in skill
+    assert "同行比较是全景章节" in skill
 
 
 def test_client_professional_routes_cover_identity_hightech_and_humanizer() -> None:
@@ -115,23 +115,20 @@ def test_natural_language_routes_and_finite_enterprise_source_fallback() -> None
     assert {"专精特新企业帮我查", "查专精特新同行"} <= peer
 
     feasibility_text = (SKILLS / "project-feasibility/SKILL.md").read_text(encoding="utf-8")
-    assert "企业名称加项目名和报告意图即可启动" in feasibility_text
-    assert "现有资料可同时提供但不是启动前提" in feasibility_text
-    assert "企业数据源有限降级协议" in feasibility_text
+    assert "企业名称与目标项目可启动分析" in feasibility_text
+    assert "未知项标状态" in feasibility_text
+    assert "按当前可用资料生成草稿" in feasibility_text
 
     peer_text = (SKILLS / "peer-benchmarking/SKILL.md").read_text(encoding="utf-8")
-    assert "先检索本地知识库" in peer_text
-    assert "企业数据源有限降级协议" in peer_text
+    assert "当前知识服务中的政府公示" in peer_text
+    assert "enterprise-source-fallback.md" in peer_text
 
-    # 数据源顺序集中在共享协议中，避免多个 Skill 各自复制后再次形成无限重试。
-    fallback = (SKILLS / "_runtime/enterprise-source-fallback.md").read_text(
-        encoding="utf-8"
-    )
-    assert "天眼查 → 企查查" in fallback
-    assert "最多重试一次" in fallback
-    assert "不重试，也不再次弹出授权" in fallback
-    assert "第二次失败立即转下一来源" in fallback
-    assert "不重复调用刷新回执" in fallback
+    fallback = (SKILLS / "_runtime/enterprise-source-fallback.md").read_text(encoding="utf-8")
+    assert "天眼查→企查查" in fallback
+    assert "重试一次" in fallback
+    assert "直接沿替代来源继续" in fallback
+    assert "成功结果直接复用" in fallback
+    assert "只复查失败或冲突的环节" in fallback
 
 
 def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> None:

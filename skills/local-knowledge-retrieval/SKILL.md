@@ -1,78 +1,45 @@
 ---
 name: local-knowledge-retrieval
-description: 检索团队统一云端知识服务。需要历史政策、相似案例、模板、企业名单、年份批次核验或既有项目经验时使用；自动执行简称与全称、年份与批次变体、结构化名单与全文双路径检索，并禁止一次未命中即判定资料不存在。
+description: 检索团队知识服务中的政策、案例、模板、名单及项目经验，组合简称全称、年份批次、结构化名单和全文路径，保留实际覆盖范围与来源状态。
 ---
 
 # 团队知识检索
 
+按本轮可用工具访问 `jiaotang-kb` MCP。普通成员采用已连接的远程服务，管理员已配置本地索引时按本机规则使用；缺能力时衔接当前客户端连接流程，以会话文件、个人政策规则和官方来源继续任务。Bearer Token 由宿主安全凭据接口管理，输出使用脱敏连接状态。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 查询路由
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+1. `knowledge_service_status` 或等价工具检查实际状态，`connected: true` 记连接成功；未连接、无权限、工具未暴露及检索未命中分别记录。
+2. 解析企业、项目、地区、年份、批次、文件类型，参考 [search-orchestration.md](references/search-orchestration.md)。三首名单参考 [three-first-project-list-schema.md](references/three-first-project-list-schema.md)。
+3. 已知企业名单组合 `POST /v1/lists/search` 与 `POST /v1/search`，MCP 对应 `public_list_search`、`knowledge_search`；产品、行业、技术反查采用 `POST /v1/recognition/search` 或 `recognition_search`；三首组合采用 `POST /v1/three-first/analyze` 或 `three_first_analysis`，保留全部项目和地区。
+4. 首轮未命中时展开简称、全称、年份、批次、类型和地区变体。关键文档用 `GET /v1/documents/{id}` 或 `knowledge_document` 取全文。
+5. 跨年名单、复核及城市归属结合企业身份时间轴，[企业数据源说明](../_runtime/enterprise-source-fallback.md)补当前主体，冲突回官方裁决。
+6. 当期通知识别企业截止时间，按北京时间算剩余天数，并分别列企业截止与主管部门报送截止。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
+服务新增工具时刷新原 MCP，三首与反向发现使用同一连接。超时后可重发现工具并复核状态，仍待恢复时保留已有结果和未完成范围，其他资料渠道继续。
 
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+## 名单与产品证据
 
-先检查当前宿主是否实际暴露团队知识工具或已经连接`jiaotang-kb` MCP。普通独立客户端使用其已配置的团队知识服务，不读取管理员本机镜像或绝对路径；本机管理员环境若已有活动本地索引，按本机规则直接使用，并将当期适用性回到官方原文。当前任务确实需要团队知识但连接缺失时，才进入当前客户端或登录门户提供的连接流程，不假设任何特定第三方宿主、插件市场或安装命令。
+`authoritative_list_search` 适用于企业、年度、批次、地区和状态的名单核验；产品、行业反查使用 `recognition_search`，三首使用专表。查询参数按工具已支持字段，过滤结果对应实际条件。
 
-普通成员通过远程HTTP`jiaotang-kb`访问团队知识。个人Bearer Token只保存在当前宿主的安全凭据存储中；Skill不读取、不输出、不写入普通日志，也不在最终回复中复述。未连接、无权限、工具未暴露和当前检索层未命中必须分别报告，均不得写成资料不存在。通过固定协议调用团队知识服务：
+反向发现分别保留产品行业证据和认定证据，`verified_matches` 进入已认定表，`pending_candidates` 列待核线索。三首按公示、认定、奖励、目录退出分别记事件；退出状态引用明确原文。具体产品待取时复用本轮材料和官方附件，仍缺项则交企业、项目、年度、来源及待取材料。
 
-1. 先调用`knowledge_service_status`检查连接，只有返回`connected: true`才视为连接成功。
-2. 解析企业、项目、地区、年份、批次和文件类型意图，读取 [检索编排协议](references/search-orchestration.md)。
-   涉及首台套、首版次或首批次企业与产品名单时，同时读取 [三首项目名单数据协议](references/three-first-project-list-schema.md)。
-3. 已知企业查名单时并行调用 `POST /v1/lists/search` 与 `POST /v1/search`；按产品、行业或技术方向反向找已认定企业时，统一调用 `POST /v1/recognition/search` 或 MCP `recognition_search`，由服务端解析全部项目、主题词、地区、年度与状态，并分开返回确切、相关和待核验结果。三首项目统一调用 `POST /v1/three-first/analyze` 或 MCP `three_first_analysis`，一次保留全部项目和地区，由服务端组合产品名单、目录差异和全文结果；其他问题至少调用全文检索。
-4. 首轮未命中时自动执行简称、全称、年份、批次、文件类型和地区层级变体，不得停止。
-5. 涉及企业跨年名单、复核状态或城市归属时，读取企业身份时间轴；缺少当前身份时执行 [企业数据源有限降级协议](../_runtime/enterprise-source-fallback.md)，最终冲突回到官方来源裁决。
-6. 对关键命中调用 `GET /v1/documents/{id}` 读取完整提取文本和来源路径。
-7. 项目检索或企业成长路径中命中当前有效申报通知时，识别企业申报截止时间并按北京时间动态计算剩余天数；企业截止与主管部门报送截止并存时优先企业截止。
-8. 结果必须回到原文件核验，政策时效重新确认。
-9. 云端服务不可用时，使用当前会话文件、本地个人政策规则和政府官方来源降级核验，不读取团队本地知识库镜像。
+核对 `coverage`、`pagination`、全部项目分组和分级结果，逐页处理实际返回的 `has_more`、`is_truncated`。来源、地区、年份、批次、同义词或产品证据覆盖缺项时说明当前范围。
 
-上述三首专用查询属于现有 `jiaotang-kb` MCP 的内部能力。根据用户自然语言自动调用，不让用户新增第二个 MCP、重新生成凭据或手工选择工具；现有客户端工具列表未刷新时，只需重新连接原 MCP。
+## 完整度与计数
 
-三首项目按“公示—认定—奖励—目录退出”分别记录状态事件，不以后序状态删除前序证据。没有明确目录退出原文时不得推断退出。无法取得具体产品名称时先复用本轮用户材料，并按三首名单协议通过可用官方原文和附件有限补查；仍未取得时只返回企业、项目、年度、来源和缺失材料，不重复索要已提供文件，也不生成“未展开产品”等占位名称。
+- `coverage_complete` 为 `true/false`；`truncated` 为 `true/false/unavailable`。任一路径 `has_more=true` 或 `is_truncated=true` 时记 `true`；各实际路径提供分页状态且全部到底记 `false`；使用无分页状态的 `knowledge_search` 且其他路径未确认截断时记 `unavailable`。覆盖缺项记 `coverage_complete=false`。
+- `verified`、`pending`、`noise`、`conflict` 同时说明单位、去重键、精确值或下限。文档数、名单行数、企业数和企业＋项目＋年度批次记录数分别统计；显式实体、各分级合计、总计和核验调用范围相互对照，冲突列明。
+- `statement_conflicts` 按实际逐项检查填写。当前或未来批次的最终名单状态与主表覆盖分列，官方最终名单已可读时核对主表遗漏。
+- `activation_ok`、`prompt_context_ok`、`delivery_check_ok` 分别记录。`state_origin=activation_fallback` 可说明激活持久化，提示词及交付观测采用 `prompt_hook_observable=false`、`delivery_check=unavailable` 等真实状态。
+- 验收、保存、归档和日志按用户任务范围分别执行，宿主自动缓存按实际事件记录。
 
-通过 MCP 调用时使用同一流程：普通名单由 `public_list_search` 与 `knowledge_search` 并行，关键文档再调用 `knowledge_document`；三首组合任务调用统一入口 `three_first_analysis`；产品或行业反查调用 `recognition_search`。必须检查 `coverage`、`pagination`、全部项目分组和三档结果，不得静默只取第一个项目、地区或第一页，也不得因为任一工具返回空结果而跳过另一条路径。
+## 案例与政策资料
 
-`authoritative_list_search` 只用于按企业、年度、批次、地区和状态核验权威名单事实。除三首专表外，不得向该工具传入 `product_name` 或 `industry` 做主题词反查；国家小巨人和省级专精特新产品/行业反查固定使用 `recognition_search`。工具若明确拒绝不支持的筛选字段，按提示转路由；严禁删除筛选字段后把返回的全量名单冒充主题词筛选结果，也不得为了替代产品反查而遍历数万条名单。
+案例用 `knowledge_case_pack` 按 `project_id`、年度、行业和规模选取，按申报书或建设方案骨架及 `section` 对应附件分层取得。借鉴结构、指标组织和证据类型，当前客户事实取其自身材料。`auto_grouped` 为自动归组，重要关系回原件核对。
 
-反向发现结果必须分开保存“产品或行业证据”和“正式认定证据”。`verified_matches` 才能进入已认定主表；`pending_candidates` 只能列为待核验线索。当前知识证据没有覆盖的行业、地区、年度或同义词必须明示，未命中只能写“当前检索层未命中”。
+条件、评分、模板和维护侧重规则资料；最新通知、公示、名单、截止和具体批次侧重动态资料，结合官方原文核验。意图待明时可同时列条件和动态线索，围绕用户问题收敛。
 
-## 完整性、计数与措辞门禁
+后台以 `source_layer`、`source_labels`、`verification_status`、`validity_status` 排序，区分规则、动态、官方链接和实际核验。对外呈现可追溯文件、来源及已核结论；尚未取得原文的部分保持待核并继续交付已有结果。
 
-- `coverage_complete` 与 `truncated` 必须分开报告。`coverage_complete` 输出 `true` 或 `false`；`truncated` 输出 `true`、`false` 或 `unavailable`。任一实际使用的分页查询仍为 `has_more=true` 或 `is_truncated=true` 时，`truncated=true`；只有所有实际使用的检索路径都提供分页状态且均已到底时才能写 `truncated=false`；只要使用了不返回分页状态的 `knowledge_search`，且没有其他路径已经确认截断，就写 `truncated=unavailable`，不得推断为 `false`。来源、地区、年度、批次、同义词或产品证据覆盖不足时，`coverage_complete=false`。
-- `coverage_complete=false` 时，从中间进度到最终答复均不得使用“全部闭合”“完整覆盖”“证据链已收齐”“确认不存在”及同义表述。只允许说明“当前已核验的记录”“当前检索范围内未命中”和仍待补齐的范围。
-- `verified`、`pending`、`noise`、`conflict` 每个数字必须同时写计数单位、去重键和是否为精确值。若只能得到下限，必须写“至少N条/家”并说明未完成的枚举范围；显式列出的去重实体数必须与报告数字一致。
-- 文档命中数、名单事实行数、去重企业数和“企业＋项目＋年度/批次”记录数必须分开，不得相互换算。
-- 最终写 `statement_conflicts=无` 前，必须逐项复核“声称逐一核验的企业数、实际名单核验调用数、各分级显式企业数、分级合计和总计”。`6/5家`、同一对象出现两个计数、调用数与声称核验数不一致，都必须列为冲突，不得写“无”。
-- Skill 调用回执中的 `activation_ok`、`prompt_context_ok` 和 `delivery_check_ok` 是三层独立状态。`activation_ok=true` 且 `state_origin=activation_fallback` 只证明技能已激活并持久化；应报告 `prompt_hook_observable=false`、`delivery_check=unavailable`，不得把它改写为技能激活失败，也不得声称完整 Hook 闭环。
-- 验收任务默认只读。用户没有明确要求归档、保存日志或生成本地收据文件时，不创建宿主管理的记忆目录、工作日志或业务文件；宿主自动缓存仍须如实计入文件写入事件。
-- 不得把尚未取得官方最终认定名单的当期或未来批次写成“主表遗漏”。只有官方最终名单已经可读且未进入主表时，才能列为名单覆盖缺口；否则写“尚未形成或尚未核验最终名单”。
-- 连接器超时后只做一次工具重发现和一次 `knowledge_service_status` 复核。若 deferred tool 索引仍不可用，立即停止新增查询，保留已取得证据并标记部分完成；不得连续空转重试，也不得声称连接已恢复。
-
-## 案例包分层调用
-
-需要历史案例、建设方案或附件结构时，先用 `knowledge_case_pack` 按 `project_id`、年度、行业、企业规模筛选三至五套案例。首轮只读取申报书或建设方案骨架；写到具体章节时，再用 `section` 展开对应佐证附件。案例只用于结构、指标组织和证据类型参考，不得把案例企业的财务、客户、技术、知识产权或人员事实复制给当前客户。返回 `auto_grouped` 时表示目录关系由系统自动归组，关键结论仍须回到原文件核验。
-
-## 政策资料分层路由
-
-`10_政策与目录` 中保留两类物理分开的资料，不把它们合并成同一文件夹：
-
-- 规则层：管理办法、认定条件、申报指引、材料模板、维护规则和历史案例。
-- 动态层：`政策数据库/企策顾问` 下按地区归档的申报通知、公示公告、名单和截止时间线索。
-
-查询“条件、门槛、标准、评分、管理办法、材料、模板、维护”时后台先查规则层，再核验当期官方通知。查询“最新、当前、通知、公示、名单、截止、开放、批次或具体年度”时后台先查动态层，再回到官方原文。只输入“高新”等项目简称且意图不清时，先确认用户要查申报条件还是最新通知，不得静默只选一层。
-
-企策顾问资料只作动态发现和内部索引线索；最终政策条件、申报时间和名单结论必须保留来源路径，并以主管部门官方原文核验。
-
-后台检索必须使用 `source_layer`、`source_labels`、`verification_status` 和 `validity_status` 完成排序与核验，但这些内部字段不得显示在网站答复、报告、申报材料或其他用户交付文件中：
-
-- `规则层`表示管理员维护的办法、规则、指引或稳定资料。
-- `动态层`表示企策顾问等动态采集资料。
-- `官方原文`只表示系统已识别政府或法定机构来源链接，不等同于已经人工核验全部条款。
-- 动态层未识别官方原文时，后台继续核对官方原文或当期通知；对外只给核验后的结论、可追溯文件名称和来源链接。
-
-未连接、无权限或未命中时分别说明当前检索层状态，不写成资料不存在。
+报告表达采用[报告写作规则](../_runtime/report-writing.md)。

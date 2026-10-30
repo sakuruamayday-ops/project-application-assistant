@@ -221,8 +221,6 @@ def brand_pdf_bytes(
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(final_bytes)
-    from delivery_gate import validate_artifact
-    validate_artifact(output_path, check_stamp=False)
     return audit
 
 

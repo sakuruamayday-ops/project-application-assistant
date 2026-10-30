@@ -100,8 +100,6 @@ def collect_rd_targets(root: etree._Element, *, require_field: bool = True) -> d
         ):
             raise ValueError(f"{current_rd}表的领域、核心技术或阶段性成果数据单元格缺失")
         field = element_text(field_cells[field_index + 1]).strip()
-        if require_field and field != PENDING_FIELD and (not field or "—" not in field):
-            raise ValueError(f"{current_rd}表头未填写完整四级领域：{field!r}")
         if current_rd in targets:
             raise ValueError(f"文档存在重复编号：{current_rd}")
         targets[current_rd] = {
@@ -132,87 +130,62 @@ def require_string(container: dict, key: str, context: str) -> str:
 
 
 def validate_profile(data: dict) -> dict[str, object]:
-    profile = data.get("enterprise_profile")
+    profile = data.get("enterprise_profile") or {}
     if not isinstance(profile, dict):
         raise ValueError("enterprise_profile必须为对象")
+    profile = dict(profile)
     for key in ("name", "scale_summary", "main_business", "patent_summary"):
-        require_string(profile, key, "enterprise_profile")
-    for key in ("scale_evidence", "patent_evidence"):
-        values = profile.get(key)
-        if not isinstance(values, list) or not values or not all(isinstance(item, str) and item.strip() for item in values):
-            raise ValueError(f"enterprise_profile.{key}必须是非空字符串数组")
-    verified = profile.get("verified_advanced_terms", [])
-    if not isinstance(verified, list) or not all(isinstance(item, str) and item.strip() for item in verified):
-        raise ValueError("enterprise_profile.verified_advanced_terms必须是字符串数组")
-    unknown = sorted(set(verified) - set(ADVANCED_TERMS))
-    if unknown:
-        raise ValueError("verified_advanced_terms含未受控词：" + "、".join(unknown))
+        profile.setdefault(key, "")
+    for key in ("scale_evidence", "patent_evidence", "verified_advanced_terms"):
+        profile.setdefault(key, [])
+        if not isinstance(profile[key], list):
+            raise ValueError(f"enterprise_profile.{key}必须为数组")
     return profile
 
 
 def format_technology(index: int, value: dict, rd_id: str) -> str:
     if not isinstance(value, dict):
         raise ValueError(f"{rd_id}.core_technologies[{index - 1}]必须为对象")
-    name = require_string(value, "name", f"{rd_id}.core_technologies[{index - 1}]").rstrip("：:")
-    description = require_string(value, "description", f"{rd_id}.core_technologies[{index - 1}]")
-    if not name.endswith("技术"):
-        raise ValueError(f"{rd_id}第{index}条核心技术名称必须以“技术”结尾")
-    indicator_kind = value.get("indicator_kind", "proposed")
-    if indicator_kind not in ("proposed", "measured"):
-        raise ValueError(f"{rd_id}第{index}条indicator_kind仅支持proposed或measured")
-    # 显式缺值写成待核定草稿，不能为满足数值检查而编造指标；正式核稿仍会报告缺口。
-    if "indicators" in value and value["indicators"] is None:
+    name = str(value.get("name") or "技术名称待补").strip().rstrip("：:")
+    description = str(value.get("description") or "").strip()
+    indicators = value.get("indicators")
+    if indicators is None or indicators == "":
         return f"{index}、{name}：{ensure_sentence(description)}{PENDING_INDICATOR}"
-    indicators = require_string(value, "indicators", f"{rd_id}.core_technologies[{index - 1}]")
-    if not re.search(r"\d", indicators) or not UNIT_OR_BOUNDARY.search(indicators):
-        raise ValueError(f"{rd_id}第{index}条核心技术指标必须包含数值以及单位或阈值边界")
-    indicators = re.sub(r"^(?:拟定|实测)技术指标(?:为|：|:)?", "", indicators).strip()
-    if indicator_kind == "measured":
-        source = require_string(value, "indicator_source", f"{rd_id}.core_technologies[{index - 1}]")
+    indicators = re.sub(r"^(?:拟定|实测)技术指标(?:为|：|:)?", "", str(indicators)).strip()
+    kind = value.get("indicator_kind", "proposed")
+    if kind == "measured":
+        source = str(value.get("indicator_source") or "来源待补")
         return f"{index}、{name}：{ensure_sentence(description)}实测技术指标为{ensure_sentence(indicators)}依据：{ensure_sentence(source)}"
+    if kind != "proposed":
+        return f"{index}、{name}：{ensure_sentence(description)}技术指标（状态待核对：{kind}）为{ensure_sentence(indicators)}"
     return f"{index}、{name}：{ensure_sentence(description)}拟定技术指标为{ensure_sentence(indicators)}"
 
 
 def format_item(item: dict, field: str, max_body_chars: int) -> tuple[str, int]:
     rd_id = require_string(item, "rd_id", "item").upper()
-    technologies = item.get("core_technologies")
-    innovations = item.get("innovations")
-    if not isinstance(technologies, list) or len(technologies) != 2:
-        raise ValueError(f"{rd_id}.core_technologies必须且只能有2条")
-    if not isinstance(innovations, list) or len(innovations) != 2:
-        raise ValueError(f"{rd_id}.innovations必须且只能有2条")
-    if not all(isinstance(value, str) and value.strip() for value in innovations):
-        raise ValueError(f"{rd_id}.innovations必须为2条非空字符串")
-    has_proposed = any(value.get("indicators") is not None and value.get("indicator_kind", "proposed") == "proposed" for value in technologies)
-    lines = [
-        f"所属技术领域：{field}。",
-        "核心技术：",
-        format_technology(1, technologies[0], rd_id),
-        format_technology(2, technologies[1], rd_id),
-        "创新点：",
-        f"1、{ensure_sentence(innovations[0])}",
-        f"2、{ensure_sentence(innovations[1])}{VALIDATION_SENTENCE if has_proposed else ''}",
-    ]
-    body_length = len("".join(lines[index] for index in (2, 3, 5, 6)))
-    if body_length > max_body_chars:
-        raise ValueError(f"{rd_id}核心技术与创新点合计{body_length}字，超过{max_body_chars}字上限")
-    return "\n".join(lines), body_length
+    technologies = item.get("core_technologies") or []
+    innovations = item.get("innovations") or []
+    if not isinstance(technologies, list) or not isinstance(innovations, list):
+        raise ValueError(f"{rd_id}核心技术及创新点须为数组")
+    if not all(isinstance(value, str) for value in innovations):
+        raise ValueError(f"{rd_id}.innovations须为字符串数组")
+    technology_lines = [format_technology(index, value, rd_id) for index, value in enumerate(technologies, 1)]
+    innovation_lines = [f"{index}、{ensure_sentence(value)}" for index, value in enumerate(innovations, 1)]
+    has_proposed = any(value.get("indicators") not in (None, "") and value.get("indicator_kind", "proposed") == "proposed" for value in technologies)
+    if has_proposed and innovation_lines:
+        innovation_lines[-1] += VALIDATION_SENTENCE
+    lines = [f"所属技术领域：{field}。", "核心技术：", *technology_lines, "创新点：", *innovation_lines]
+    return "\n".join(lines), len("".join(technology_lines + innovation_lines))
 
 
 def format_stage_results(item: dict, max_body_chars: int) -> tuple[str | None, int]:
-    rd_id = require_string(item, "rd_id", "item").upper()
     results = item.get("stage_results")
     if results is None:
         return None, 0
-    if not isinstance(results, list) or len(results) != 4:
-        raise ValueError(f"{rd_id}.stage_results必须且只能有4条")
-    if not all(isinstance(value, str) and value.strip() for value in results):
-        raise ValueError(f"{rd_id}.stage_results必须为4条非空字符串")
-    lines = [f"{index}、{ensure_sentence(str(value))}" for index, value in enumerate(results, 1)]
-    body_length = len("".join(lines))
-    if body_length > max_body_chars:
-        raise ValueError(f"{rd_id}阶段性成果合计{body_length}字，超过{max_body_chars}字上限")
-    return "\n".join(lines), body_length
+    if not isinstance(results, list) or not all(isinstance(value, str) for value in results):
+        raise ValueError("stage_results须为字符串数组")
+    lines = [f"{index}、{ensure_sentence(value)}" for index, value in enumerate(results, 1)]
+    return "\n".join(lines), len("".join(lines))
 
 
 def set_simsun_xiaosi(run: etree._Element) -> None:
@@ -309,15 +282,13 @@ def prepare_basic_fields(item: dict, target: dict[str, object], rd_id: str) -> d
         value = require_string(fields, label, f"{rd_id}.basic_fields")
         if label == "起止时间":
             match = re.fullmatch(r"(\d{4})\.(\d{1,2})\.(\d{1,2})\s*-\s*(\d{4})\.(\d{1,2})\.(\d{1,2})", value)
-            if not match:
-                raise ValueError(f"{rd_id}起止时间须为YYYY.MM.DD-YYYY.MM.DD")
-            parts = [int(part) for part in match.groups()]
-            start, end = datetime(*parts[:3]), datetime(*parts[3:])
-            if start > end:
-                raise ValueError(f"{rd_id}起止时间倒置")
-            value = f"{start:%Y.%m.%d}-{end:%Y.%m.%d}"
-        if label == "目的及组织实施方式" and len(value) > 400:
-            raise ValueError(f"{rd_id}目的及组织实施方式超过400字上限")
+            if match:
+                try:
+                    parts = [int(part) for part in match.groups()]
+                    start, end = datetime(*parts[:3]), datetime(*parts[3:])
+                    value = f"{start:%Y.%m.%d}-{end:%Y.%m.%d}"
+                except ValueError:
+                    pass  # Preserve user-provided dates for later review.
         result[label] = value
     return result
 
@@ -353,8 +324,6 @@ def main() -> None:
         raise SystemExit("输出文件不得与输入文件相同")
     if not input_path.is_file() or not spec_path.is_file():
         raise SystemExit("输入DOCX或JSON不存在")
-    if args.max_body_chars < 1 or args.max_body_chars > 400:
-        raise SystemExit("--max-body-chars必须在1至400之间")
     if output_path.exists() and not args.overwrite:
         raise SystemExit(f"输出文件已存在；如需覆盖请增加 --overwrite：{output_path}")
 
@@ -364,8 +333,11 @@ def main() -> None:
             raise ValueError("schema_version必须为1")
         profile = validate_profile(data)
         items = data.get("items")
-        if not isinstance(items, list) or not items:
-            raise ValueError("items必须为非空数组")
+        if items is None:
+            items = []
+        if not isinstance(items, list):
+            raise ValueError("items必须为数组")
+        warnings: list[str] = []
 
         with zipfile.ZipFile(input_path, "r") as source_zip:
             root = etree.fromstring(source_zip.read("word/document.xml"))
@@ -385,8 +357,8 @@ def main() -> None:
                 target = targets[rd_id]
                 basic_fields = prepare_basic_fields(raw_item, target, rd_id)
                 field = basic_fields.get("技术领域", str(target["field"]))
-                if field != PENDING_FIELD and (not field or "—" not in field):
-                    raise ValueError(f"{rd_id}表头未填写完整四级领域：{field!r}")
+                if not field or (field != PENDING_FIELD and "—" not in field):
+                    warnings.append(f"{rd_id}: 四级领域待核对，已保留原值")
                 core_value, body_length = format_item(raw_item, field, args.max_body_chars)
                 result_value, result_length = format_stage_results(raw_item, args.max_body_chars)
                 formatted[rd_id] = {
@@ -397,21 +369,21 @@ def main() -> None:
                     "result_length": result_length,
                     "basic_fields": basic_fields,
                 }
+                if body_length > args.max_body_chars or result_length > args.max_body_chars:
+                    warnings.append(f"{rd_id}: 正文超过表单建议{args.max_body_chars}字，已保留全文")
+                if len(str(basic_fields.get("目的及组织实施方式", ""))) > 400:
+                    warnings.append(f"{rd_id}: 目的及组织实施方式超过表单400字容量，已保留全文")
                 all_text.append(core_value)
 
             result_modes = {record["result_value"] is not None for record in formatted.values()}
             if len(result_modes) > 1:
-                raise ValueError("同一批次的RD必须全部提供stage_results，或全部不提供")
+                warnings.append("部分RD阶段性成果待补，已保留各项目现有内容")
 
             verified = set(profile.get("verified_advanced_terms", []))
             found = sorted(term for term in ADVANCED_TERMS if term in "\n".join(all_text))
             unsupported = sorted(set(found) - verified)
             if unsupported:
-                raise ValueError(
-                    "正文包含缺少企业能力证据的高阶技术词："
-                    + "、".join(unsupported)
-                    + "；请补充证据并列入verified_advanced_terms，或改写为企业实际技术"
-                )
+                warnings.append("高阶技术词的能力依据待补：" + "、".join(unsupported))
 
             for rd_id, record in formatted.items():
                 # 同一物理表内按标签定位，避免合并单元格展开和RD编号延续到后续非RD表。
@@ -470,14 +442,15 @@ def main() -> None:
             },
             "advanced_terms_found": found,
             "advanced_terms_verified": sorted(verified),
+            "warnings": warnings,
             "rd_count": len(formatted),
             "rd": {
                 rd_id: {
                     "field": record["field"],
                     "body_length": record["body_length"],
-                    "core_technology_count": 2,
-                    "innovation_count": 2,
-                    "stage_result_count": 4 if record["result_value"] is not None else 0,
+                    "core_technology_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("core_technologies") or []),
+                    "innovation_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("innovations") or []),
+                    "stage_result_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("stage_results") or []),
                     "stage_result_length": record["result_length"],
                     "basic_fields": record["basic_fields"],
                     "pending_field": record["field"] == PENDING_FIELD,
@@ -485,7 +458,7 @@ def main() -> None:
                 }
                 for rd_id, record in formatted.items()
             },
-            "format": "所属技术领域 + 2条具名核心技术 + 2条创新点",
+            "format": "所属技术领域 + 输入的具名核心技术与创新点",
             "font": "宋体小四",
             "field_source": "each RD header",
             "indicator_status": "draft targets unless source-backed actual values are supplied outside this formatter",

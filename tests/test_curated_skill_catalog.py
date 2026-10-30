@@ -48,17 +48,17 @@ def test_community_sources_browse_directly_but_install_only_after_local_review()
     assert "network-and-command-review" in policy["required_checks"]
 
 
-def test_client_runtime_contract_makes_hooks_host_enforced_and_fail_closed():
+def test_client_runtime_contract_keeps_security_and_delivers_model_output_directly():
     suite = load("suite-manifest.json")
     contract = load("client-runtime-gates.json")
     points = {item["point"]: item for item in contract["lifecycle"]}
 
     assert contract["release_tag"] == suite["release"]["tag"]
-    assert contract["enforcement"]["mode"] == "fail-closed"
+    assert contract["enforcement"]["mode"] == "security-only"
     assert contract["enforcement"]["owner"] == "signed-desktop-host-plus-native-cordis-plugin"
     assert contract["enforcement"]["model_compliance_is_not_enforcement"] is True
     assert contract["dsh_hook_compatibility"]["trusted_enforcement_boundary"] is False
-    assert contract["enforcement"]["failure_scope"] == "security-integrity-permission-and-real-execution"
+    assert contract["enforcement"]["failure_scope"] == "account-cloud-isolation-credentials-package-integrity-and-real-execution"
     assert "business_quality_repair_budget" not in contract["enforcement"]
     assert contract["enforcement"]["business_quality_failure"].startswith("advisory-")
     assert {
@@ -69,17 +69,29 @@ def test_client_runtime_contract_makes_hooks_host_enforced_and_fail_closed():
         "central-tool-broker",
         "artifact-delivery-gate",
     }
-    assert points["session-start"]["blocking"] is True
-    assert points["user-prompt-submit"]["blocking"] is True
-    assert points["skill-activation"]["blocking"] is True
-    assert points["tool-pre-execute"]["blocking"] is True
-    assert points["turn-stopping"]["blocking"] is True
-    assert "use-awaited-agent-pre-step-for-first-request-gating" in next(
+    assert points["startup"]["blocking"] is True
+    assert "verify-client-signature" in points["startup"]["requirements"]
+    assert "load-last-known-good-policy" in points["startup"]["requirements"]
+    for point in ("session-start", "user-prompt-submit", "skill-activation", "tool-pre-execute", "turn-stopping"):
+        assert points[point]["blocking"] is False
+    assert "preserve-team-login-and-minimum-client-policy" in points["user-prompt-submit"]["requirements"]
+    assert "execute-registered-local-tools-automatically-with-os-user-permissions" in points["tool-pre-execute"]["requirements"]
+    assert "model-outputs-current-result" in points["turn-stopping"]["requirements"]
+    assert "answer-local-tool-requests-automatically" in next(
         item["responsibility"]
         for item in contract["enforcement_components"]
         if item["component"] == "native-cordis-policy-gate"
     )
-    assert "windows-and-macos-produce-equivalent-decisions" in contract["mandatory_regressions"]
+    assert {
+        "direct-output-with-data-gaps",
+        "tool-autoexecution-with-user-cancellation",
+        "historical-session-opens-local-tool-permissions",
+        "real-files-delivered-without-quality-receipts",
+        "tampered-skill-or-manifest-is-rejected",
+        "cloud-members-remain-isolated",
+        "credentials-stay-in-system-provider",
+        "rollback-restores-last-known-good-runtime",
+    } <= set(contract["mandatory_regressions"])
 
 
 def test_client_runtime_contract_preserves_professional_skills_across_providers():
@@ -106,10 +118,10 @@ def test_client_runtime_contract_preserves_professional_skills_across_providers(
     assert "read-relevant-skill-guidance-on-demand" in professional["required_chain"]
     assert "preserve-fact-policy-calculation-and-evidence-boundaries" in professional["required_chain"]
     assert "reuse-actual-source-and-existing-artifacts" in professional["required_chain"]
-    assert "verify-real-artifact-and-openability" in professional["required_chain"]
+    assert "deliver-existing-generated-files" in professional["required_chain"]
     assert "load-every-required-skill" not in professional["required_chain"]
     assert "require-current-turn-artifact-receipts-for-formal-files" not in professional["required_chain"]
     stop = next(item for item in contract["lifecycle"] if item["point"] == "turn-stopping")
     assert "allow-at-most-one-deterministic-repair" not in stop["requirements"]
-    assert "never-force-an-unbounded-continuation-loop" in stop["requirements"]
-    assert "verify-claimed-files-exist-and-are-openable" in stop["requirements"]
+    assert "model-outputs-current-result" in stop["requirements"]
+    assert "report-real-tool-failures-and-data-gaps" in stop["requirements"]

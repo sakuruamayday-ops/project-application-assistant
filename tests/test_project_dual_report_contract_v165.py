@@ -60,21 +60,23 @@ def test_all_project_domain_routes_load_the_shared_contract() -> None:
         "green-development-projects",
         "digitalization-projects",
     ):
-        assert "project-feasibility/references/two-report-contract.md" in read(
-            SKILLS / skill / "SKILL.md"
-        )
+        text = read(SKILLS / skill / "SKILL.md")
+        if skill == "sme-score-preassessment":
+            assert "references/pre-sale-assessment-report-contract.md" in text
+        else:
+            assert "project-feasibility/references/two-report-contract.md" in text
 
 
-def test_common_strengthening_and_watermark_contract_are_mandatory() -> None:
+def test_common_strengthening_and_editable_delivery_methods_are_retained() -> None:
     text = read(CONTRACT)
     for phrase in (
         "国内产品技术水平评价咨询报告",
         "国际产品技术水平评价咨询报告",
-        "国内领先、国际先进",
-        "共享品牌运行时",
-        "默认只输出一份 PDF",
-        "用户明确要求可编辑稿",
-        "不设置文档加密或编辑限制",
+        "国内领先或国际先进",
+        "共享品牌",
+        "分析与体检默认 PDF",
+        "用户要求报告可编辑时",
+        "Word 正文保持可编辑",
     ):
         assert phrase in text
 
@@ -87,17 +89,17 @@ def test_sme_digital_diagnostic_is_soft_strengthening_without_invented_score() -
         / "digital-transformation-diagnostic-strengthening.md"
     )
     for phrase in (
-        "软提升与证据补强",
+        "软提升和证据补强",
         "发展战略",
         "业务创新转型",
         "新型能力",
-        "系统性解决方案",
+        "系统方案说明设备、网络、系统、数据与业务闭环",
         "治理体系",
         "全国与同行对标",
         "待企业确认，建议补强",
     ):
         assert phrase in text
-    assert "不得提前写入成熟度等级、指数、全国排名或同行排名" in text
+    assert "等级、指数和排名据实际评价记录填列" in text
 
 
 def test_hightech_super_deduction_chain_is_complete_and_sanitized() -> None:
@@ -180,8 +182,10 @@ def test_action_report_checks_follow_renderer_order_and_table_titles() -> None:
 
 def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     text = read(CONTRACT)
-    assert "企业分析报告 A、B、C 版" in text
-    assert "尖兵领雁、市级重大及科技计划类的既有分析逻辑保持不变" in text
+    assert "领域资格、技术、预算、评价和验收仍按对应项目" in text
+    assert "已有专项报告使用同源事实与原分析结构" in text
+    for method in ("高企四关联", "三首产品与成熟度", "研发中心当期评分", "专精现行梯度"):
+        assert method in text
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
     contract = json.loads(read(SKILLS / "delivery-contracts.json"))
     assert manifest["release"]["tag"] == f"V{contract['rule_version']}"
@@ -192,9 +196,9 @@ def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_pdf() -> 
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
     assert "A 第一版｜标准销售版" in text
     assert "B 第二版｜GCIP深度顾问版" in text
-    assert "C 全生成｜同时生成A和B" in text
-    assert "每种已选报告默认只交付一份 PDF" in text
-    assert "只有用户明确要求可编辑稿时才追加对应 Word" in text
+    assert "C 全生成" in text and "分别生成 A、B" in text
+    assert "成品生成后直接交付对应 PDF" in text
+    assert "Word 按请求从同一正文追加" in text
     assert "gongchuang_deliver_pdf" in text
     assert 'deliveryProfileId="enterprise-panorama-standard"' in text
     assert 'deliveryProfileId="enterprise-panorama-professional"' in text
@@ -296,32 +300,44 @@ def test_sales_html_escapes_business_text_and_keeps_template_tokens_literal():
         assert not document.xpath('//script') and len(document.xpath('//style')) == 1
         images = document.xpath('//div[contains(@class,"callout")]/img')
         assert len(images) == 4 and all(node.get('src').startswith('data:image/png;base64,') for node in images)
-        for patch in ({'html': '<div>custom DOM</div>'}, {'sections': {'01': {'css': 'body{}'}}}):
-            invalid = {**data, **patch}
-            try:
-                sales_generate(module, folder, invalid, 'invalid.html')
-            except ValueError:
-                pass
-            else:
-                raise AssertionError('layout input must be rejected')
-            assert not (folder / 'invalid.html').exists()
+        for index, patch in enumerate(({'html': '<div>custom DOM</div>'}, {'sections': {'01': {'css': 'body{}'}}})):
+            augmented = {**data, **patch}
+            _, ignored_layout = sales_generate(module, folder, augmented, f'ignored-layout-{index}.html')
+            ignored = html.fromstring(ignored_layout.read_text())
+            assert len(ignored.xpath('//section[@data-section]')) == 13
+            assert len(ignored.xpath('//style')) == 1 and not ignored.xpath('//script')
+            assert 'custom DOM' not in ignored.find('body').text_content()
 
 
-def test_sales_html_rejects_actual_color_words_without_promoting_business_status():
+def test_sales_html_converts_color_words_to_existing_dots_without_dropping_content():
+    from lxml import html
     with sales_html_case() as (folder, module):
-        for value in ('政府公示名单同名主体已命中（绿）', '第三方平台单源，待官方核验（黄）', '知识产权公开记录空白（红）', '单源待核(⻩)', '待核（ ⻩ ）'):
+        for index, (value, level) in enumerate((('政府公示名单同名主体已命中（绿）', 'low'), ('第三方平台单源，待官方核验（黄）', 'medium'), ('知识产权公开记录空白（红）', 'high'), ('单源待核(⻩)', 'medium'), ('待核（ ⻩ ）', 'medium'))):
             data = sales_input()
             data['sections']['03']['paragraphs'] = [value]
-            try:
-                sales_generate(module, folder, data, 'invalid.html')
-            except ValueError as error:
-                assert '{text,status}' in str(error)
-            else:
-                raise AssertionError('plain color markers must not render')
-            assert not (folder / 'invalid.html').exists()
+            _, destination = sales_generate(module, folder, data, f'colored-{index}.html')
+            document = html.fromstring(destination.read_text())
+            paragraph = document.xpath('//section[@data-section="03"]//p')[0]
+            assert paragraph.xpath(f'./span[@class="risk {level}"]')
+            assert not module['COLOR_MARKER'].search(paragraph.text_content())
+            assert paragraph.text_content() == module['COLOR_MARKER'].sub('', value)
         data['sections']['03']['paragraphs'] = ['绿色制造、黄色涂层、红外技术是普通业务文字。']
         _, destination = sales_generate(module, folder, data)
         assert '绿色制造、黄色涂层、红外技术' in destination.read_text()
+
+
+def test_sales_html_renders_missing_fields_with_fixed_structure():
+    from lxml import html
+    with sales_html_case() as (folder, module):
+        data = {'sections': {'03': {'tables': [{'type': 'business', 'rows': [['只提供业务名称']]}], 'metadata': '忽略'}, 'other': {'unsupported': True}}, 'metadata': {'unused': True}}
+        _, destination = sales_generate(module, folder, data)
+        document = html.fromstring(destination.read_text())
+        assert len(document.xpath('//section[@data-section]')) == 13
+        row = document.xpath('//table[@data-table-type="business"]/tbody/tr')[0]
+        assert len(row.xpath('./td')) == 2
+        assert row.xpath('./td')[0].text_content() == '只提供业务名称'
+        assert '请企业提供' in row.xpath('./td')[1].text_content()
+        assert '浙江巨能' not in document.find('body').text_content()
 
 
 def test_sales_html_financial_missing_and_public_capital_do_not_share_a_false_restriction():
@@ -339,8 +355,8 @@ def test_sales_html_financial_missing_and_public_capital_do_not_share_a_false_re
         sales_generate(module, folder, data, 'provided.html')
         data['sections']['07']['tables'][0]['source_kind'] = 'third-party-estimate'
         _, pending = sales_generate(module, folder, data, 'financial-gap.html')
-        assert '用户提供数值' not in pending.read_text()
-        assert '仅采用用户提供的财务资料' in pending.read_text()
+        assert '用户提供数值' in pending.read_text()
+        assert '客户财务资料' in pending.read_text()
         data['sections']['07']['tables'][0] = {'type': 'operating-metrics', 'source_kind': 'government-source',
                                               'rows': [['参保人数', '48人', '合成官方年报']]}
         _, public = sales_generate(module, folder, data, 'public-operation.html')
@@ -369,8 +385,9 @@ def test_sales_html_new_file_cli_and_cross_platform_font_uris():
         invalid['sections']['03']['paragraphs'] = ['单源待核（⻩）']
         source.write_text(json.dumps(invalid, ensure_ascii=False))
         bad = subprocess.run(argv[:-1] + [str(folder / 'bad.html')], text=True, capture_output=True)
-        assert bad.returncode == 2 and json.loads(bad.stdout)['status'] == 'fail'
-        assert not (folder / 'bad.html').exists()
+        assert bad.returncode == 0 and json.loads(bad.stdout)['status'] == 'pass'
+        assert (folder / 'bad.html').is_file()
+        assert 'risk medium' in (folder / 'bad.html').read_text()
         assert '%20' in module['font_uri'](PurePosixPath('/签名字体/a b.otf'))
         uri = module['font_uri'](PureWindowsPath("C:/签名 素材/a'quote.otf"))
         assert uri.startswith('file:///C:/') and '%20' in uri and '%27' in uri and '\\' not in uri
@@ -379,3 +396,19 @@ def test_sales_html_new_file_cli_and_cross_platform_font_uris():
         assert operation['parameters']['output']['extensions'] == ['.html']
         assert operation['network'] == 'none' and operation['sandbox_mode'] == 'workspace-write'
         assert all((SKILLS / path).is_file() for path in operation['files'])
+
+
+def test_sales_html_merges_repeated_rows_and_preserves_both_annotations():
+    from lxml import html
+    with sales_html_case() as (folder, module):
+        data = sales_input()
+        data['sections']['03']['tables'] = [
+            {'type': 'business', 'rows': [['业务甲', '内容甲']], 'summary': {'title': '第一条摘要', 'text': '摘要甲'}},
+            {'type': 'business', 'rows': [['业务乙', '内容乙']], 'summary': {'title': '第二条摘要', 'text': '摘要乙'}, 'callouts': [{'kind': 'info', 'text': '后续说明'}]},
+        ]
+        _, destination = sales_generate(module, folder, data)
+        document = html.fromstring(destination.read_text())
+        assert len(document.xpath('//table[@data-table-type="business"]/tbody/tr')) == 2
+        section = document.xpath('//section[@data-section="03"]')[0].text_content()
+        for value in ('业务甲', '业务乙', '摘要甲', '摘要乙', '后续说明'):
+            assert value in section

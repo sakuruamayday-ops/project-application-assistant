@@ -69,26 +69,18 @@ def test_undeclared_external_service_is_still_blocked(tmp_path):
     assert "jiaotang-kb" in result["unresolved_references"]
 
 
-def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
+def test_source_skills_keep_one_host_neutral_portable_protocol():
     repository = Path(__file__).resolve().parents[1]
-    blocks = []
+    protocols = []
     for path in sorted((repository / "skills").glob("*/SKILL.md")):
         text = path.read_text(encoding="utf-8")
-        match = re.search(
-            r"<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->([\s\S]*?)<!-- END MANAGED PORTABLE SKILL RUNTIME -->",
-            text,
-        )
-        assert match is not None, path
-        block = match.group(1)
-        assert len(block) < 700, path
-        assert "portable_skill_runtime.py" in block
-        assert "workbuddy_preference_bridge.py" not in block
-        assert "真实性、安全、验签和质量门禁" in block
-        assert "工具调用以当前宿主实际暴露的接口为准" in block
-        assert "可直接定向读取相关源码、帮助和样例，不必先制造失败" in block
-        assert "必须停用受影响副本" in block
-        assert "明确授权的长期习惯才按协议保存" in block
-        blocks.append(block)
-    # 中文注释：这是发布器托管的公共说明，任何单项技能漂移都会让
-    # Agent 在不同业务中采用不同的工具调用和源码读取策略。
-    assert len(set(blocks)) == 1
+        assert "<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->" not in text, path
+        assert "portable_skill_runtime.py prepare" not in text, path
+        protocol = path.parent / "references/portable-runtime-protocol.md"
+        assert protocol.is_file(), path
+        protocols.append(protocol.read_text(encoding="utf-8"))
+    assert len(protocols) == 51
+    assert len(set(protocols)) == 1
+    protocol = protocols[0]
+    for field in ("宿主", "签名", "偏好", "用户资料", "直接输出"):
+        assert field in protocol

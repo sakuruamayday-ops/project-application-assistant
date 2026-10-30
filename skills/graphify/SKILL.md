@@ -1,101 +1,45 @@
 ---
 name: graphify
-description: 将代码、政策、项目资料或知识库目录构建为可查询的持久知识图谱。仅在用户明确要求知识图谱、关系图、路径追踪、社区聚类、GraphRAG或明确点名graphify时使用。
+description: 按用户指定目录构建和更新知识图谱，支持关系追踪、路径、社区聚类、GraphRAG 及证据导航；用户提出图谱需求或点名 graphify 时使用。
 ---
 
 # 知识图谱构建与查询
 
+将代码、政策和项目资料转换为可持续更新的关系图。输入采用用户指定的客户、项目、专题或多主体范围，各项目输出独立 `graphify-out/`；普通关键词和全文查询按需使用知识服务。
 
-<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 便携运行门禁
+## 范围与来源
 
-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
+1. 按 `references/project-profiles.md` 选择 `application-evidence`、`policy-corpus`、`ip-evidence` 或 `client-dossier`，确认目录、目标、隐私级别及输出。
+2. 专精特新与小巨人记录项目类型及申请书版本，资料盘点、构图和资格判断分别呈现状态。
+3. 客户资料采用 `privacy=restricted`，公开政策、公示和专利可用 `privacy=public`，保留来源及采集日期。敏感身份、账户、凭据和原始名单通过数据筛选及脱敏处理；外部后端传输按用户指令和宿主权限执行，规则见 `references/privacy-and-scope.md`。
+4. 原文提取、模型推断和歧义分别标为 `EXTRACTED`、`INFERRED`、`AMBIGUOUS`。图谱用于导航与发现，政策现行性、企业登记、专利状态和财务原值由原始来源核验。
 
-先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
+## 工具与构建
 
-`fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
-<!-- END MANAGED PORTABLE SKILL RUNTIME -->
-
-把用户指定目录转换为可持续更新的知识图谱，用于发现文件、政策、项目、企业、产品、技术、专利和证据之间的关系。
-
-## 使用边界
-
-- 普通文件搜索、政策关键词检索和知识库全文查询继续使用云端知识库，不自动触发本技能。
-- 只有用户明确要求知识图谱、关系追踪、最短路径、社区聚类或GraphRAG时触发。
-- 不默认生成Obsidian目录；标准输出为交互式HTML、图数据JSON和图谱报告。
-- 图谱中的推断关系必须与原文提取关系分开标记，不把模型推断写成政策或企业事实。
-- 只处理用户指定的单一客户、单一项目或单一专题目录，不扫描主目录、磁盘根、整个知识库或混合客户根目录。
-- 每个客户或项目使用独立的 `graphify-out/`；除非用户明确要求集团或多主体对比，不合并不同客户图谱。
-- Graphify只用于关系导航、证据链检查和异常发现，不替代政策现行性、企业登记、专利法律状态或财务原值核验。
-
-## 项目与隐私门禁
-
-1. 先读 `references/project-profiles.md`，选择 `application-evidence`、`policy-corpus`、`ip-evidence` 或 `client-dossier`。
-2. 涉及专精特新或小巨人时，先确认申请书项目类型与审核版本；未确认时只能盘点资料和构图，不形成达标结论。
-3. 客户项目默认 `privacy=restricted`。不得因环境中存在模型密钥就把客户资料发送给第三方后端。
-4. 发现凭据、身份证件、银行账号、原始员工花名册或未脱敏客户名单时，排除相应文件并只报告数量。
-5. 公开政策、公示名单和公开专利可使用 `privacy=public`，但仍须保留来源和采集日期。
-
-完整规则见 `references/privacy-and-scope.md`。
-
-## 前置能力
-
-本技能调用开源 `graphifyy` 工具。首次使用时先检测：
+检测 `graphifyy` 能力：
 
 ```bash
 command -v graphify || python3 -c "import graphify"
 ```
 
-未安装时向用户说明将安装第三方依赖，再执行以下任一方式：
+需要依赖时按当前环境使用 `uv tool install graphifyy` 或 `python3 -m pip install graphifyy`，向用户说明所用第三方工具与实际版本。
+
+1. 初始化项目并生成领域提取规范：
 
 ```bash
-uv tool install graphifyy
+python3 scripts/init_project.py PROJECT_ROOT --profile PROFILE --project-name "项目名称" --client-name "客户名称" --privacy restricted
+python3 scripts/build_prompt.py --overlay references/domain-overlay.md --output PROJECT_ROOT/graphify-out/.project-extraction-spec.md
 ```
 
-或：
+存在上游规范时可增加 `--upstream 基础规范路径`。按文件规模分批构建，保留 `graph.json`、交互式 HTML 和 `GRAPH_REPORT.md`。
+
+2. 审计并抽样核对实体、关系方向、同名合并、来源、政策版本、专利状态和推断标记：
 
 ```bash
-python3 -m pip install graphifyy
+python3 scripts/audit_graph.py PROJECT_ROOT/graphify-out/graph.json --profile PROJECT_ROOT/.gongchuang-graphify.json --output PROJECT_ROOT/graphify-out/EVIDENCE_GRAPH_AUDIT.md
 ```
 
-## 构建流程
-
-1. 确认输入目录、业务 Profile、隐私级别和输出目的。
-2. 至少10个相关文件、预计超过20,000字、需要跨材料证据核对或会持续更新时再构图；小任务直接使用现有检索与审查技能。
-3. 初始化项目：
-
-```bash
-python3 scripts/init_project.py PROJECT_ROOT \
-  --profile PROFILE \
-  --project-name "项目名称" \
-  --client-name "客户名称" \
-  --privacy restricted
-```
-
-4. 生成业务语义提取规范：
-
-```bash
-python3 scripts/build_prompt.py \
-  --overlay references/domain-overlay.md \
-  --output PROJECT_ROOT/graphify-out/.project-extraction-spec.md
-```
-
-如宿主或已安装的 Graphify 提供基础提取规范，可额外传入 `--upstream 基础规范路径`，再叠加本技能规则。
-5. 统计文件数量、类型和规模；超过500份文件时按一级目录分批。
-6. 执行完整构建，输出到项目目录下的 `graphify-out/`，至少保留 `graph.json`、交互式HTML和 `GRAPH_REPORT.md`。
-7. 审计图谱：
-
-```bash
-python3 scripts/audit_graph.py \
-  PROJECT_ROOT/graphify-out/graph.json \
-  --profile PROJECT_ROOT/.gongchuang-graphify.json \
-  --output PROJECT_ROOT/graphify-out/EVIDENCE_GRAPH_AUDIT.md
-```
-
-8. 抽样核对实体、关系、来源文件、政策版本、专利状态和推断标记；审计告警不自动改图。
-9. 后续文件变化时优先增量更新，不重复全量构建。
-
-常用命令：
+3. 告警结合原文裁决，后续按文件变化增量更新，保留旧图供回滚：
 
 ```bash
 graphify <目录> --no-viz
@@ -105,37 +49,14 @@ graphify path "实体A" "实体B"
 graphify explain "实体名称"
 ```
 
-需要交互图时移除 `--no-viz`。需要提供给其他Agent时，可使用工具支持的GraphRAG JSON或MCP模式，但不得替代团队知识库现有MCP。
+交互图可移除 `--no-viz`；GraphRAG JSON、MCP 按工具实际能力提供，与团队知识服务各司其职。
 
-## 政府项目场景
+## 业务查询与交付
 
-- 政策版本图：政策、废止依据、替代文件、申报通知和执行细则。
-- 项目关系图：国家、省、市、区县项目及其上下级、别名和申报条件。
-- 企业能力图：产品、技术、专利、客户验证、产业链和可申报项目。
-- 专利关系图：申请人、权利人、同族、引证、技术特征和产品映射。
+政策版本、项目层级、企业产品技术、专利和证据关系参考 `references/domain-overlay.md`，查询参考 `references/query-templates.md`。
 
-业务实体、关系方向、来源等级和申报四项判断规则见 `references/domain-overlay.md`；常用问题见 `references/query-templates.md`。
+回答区分图谱事实及 `source_file`、`source_location`，推断及置信度，待外部核验事项和行动。核对关键节点到原文件、客户范围、隐私级别、冲突及增量覆盖。正式材料按相应业务技能组织，以当前可用证据形成稿件。
 
-## 查询与交付
+第三方工具 `graphifyy` 的版本、安装和许可证以实际发布说明为准；本技能提供原创业务适配方法。
 
-回答必须区分：
-
-1. 图谱事实：附 `source_file` 或 `source_location`；
-2. 图谱推断：标明关系置信度；
-3. 待外部核验：政策现行性、企业登记、专利法律状态和财务原值；
-4. 行动项：缺少的材料、冲突关系或补证任务。
-
-正式申报文本仍须经过套件的真实性、数据溯源、关联一致性和交付门禁，图谱报告不能替代正式申报材料。
-
-## 验收
-
-- 每个关键节点可追溯到原文件。
-- 抽样关系不存在方向颠倒或同名实体误合并。
-- `EXTRACTED`、`INFERRED`和`AMBIGUOUS`关系明确区分。
-- 不同客户资料未进入同一图谱，受限资料未静默发送到外部模型。
-- 政策版本、专利状态和事实冲突被显式保留，不以共现关系替代核验。
-- 更新后旧图谱可回滚，新增文件能够进入增量结果。
-
-## 来源说明
-
-本技能是企业全生命周期助手的原创适配说明，运行时依赖第三方开源包 `graphifyy`。第三方软件的安装、版本和许可证以其发布页面为准，不随本技能复制第三方源码。
+报告表达采用[报告写作规则](../_runtime/report-writing.md)。
