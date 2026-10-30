@@ -377,8 +377,6 @@ def main() -> int:
     content = args.content
     if args.input_file:
         source = Path(content)
-        if source.stat().st_size > 1024 * 1024:
-            raise ValueError("Word 正文文件超过 1 MiB，请按独立交付文件拆分")
         content = source.read_text(encoding="utf-8-sig")
     html_input = args.input_file and source.suffix.lower() == ".html"
     print(json.dumps(build_document(content, args.output, html_input=html_input), ensure_ascii=False))

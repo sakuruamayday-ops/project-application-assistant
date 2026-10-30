@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 from docx import Document
@@ -67,6 +68,30 @@ def test_refuses_to_overwrite_an_existing_docx(tmp_path: Path) -> None:
 
     assert completed.returncode != 0
     assert "拒绝覆盖" in completed.stderr
+
+
+def test_input_file_larger_than_one_mib_preserves_every_paragraph(tmp_path: Path) -> None:
+    paragraphs = [f"第{index:03d}段：" + "合成正文甲乙丙丁0123456789。" * 300 for index in range(100)]
+    content = "# 合成长正文\n\n" + "\n\n".join(paragraphs)
+    source = tmp_path / "long-report.md"
+    source.write_text(content, encoding="utf-8")
+    assert source.stat().st_size > 1024 * 1024
+    artifact = tmp_path / "long-report.docx"
+
+    completed = subprocess.run(
+        [sys.executable, str(SCRIPT), "--input-file", str(source), str(artifact)],
+        check=True, capture_output=True, text=True,
+    )
+
+    receipt = json.loads(completed.stdout)
+    assert receipt["status"] == "passed"
+    assert receipt["characters"] == len(content)
+    assert [paragraph.text for paragraph in Document(artifact).paragraphs] == ["合成长正文", *paragraphs]
+    with ZipFile(artifact) as archive:
+        xml = archive.read("word/document.xml").decode("utf-8")
+    for paragraph in paragraphs:
+        assert paragraph in xml
+    assert source.read_text(encoding="utf-8") == content
 
 
 def test_exports_markdown_emphasis_without_changing_literal_symbols(tmp_path: Path) -> None:
