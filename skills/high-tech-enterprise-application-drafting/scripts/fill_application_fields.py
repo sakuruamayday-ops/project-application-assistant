@@ -257,12 +257,21 @@ def fill_application(input_path: Path, spec: dict, output: Path, *, spec_path=No
     with ZipFile(input_path) as source_package:
         root = etree.fromstring(source_package.read("word/document.xml"))
         tables = root.xpath("./w:body/w:tbl", namespaces=NS)
+        cover_aliases = {
+            "地区": "企业所在地区",
+            "所在地区": "企业所在地区",
+            "公司名称": "企业名称",
+            "申报日期": "申请日期",
+            "受理机构": "认定机构",
+        }
         cover = dict(spec.get("cover", {}))
-        if "企业名称" in spec.get("registration", {}):
-            cover.setdefault("企业名称", spec["registration"]["企业名称"])
+        if "企业名称" in spec.get("registration", {}) and not any(
+            cover_aliases.get(k, k) == "企业名称" for k in cover
+        ):
+            cover["企业名称"] = spec["registration"]["企业名称"]
         supplied_cover_fields = set()
         for input_label, value in cover.items():
-            label = "企业所在地区" if input_label == "地区" else input_label
+            label = cover_aliases.get(input_label, input_label)
             field = pointer("cover", label)
             source_field = (pointer("cover", input_label) if input_label in spec.get("cover", {})
                             else pointer("registration", input_label))
@@ -495,13 +504,17 @@ def fill_application(input_path: Path, spec: dict, output: Path, *, spec_path=No
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="按物理单元格与具名字段无损回填高企申请书 Word 母版")
     parser.add_argument("input", type=Path)
     parser.add_argument("spec", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--strict", action="store_true", help="严格验收模式：任一字段未定位、回读失败或财务冲突即返回退出码 2")
     args = parser.parse_args()
     spec = json.loads(args.spec.read_text(encoding="utf-8"))
-    print(json.dumps(fill_application(args.input, spec, args.output, spec_path=args.spec), ensure_ascii=False))
+    result = fill_application(args.input, spec, args.output, spec_path=args.spec)
+    print(json.dumps(result, ensure_ascii=False))
+    if args.strict and result["status"] != "passed":
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

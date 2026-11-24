@@ -107,7 +107,7 @@ def run_preflight(
                 f"{gap['label']}{f'，可选：{allowed}' if allowed else ''}"
             )
         blocking_question = (
-            "开始2026门槛预评估前，请主人一次确认或补充：" + "；".join(prompts) + "。"
+            "开始2026门槛预评估前，请一次确认或补充：" + "；".join(prompts) + "。"
         )
 
     low_impact_assumptions = []

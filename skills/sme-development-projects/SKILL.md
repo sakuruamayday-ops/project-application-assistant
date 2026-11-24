@@ -3,7 +3,16 @@ name: sme-development-projects
 description: 处理优质中小企业培育、申请书审核和申报写作，按任务形成方向、条件判断、材料体检或正文；前期预评估可衔接 sme-score-preassessment。
 ---
 
-# 中小企业培育项目
+# 中小企业培育与申请书撰写（收费 MCP / 付费交付端）
+
+## 商业定位、MCP 双态与共用底座
+
+本技能属于**专精特新与“小巨人”收费撰写、培育方案与深度成品能力（收费 MCP 服务端 / 付费交付端）**，遵循 [WorkBuddy 商业分层与 MCP 规范](../_runtime/workbuddy-core/mcp-routing-and-tiering.md) 与 [申报正文撰写共用底座（v1.2）](../_runtime/workbuddy-core/v12-drafting-core.md)。仅做免费门槛与材料初筛体检时，由免费入口 `sme-score-preassessment` 承接。
+
+- **双字段主导产品锚定 + 业态三分支**：先锁 `rawAnchor`（对外开票商业实体），再按业态三分支（`equipment_or_mold_maker` / `product_or_material_maker` / `ambiguous`）区分装备/模具与制品/材料企业，结合工业“六基”与工艺特征升维为 `formalDeclarationName`。升维引入但尚无授权发明覆盖的工艺词登记至 `unpatentedProcessTags`，直接转化为六问 Q2 发明专利补强建议。
+- **专利业务向三级分流 + 全凑数兜底**：按主导产品关联度自动分流为 `direct_support`（一档核心支撑）、`production_support`（二档自用装备/模具工艺支撑，严禁抢占主导产品名）、`weak_or_unrelated`（三档凑数仅计数量）。一档为空时死锁 `rawAnchor` 不跑偏，改用企业工艺、实用新型/软著与行业典型工艺窗口成稿，并在外置清单提示补做发明专利。
+- **直接生成干净专业正文（去过度防御）**：缺实测指标时允许按行业成熟工程实践写入合理区间，统一表述为“设计控制目标为……”，并将估算项外置到《交付核对与补强清单》及主体隔离黑板 `.facts/<企业标识>.facts.json`（`origin: ai_design_target`），不在正文里插刺眼括号或免责兜底话术。
+- **MCP 故障显式暴露**：已配置付费 MCP 时若出现 `401/403`、Token 过期、配额归零或超时，显式向用户报错排查，绝不静默降级。
 
 按本轮单点、局部、培育或申请书任务处理。材料体检参考 [material-checkup-report-template.md](references/material-checkup-report-template.md)：现状、可行性和培育使用五章 19 内容块的行动型报告，已有申请书核稿逐字段列发现。申请书采用对应表单 DOCX，分析与体检采用固定 HTML 生成 PDF；内容生成后按实际状态交付。
 
@@ -22,7 +31,7 @@ description: 处理优质中小企业培育、申请书审核和申报写作，�
 - 完整培育路径参考 `references/policy-application-path-contract.md`，覆盖相关主梯度、研发、绿色、数字化、IP、质量品牌和产业化，按条件成熟度、建设后、条件触发或长期梯度排序，列补证后复检节点。
 - 产业链及六基使用 `industry-chain-foundation-matcher` 的原目录、精确近似和未命中结果；市场、排名、补短板、锻长板、填空白和替代使用 `industry-positioning`、`evidence-ledger` 的边界、对象、计算和来源方法，各项目采用自身政策条件。
 - 产品与收入见 `references/main-product-naming-and-boundary-gate.md`、`core-formula-process-performance-matrix.md`，市场见 `market-share-workpaper-method.md`，技术见 `technology-advancement-feasibility-rubric.md`。技术载体及终端商业产品分别映射。
-- 六问参考 `references/direction-card-to-six-questions.md`，每套对应一个产品；专利布局衔接 `patent-router`，正式写作衔接 `application-writing`。企业简介参考 `references/enterprise-introduction-method.md`，沿企业三段、产品技术五段，第四段为精细化管理；表单结构按当期要求。
+- 六问以 `references/direction-card-to-six-questions.md` 为全包唯一真源（Q1 专利归类 → Q2 3-5年专利技术簇布局 → Q3 补短板/填空白/替代因果 → Q4 核心技术叙事 → Q5 国际对标 → Q6 优势短板与培育），每套对应一个锁定主导产品；专利布局衔接 `patent-router`，正式写作衔接 `application-writing`。企业简介参考 `references/enterprise-introduction-method.md`，沿企业基本情况三段、主导产品及技术五段，**产品技术五段中第 4 段（全篇第 7 段）为精细化管理**；表单结构按当期要求。
 
 ## 当前栏位填写指引
 

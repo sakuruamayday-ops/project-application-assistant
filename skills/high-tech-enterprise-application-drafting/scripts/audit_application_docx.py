@@ -34,10 +34,13 @@ PERSONNEL_PERCENT_WITHOUT_UNIT = re.compile(
 RD_YEAR_FIELDS = ("第一年", "第二年", "第三年")
 EXPENSE_SUBTOTAL = "研究开发费用（内、外部）小计"
 PS_INCOME = "上年度销售收入"
-RD_TECH_PATTERN = re.compile(r"^[12]、.+技术：.+(?:拟定|实测)技术指标为.+\d")
+RD_TECH_PATTERN = re.compile(
+    r"^[12]、.+技术：.+(?:(?:拟定|实测)(?:技术)?指标为|设计(?:控制)?目标(?:为|控制在)|目标控制范围为|控制目标为|实测(?:结果)?为).*\d"
+)
 UNIT_OR_BOUNDARY = re.compile(
-    r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
-    r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
+    r"(%|％|秒|分钟|小时|天|毫米|厘米|微米|纳米|千米|米|赫兹|分贝|摄氏度|℃|°C|兆帕|千帕|帕|MPa|kPa|GPa|Pa|"
+    r"mm|cm|μm|um|nm|km|kg|mg|mL|Hz|kHz|MHz|dB|mV|kV|mA|kW|MW|rpm|r/min|RH|目|g/m²|cc/m²|"
+    r"伏|安|瓦|帧|次|个|类|项|套|点|条|±|≤|≥|不低于|不高于|不大于|不小于|不超过|不少于)"
 )
 INNOVATION_SECTION_ORDER = (
     "知识产权对企业竞争力的作用",
@@ -264,7 +267,7 @@ def rd_tables(document):
                 current_rd = None
 
 
-def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
+def audit_rd_core_innovation(document, *, include_domain_in_limit: bool = False) -> tuple[dict, list[dict]]:
     result = {}
     issues = []
     for current_rd, _, table in rd_tables(document):
@@ -294,6 +297,7 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
             if len(lines) == 7
             else 0
         )
+        total_length = len(normalized(core_text))
         item_issues = []
         if field == "待企业确认四级领域":
             item_issues.append("四级技术领域待确认，不能作为已核定领域交付")
@@ -313,12 +317,16 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
         for index, number in ((5, "1、"), (6, "2、")):
             if len(lines) <= index or not lines[index].startswith(number):
                 item_issues.append(f"第{index + 1}行必须以{number}开头")
-        if body_length > 400:
+        if include_domain_in_limit:
+            if total_length > 400:
+                item_issues.append(f"含领域行整栏合计{total_length}字，超过400字网报上限")
+        elif body_length > 400:
             item_issues.append(f"核心技术与创新点合计{body_length}字，超过400字上限")
         result[current_rd] = {
             "field": field,
             "line_count": len(lines),
             "body_length": body_length,
+            "total_length": total_length,
             "core_technology_count": sum(
                 1 for line in lines if RD_TECH_PATTERN.search(line)
             ),
@@ -582,6 +590,37 @@ def effective_font(run, paragraph, default_styles, defaults):
     return font, east_asia, size
 
 
+def _reconcile_blackboard_estimates(blackboard_path: Path, body_text: str) -> dict:
+    payload = json.loads(blackboard_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("--blackboard 必须指向 JSON 对象")
+    compact_text = normalized(body_text)
+    pending, resolved = [], []
+    for item in payload.get("estimatedMetrics", []):
+        if not isinstance(item, dict):
+            continue
+        if item.get("origin", "ai_design_target") != "ai_design_target":
+            continue
+        snippet = normalized(str(item.get("snippet", "")))
+        suggested = normalized(str(item.get("suggestedValue", "")))
+        present = bool((snippet and snippet in compact_text) or (suggested and suggested in compact_text))
+        entry = dict(item)
+        if present:
+            entry["status"] = "pending"
+            entry["checkup_note"] = "该数值源自初稿行业设计目标，尚未见企业实测原件，提交前请核对工艺单或检测报告。"
+            pending.append(entry)
+        else:
+            entry["status"] = "resolved"
+            resolved.append(entry)
+    return {
+        "company_name": payload.get("company_name", ""),
+        "pending_count": len(pending),
+        "resolved_count": len(resolved),
+        "pending_estimates": pending,
+        "resolved_estimates": resolved,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Audit a high-tech enterprise application DOCX.")
     parser.add_argument("docx", type=Path)
@@ -591,6 +630,21 @@ def main():
         "--innovation-evidence",
         type=Path,
         help="企业创新能力四栏证据边界JSON；正式回填时必须提供",
+    )
+    parser.add_argument(
+        "--include-domain-in-limit",
+        action="store_true",
+        help="按网报口径将所属技术领域行与标题行一并计入RD核心技术400字上限",
+    )
+    parser.add_argument(
+        "--blackboard",
+        type=Path,
+        help="可选：传入企业事实黑板 JSON（.facts/<主体>.facts.json），自动回查并销项行业估算指标",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="严格回归模式：存在任何硬性问题时返回退出码 2",
     )
     args = parser.parse_args()
 
@@ -629,7 +683,9 @@ def main():
         label: item["length"] for label, item in innovation_detail.items()
     }
 
-    rd_core_innovation, rd_core_issues = audit_rd_core_innovation(document)
+    rd_core_innovation, rd_core_issues = audit_rd_core_innovation(
+        document, include_domain_in_limit=args.include_domain_in_limit
+    )
     rd_stage_results, rd_stage_issues = audit_rd_stage_results(document)
     limited_fields, limited_field_issues = audit_limited_fields(document)
     required_issues, format_issues, expense_issues = audit_application_fields(document)
@@ -658,6 +714,8 @@ def main():
         "placeholder_count": len(placeholders),
         "placeholder_sample": placeholders[:20],
     }
+    if args.blackboard:
+        result["estimated_metrics_reconciliation"] = _reconcile_blackboard_estimates(args.blackboard, body_text)
     for name, issues in (
         ("required_field", required_issues), ("format", format_issues), ("rd_expense", expense_issues),
     ):
@@ -665,6 +723,19 @@ def main():
             result[f"{name}_issue_count"] = len(issues)
             result[f"{name}_issues"] = issues
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    if args.strict and any(
+        (
+            font_issues,
+            innovation_issues,
+            rd_core_issues,
+            rd_stage_issues,
+            limited_field_issues,
+            required_issues,
+            format_issues,
+            expense_issues,
+        )
+    ):
+        raise SystemExit(2)
     # Content findings remain visible without withholding the existing document.
     raise SystemExit(0)
 

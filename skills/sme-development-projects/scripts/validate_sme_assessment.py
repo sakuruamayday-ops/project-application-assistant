@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""校验优质中小企业诊断的版本、政策和四项判断。"""
+"""校验优质中小企业诊断的版本、政策、四项判断与 v1.2 撰写元数据（ai_meta）。"""
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
-
 
 DECISIONS = {"retain", "replace", "retain-after-evidence"}
 EVIDENCE_STATES = {"verified", "computed", "claimed", "missing", "conflicting"}
 JUDGMENTS = {"leading_product", "bottleneck", "gap_filling", "import_substitution"}
 QUALITY_SCORE_STATES = {"verified-platform-score", "pending-platform-evaluation"}
+BUSINESS_TYPES = {"equipment_or_mold_maker", "product_or_material_maker", "ambiguous"}
+METRIC_ORIGINS = {"enterprise_source", "ai_design_target", "public_registry", "mcp_verified"}
 LEGACY_SCORE_KEYS = {
     "estimated_score",
     "total_score",
@@ -23,8 +25,9 @@ LEGACY_SCORE_KEYS = {
 }
 
 
-def validate(document: dict) -> list[str]:
+def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[str]]:
     errors: list[str] = []
+    warnings: list[str] = []
     context = document.get("application_context", {})
     for field in ("project_level", "region", "year", "application_type", "form_version"):
         if not context.get(field):
@@ -95,20 +98,59 @@ def validate(document: dict) -> list[str]:
         and quality_score.get("status") != "verified-platform-score"
     ):
         errors.append("平台质量分未核验时总体结论不得为eligible")
-    return errors
+
+    # Optional v1.2 ai_meta validation (dual-field product lock, 3-tier patent triage, estimated metrics lineage).
+    ai_meta = document.get("ai_meta") or document.get("__aiMeta")
+    if ai_meta is not None:
+        if not isinstance(ai_meta, dict):
+            errors.append("ai_meta必须为对象")
+        else:
+            locked = ai_meta.get("lockedProduct")
+            if isinstance(locked, dict):
+                if not locked.get("rawAnchor"):
+                    (errors if strict else warnings).append("ai_meta.lockedProduct缺少rawAnchor商业实体锚点")
+                btype = locked.get("businessType", "ambiguous")
+                if btype not in BUSINESS_TYPES:
+                    errors.append(f"ai_meta.lockedProduct.businessType无效:{btype}")
+                unpatented = locked.get("unpatentedProcessTags", [])
+                if not isinstance(unpatented, list):
+                    errors.append("ai_meta.lockedProduct.unpatentedProcessTags必须为数组")
+            tiers = ai_meta.get("patentTierReport")
+            if isinstance(tiers, dict):
+                for key in ("direct_support", "production_support", "weak_or_unrelated"):
+                    if key in tiers and not isinstance(tiers[key], list):
+                        errors.append(f"ai_meta.patentTierReport.{key}必须为数组")
+                if not tiers.get("direct_support"):
+                    warnings.append("direct_support有效核心专利为空，已触发兜底策略并须在Q2列出发明专利补强建议")
+            estimates = ai_meta.get("estimatedMetrics", [])
+            if not isinstance(estimates, list):
+                errors.append("ai_meta.estimatedMetrics必须为数组")
+            else:
+                for idx, item in enumerate(estimates):
+                    if not isinstance(item, dict):
+                        errors.append(f"ai_meta.estimatedMetrics[{idx}]必须为对象")
+                        continue
+                    origin = item.get("origin", "ai_design_target")
+                    if origin not in METRIC_ORIGINS:
+                        errors.append(f"ai_meta.estimatedMetrics[{idx}].origin无效:{origin}")
+    return errors, warnings
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("用法: validate_sme_assessment.py <结果.json>", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(
+        description="校验优质中小企业培育/撰写诊断结果 JSON（支持 --strict 回归验收与 v1.2 ai_meta 核验）"
+    )
+    parser.add_argument("assessment", type=Path, help="诊断结果 JSON 文件路径")
+    parser.add_argument("--strict", action="store_true", help="严格模式：存在错误或未闭合告警时返回退出码 2")
+    args = parser.parse_args()
     try:
-        document = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        document = json.loads(args.assessment.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        print(json.dumps({"status": "fail", "errors": [str(exc)]}, ensure_ascii=False))
+        print(json.dumps({"status": "fail", "errors": [str(exc)], "warnings": []}, ensure_ascii=False))
         return 2
-    errors = validate(document)
-    print(json.dumps({"status": "pass" if not errors else "fail", "errors": errors}, ensure_ascii=False, indent=2))
+    errors, warnings = validate(document, strict=args.strict)
+    status = "pass" if not errors else "fail"
+    print(json.dumps({"status": status, "errors": errors, "warnings": warnings}, ensure_ascii=False, indent=2))
     return 0 if not errors else 2
 
 

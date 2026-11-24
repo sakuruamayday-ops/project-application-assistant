@@ -1,0 +1,290 @@
+{
+  "schema_version": "workbuddy-bundles/v1",
+  "version": "2.0.0-pilot",
+  "bundles": [
+    {
+      "skillId": "skill_gongchuang_free_01",
+      "skillName": "high-tech-enterprise-preassessment",
+      "displayName": "高新技术企业申报体检",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/high-tech-enterprise-preassessment",
+      "descriptionZh": "免费版高企申报资格与材料体检：依据国科发火〔2016〕32号与195号逐项核验八大硬门槛、双年度成长性与四列缺口清单，严认原件不估分。",
+      "descriptionEn": "Free High-Tech Enterprise eligibility and material checkup against national guidelines with deterministic growth checks and four-column remediation gaps.",
+      "examplesZh": [
+        "我们今年能报高企吗，帮我按原件核对一下八大硬门槛还缺什么。",
+        "今年报还是明年报更稳？财务报表和专利清单都发你了，做个双年度高企体检。",
+        "帮我核一下我们近三年研发费用占比和成长性，列一份四列补强清单。"
+      ],
+      "examplesEn": [
+        "Check whether our company meets the eight hard criteria for High-Tech Enterprise recognition.",
+        "Compare this year vs next year eligibility windows using our financial statements and IP list.",
+        "Recalculate our three-year R&D ratio and growth rates and list four-column remediation gaps."
+      ],
+      "excludeGlobs": [
+        "assets/*.xlsx",
+        "assets/*.docx",
+        "references/policies/*.doc",
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/report-writing.md",
+          "to": "references/report-writing.md"
+        },
+        {
+          "from": "skills/_runtime/policy-jurisdiction-clarification.md",
+          "to": "references/policy-jurisdiction-clarification.md"
+        },
+        {
+          "from": "skills/_runtime/policy-online-lookup.md",
+          "to": "references/policy-online-lookup.md"
+        }
+      ],
+      "linkRewrites": {
+        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
+        "../_runtime/report-writing.md": "references/report-writing.md",
+        "../../_runtime/report-writing.md": "report-writing.md",
+        "../../_runtime/policy-jurisdiction-clarification.md": "policy-jurisdiction-clarification.md",
+        "../../_runtime/policy-online-lookup.md": "policy-online-lookup.md",
+        "../financial-verification/SKILL.md": "references/mcp-routing-and-tiering.md",
+        "[高企预评估双年度采集表.xlsx](assets/高企预评估双年度采集表.xlsx)": "《高企预评估双年度采集表》（收费 MCP 端提供）",
+        "国科发火〔2016〕32号-高新技术企业认定管理办法-2016-国家重点支持的高新技术领域.doc": "国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+      }
+    },
+    {
+      "skillId": "skill_gongchuang_free_02",
+      "skillName": "sme-score-preassessment",
+      "displayName": "专精特新申报体检",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/sme-score-preassessment",
+      "descriptionZh": "免费版专精特新与小巨人申报体检：依据工信部企业〔2026〕2号核验硬门槛、研发强度、主营占比、资产负债率与申请书基础矛盾，输出四列补强清单，严认原件不估分。",
+      "descriptionEn": "Free Specialized SME and Little Giant eligibility checkup under MIIT 2026 rules with deterministic financial checks and four-column remediation gaps.",
+      "examplesZh": [
+        "我们想报浙江专精特新，把近两年财报和专利清单发你了，先做个免费体检看看能不能报。",
+        "准备冲国家级小巨人，目前只有两件发明专利，帮我逐项查一下还差哪些硬门槛。",
+        "帮我核一下主营占比、研发强度和资产负债率，列一份带优先级的四列补强清单。"
+      ],
+      "examplesEn": [
+        "Run a Specialized SME eligibility checkup using our latest financial statements and IP list.",
+        "Check our Little Giant hard-gate gaps when we currently hold two granted invention patents.",
+        "Verify our core revenue ratio, R&D intensity, and debt ratio with a prioritized gap table."
+      ],
+      "excludeGlobs": [
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "references/policies/*.pdf",
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/report-writing.md",
+          "to": "references/report-writing.md"
+        },
+        {
+          "from": "skills/_runtime/policy-application-path-contract.md",
+          "to": "references/policy-application-path-contract.md"
+        },
+        {
+          "from": "skills/_runtime/policy-jurisdiction-clarification.md",
+          "to": "references/policy-jurisdiction-clarification.md"
+        },
+        {
+          "from": "skills/_runtime/policy-online-lookup.md",
+          "to": "references/policy-online-lookup.md"
+        }
+      ],
+      "linkRewrites": {
+        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
+        "../_runtime/report-writing.md": "references/report-writing.md",
+        "../../_runtime/report-writing.md": "report-writing.md",
+        "../../_runtime/policy-application-path-contract.md": "policy-application-path-contract.md",
+        "../../_runtime/policy-jurisdiction-clarification.md": "policy-jurisdiction-clarification.md",
+        "../../_runtime/policy-online-lookup.md": "policy-online-lookup.md",
+        "../financial-verification/SKILL.md": "references/mcp-routing-and-tiering.md",
+        "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md"
+      }
+    },
+    {
+      "skillId": "skill_gongchuang_paid_01",
+      "skillName": "high-tech-enterprise-application-drafting",
+      "displayName": "高新技术企业申请书撰写",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/high-tech-enterprise-application-drafting",
+      "descriptionZh": "收费版高企申请书撰写与原 Word 母版无损回填引擎：含 v1.2 行业设计控制目标写法、整栏 400 字网报口径、RD/PS 自动扩缩表与逐格保真审计。",
+      "descriptionEn": "Paid High-Tech Enterprise application drafting and lossless DOCX master template filling engine with v1.2 engineering targets and fidelity auditing.",
+      "examplesZh": [
+        "按这六个研发项目和两个产品清单，帮我撰写 RD/PS 正文并无损回填进高企申请书 Word 母版。",
+        "帮我写高企申请书的 PS01 关键技术及主要技术指标，缺实测参数的地方结合行业成熟工艺写设计控制目标。",
+        "高企申请书已经填好，帮我按网报 400 字口径和黑板估算清单跑一遍保真审计。"
+      ],
+      "examplesEn": [
+        "Draft RD/PS narratives and fill them losslessly into the High-Tech Enterprise DOCX master template.",
+        "Write PS01 key technologies and engineering design control targets where test reports are pending.",
+        "Audit the filled High-Tech DOCX against the 400-character portal limit and blackboard estimates."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/v12-drafting-core.md"
+        },
+        {
+          "from": "skills/_runtime/report-writing.md",
+          "to": "references/report-writing.md"
+        },
+        {
+          "from": "skills/_runtime/enterprise-source-fallback.md",
+          "to": "references/enterprise-source-fallback.md"
+        },
+        {
+          "from": "skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py",
+          "to": "scripts/validate_docx_text_only.py"
+        },
+        {
+          "from": "skills/high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md",
+          "to": "references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+        },
+        {
+          "from": "skills/high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md",
+          "to": "references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md"
+        }
+      ],
+      "linkRewrites": {
+        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
+        "../_runtime/workbuddy-core/v12-drafting-core.md": "references/v12-drafting-core.md",
+        "../_runtime/report-writing.md": "references/report-writing.md",
+        "../../_runtime/report-writing.md": "report-writing.md",
+        "../_runtime/enterprise-source-fallback.md": "references/enterprise-source-fallback.md",
+        "../../_runtime/template-fidelity/scripts/validate_docx_text_only.py": "../scripts/validate_docx_text_only.py",
+        "../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md": "references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md",
+        "../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md": "references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md",
+        "国科发火〔2016〕32号-高新技术企业认定管理办法-2016-国家重点支持的高新技术领域.doc": "国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+      }
+    },
+    {
+      "skillId": "skill_gongchuang_paid_02",
+      "skillName": "sme-development-projects",
+      "displayName": "专精特新撰写与培育方案",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/sme-development-projects",
+      "descriptionZh": "收费版专精特新与小巨人撰写与培育引擎：含主导产品双字段升维与业态三分支、专利三级分流、六问六答、八段企业简介正文撰写与方向卡成品交付。",
+      "descriptionEn": "Paid Specialized SME & Little Giant drafting and cultivation engine with dual-field product anchoring, 3-tier patent triage, Q1-Q6 strategy, and full narrative drafting.",
+      "examplesZh": [
+        "我们主营冷冻蛋挞皮，帮我做主导产品升维定名、专利三级分流，并输出专精特新六问六答和企业简介正文。",
+        "结合我们的塑料包装瓶专利和设备专利，帮我定准主导产品避免跑偏，并生成主导产品技术情况介绍。",
+        "帮我把已有的专精特新申请书按四项判断和 v1.2 口径做深度修订，输出修改正文与 Q2 发明专利补强清单。"
+      ],
+      "examplesEn": [
+        "Anchor and upgrade our leading product name, triage patents into 3 tiers, and draft the SME enterprise introduction.",
+        "Separate manufacturing equipment patents from our core product and draft the core technology narrative.",
+        "Revise our Specialized SME application under the four-judgment rubric and output Q2 patent mining topics."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/v12-drafting-core.md"
+        },
+        {
+          "from": "skills/_runtime/report-writing.md",
+          "to": "references/report-writing.md"
+        },
+        {
+          "from": "skills/_runtime/policy-application-path-contract.md",
+          "to": "references/policy-application-path-contract.md"
+        },
+        {
+          "from": "skills/sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
+          "to": "references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md"
+        }
+      ],
+      "linkRewrites": {
+        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
+        "../_runtime/workbuddy-core/v12-drafting-core.md": "references/v12-drafting-core.md",
+        "../_runtime/report-writing.md": "references/report-writing.md",
+        "../../_runtime/report-writing.md": "report-writing.md",
+        "../../_runtime/policy-application-path-contract.md": "policy-application-path-contract.md",
+        "../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md": "policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
+        "../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
+        "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
+        "../../project-feasibility/references/sme-action-workflow.md#报告内容输入": "material-checkup-report-template.md"
+      }
+    }
+  ]
+}

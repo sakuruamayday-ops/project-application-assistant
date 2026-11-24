@@ -207,13 +207,16 @@ def read_coverage(
             continue
         before = len(validation.issues)
         ratio_value = metadata.get("coverage", 1)
-        try:
-            ratio = finite_number(ratio_value, f"{field}.coverage")
-            if not 0 <= ratio <= 1:
-                raise ValueError
-        except ValueError:
-            validation.add(f"{field}.coverage", ratio_value, "0 到 1 的有限数值", "用已评权重除以该维度上限，填入数值")
+        if ratio_value is None:
             ratio = None
+        else:
+            try:
+                ratio = finite_number(ratio_value, f"{field}.coverage")
+                if not 0 <= ratio <= 1:
+                    raise ValueError
+            except ValueError:
+                validation.add(f"{field}.coverage", ratio_value, "0 到 1 的有限数值", "用已评权重除以该维度上限，填入数值")
+                ratio = None
 
         evidence_field = f"{field}.missing_evidence"
         missing = metadata.get("missing_evidence", [])
@@ -245,7 +248,7 @@ def read_coverage(
                 )
         if ratio is not None:
             coverage[key] = ratio
-        if len(validation.issues) == before and ratio < 1:
+        if len(validation.issues) == before and ratio is not None and ratio < 1:
             missing_evidence[key] = missing
     return coverage, missing_evidence
 
@@ -399,12 +402,17 @@ def analyze_scenario(
     evidence_coverage = {}
     items = []
     for key in POLICY_DIMENSIONS:
-        ratio = coverage.get(key, Decimal(1))
+        ratio = coverage.get(key)
         entry = (submitted or {}).get(key)
-        has_ratio = isinstance(entry, dict) and "coverage" in entry
+        has_ratio = isinstance(entry, dict) and entry.get("coverage") is not None
         state = intake.get(key) if intake else None
-        evidence_coverage[key] = ratio if has_ratio or state == "complete" else None
-        if state in {"none", "partial"} and ratio == 1:
+        if has_ratio:
+            evidence_coverage[key] = ratio
+        elif state == "complete":
+            evidence_coverage[key] = Decimal(1)
+        else:
+            evidence_coverage[key] = None
+        if state in {"none", "partial"} and evidence_coverage[key] == 1:
             evidence_coverage[key] = None
         if evidence_coverage[key] is None:
             actual = "有局部材料" if state == "partial" else "未登记完整材料"
@@ -569,6 +577,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("input", type=Path, help="JSON input file")
     parser.add_argument("--select-intake", action="store_true", help="Select an intake tier from material_coverage")
+    parser.add_argument("--strict", action="store_true", help="Fail with exit code 2 when any validation warning exists")
     return parser.parse_args()
 
 
