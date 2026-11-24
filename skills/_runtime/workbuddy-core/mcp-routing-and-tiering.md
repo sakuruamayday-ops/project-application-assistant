@@ -25,6 +25,7 @@
 
 ## 3. 主体隔离黑板接力（组合包无缝协作）
 
-- 技能在项目工作目录读写 `.facts/<企业简称_标识>.facts.json`。
+- 技能在项目工作目录读写 `.facts/<企业简称_标识>.facts.json`（`schema_version: workbuddy-facts-blackboard/v1`）。
+- **强制 CLI 读写约束**：严禁手写自由格式 JSON 或自行拼接 `.facts/*.facts.json` 文件名；所有初始化、事实合并、读取、估算销项与 Schema 校验一律通过本技能内联脚本 `python3 scripts/facts_blackboard.py <init|upsert|read|reconcile|validate>` 执行，确保跨技能、跨宿主（WorkBuddy / DSH / Antigravity）100% 互通不漂移。
 - 读取前必须核对 `company_name` 或 `credit_code` 完全一致，主体不同一律跳过，杜绝多企业串户。
-- 免费体检写入已核事实（`origin: enterprise_source`）；收费撰写写入主导产品锚点、专利三级分流与行业估算清单（`origin: ai_design_target`）。再次体检时通过 `reconcile` 自动回查最新正文：已被人工改为实测值的自动销项，仍残留的估算值仅在体检核对表中提示核定，斩断 AI 自证污染。
+- 免费体检写入已核事实（`origin: enterprise_source` / `mcp_verified`）；收费撰写写入主导产品锚点、专利三级分流与行业估算清单（`origin: ai_design_target`）。再次体检时通过 `reconcile` 自动回查最新正文：已被人工改为实测值的自动销项，仍残留的估算值仅在体检核对表中提示核定，斩断 AI 自证污染。

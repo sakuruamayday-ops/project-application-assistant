@@ -139,6 +139,106 @@ class WorkBuddyAll32BundlesTests(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
             self.assertIn("要求型条款数：1", proc.stdout)
 
+    def test_p0_isolated_zip_scripts_import_and_zero_parent_refs(self) -> None:
+        cases = [
+            ("free-checkup_企业项目进度交接.zip", ["project_state.py"]),
+            ("free-checkup_申报依据对照表.zip", ["apply_office_branding.py", "policy_numbers.py"]),
+            ("free-checkup_申报政策与附件查询.zip", ["policy_content.py", "validate_policy_chain.py"]),
+            (
+                "paid-mcp-engine_专利检索与申请规划.zip",
+                [
+                    "async_search_checkpoint.py",
+                    "build_ipc_evidence_chain.py",
+                    "preexam_evidence.py",
+                    "recommend_preexam_center.py",
+                ],
+            ),
+            ("paid-mcp-engine_制造企业财税体检.zip", ["brand_gold_pdf.py", "create_docx_from_text.py"]),
+            ("paid-mcp-engine_高新技术企业申请书撰写.zip", ["plan_hightech_inputs.py"]),
+        ]
+        for zip_name, script_names in cases:
+            with self.subTest(zip_name=zip_name):
+                zip_path = self.out / "zips" / zip_name
+                with tempfile.TemporaryDirectory() as iso_tmp:
+                    iso = Path(iso_tmp)
+                    with ZipFile(zip_path) as zf:
+                        zf.extractall(iso)
+                    skill_md = (iso / "SKILL.md").read_text(encoding="utf-8")
+                    self.assertNotIn("../", skill_md)
+                    for sname in script_names:
+                        sp = iso / "scripts" / sname
+                        self.assertTrue(sp.is_file(), f"{zip_name} missing {sname}")
+                        proc = subprocess.run(
+                            [
+                                sys.executable,
+                                "-c",
+                                (
+                                    "import importlib.util, sys, pathlib; "
+                                    "p = pathlib.Path(sys.argv[1]); "
+                                    "sys.path.insert(0, str(p.parent)); "
+                                    "spec = importlib.util.spec_from_file_location('_chk', p); "
+                                    "mod = importlib.util.module_from_spec(spec); "
+                                    "sys.modules['_chk'] = mod; "
+                                    "spec.loader.exec_module(mod)"
+                                ),
+                                str(sp),
+                            ],
+                            cwd=str(iso),
+                            capture_output=True,
+                            text=True,
+                        )
+                        self.assertEqual(proc.returncode, 0, f"{zip_name}/{sname}: {proc.stderr}")
+
+    def test_p1_blackboard_cli_upsert_and_validate_rejects_drift(self) -> None:
+        zip_path = self.out / "zips" / "paid-mcp-engine_高新技术企业申请书撰写.zip"
+        with tempfile.TemporaryDirectory() as iso_tmp:
+            iso = Path(iso_tmp)
+            with ZipFile(zip_path) as zf:
+                zf.extractall(iso)
+            bb_script = str(iso / "scripts" / "facts_blackboard.py")
+            up = _run(
+                bb_script,
+                "upsert",
+                "--workspace",
+                str(iso),
+                "--company",
+                "杭州中焯信息技术股份有限公司",
+                "--credit-code",
+                "913301006767781625",
+                "--financials-json",
+                json.dumps({"2024": {"revenue_wan": 14896.13, "rd_wan": 4085.34}}, ensure_ascii=False),
+                "--product-json",
+                json.dumps(
+                    {
+                        "rawAnchor": "淘涨堂商用密码手机炒股交易软件",
+                        "formalDeclarationName": "基于SM4商用密码与多接入站点校验的移动端金融行情交易软件",
+                        "businessType": "product_or_material_maker",
+                    },
+                    ensure_ascii=False,
+                ),
+                "--estimated-metrics-json",
+                json.dumps(
+                    [{"metricName": "加解密时延", "suggestedValue": "<=10ms", "origin": "ai_design_target"}],
+                    ensure_ascii=False,
+                ),
+                cwd=iso,
+            )
+            self.assertEqual(up.returncode, 0, up.stderr)
+            res = json.loads(up.stdout)
+            bb_path = Path(res["path"])
+            self.assertTrue(bb_path.is_file())
+            self.assertEqual(bb_path.name, "杭州中焯信息技术股份有限公司_781625.facts.json")
+
+            val_ok = _run(bb_script, "validate", str(bb_path), cwd=iso)
+            self.assertEqual(val_ok.returncode, 0, val_ok.stdout)
+            self.assertTrue(json.loads(val_ok.stdout)["valid"])
+
+            drift_file = iso / "drift.facts.json"
+            drift_file.write_text(json.dumps({"schemaVersion": "1", "subject": "杭州中焯"}), encoding="utf-8")
+            val_bad = _run(bb_script, "validate", str(drift_file), cwd=iso)
+            self.assertEqual(val_bad.returncode, 1)
+            self.assertFalse(json.loads(val_bad.stdout)["valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

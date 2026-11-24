@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,7 @@ SKILLS_ROOT = REPO_ROOT / "skills"
 DEFAULT_MANIFEST = REPO_ROOT / "config" / "workbuddy-bundles.json"
 DEFAULT_OUT = REPO_ROOT / "dist" / "workbuddy"
 MD_LINK_RE = re.compile(r"\[([^\]]+)\]\((?:<)?([^)\n>]+)(?:>)?\)")
+RAW_PARENT_REF_RE = re.compile(r"(?<![A-Za-z0-9_./])\.\./[A-Za-z0-9_\u4e00-\u9fff.-]+")
 INTERNAL_PERSONA = re.compile(r"主人")
 
 
@@ -191,6 +193,14 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
                         continue
                     if not resolved.exists():
                         errors.append(f"{rel} 存在死链（文件不存在）：{raw_target}")
+                # Check raw ../ references anywhere in markdown (including bash code blocks)
+                for m in RAW_PARENT_REF_RE.finditer(text):
+                    token = m.group(0)
+                    resolved = (path.parent / token).resolve()
+                    try:
+                        resolved.relative_to(resolved_root)
+                    except ValueError:
+                        errors.append(f"{rel} 存在越出单技能根目录的相对路径引用（含代码块）：{token}")
             if INTERNAL_PERSONA.search(text):
                 errors.append(f"{rel} 存在内部称呼「主人」泄露")
 
@@ -202,6 +212,45 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         if meta.get("skillId") != bundle["skillId"]:
             errors.append("_skillhub_meta.json 的 skillId 不匹配")
+
+    # 6. Bare-metal standalone Python script importability smoke check (catches missing _runtime deps).
+    scripts_dir = skill_dir / "scripts"
+    if scripts_dir.is_dir():
+        py_files = sorted(scripts_dir.glob("*.py"))
+        if py_files:
+            check_code = (
+                "import importlib.util, os, sys, pathlib\n"
+                "sdir = pathlib.Path(os.environ['WB_CHECK_SCRIPTS_DIR'])\n"
+                "sys.path.insert(0, str(sdir))\n"
+                "errs = []\n"
+                "for f in sorted(sdir.glob('*.py')):\n"
+                "    mname = f'_wb_chk_{f.stem}'\n"
+                "    try:\n"
+                "        spec = importlib.util.spec_from_file_location(mname, f)\n"
+                "        mod = importlib.util.module_from_spec(spec)\n"
+                "        sys.modules[mname] = mod\n"
+                "        spec.loader.exec_module(mod)\n"
+                "    except SystemExit:\n"
+                "        pass\n"
+                "    except Exception as e:\n"
+                "        errs.append(f'{f.name}: {type(e).__name__}: {e}')\n"
+                "if errs:\n"
+                "    print('\\n'.join(errs))\n"
+                "    sys.exit(1)\n"
+            )
+            env = os.environ.copy()
+            env["WB_CHECK_SCRIPTS_DIR"] = str(scripts_dir)
+            proc = subprocess.run(
+                [sys.executable, "-c", check_code],
+                cwd=str(skill_dir),
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if proc.returncode != 0:
+                detail = (proc.stdout + "\n" + proc.stderr).strip()
+                errors.append(f"独立包脚本裸机导入失败：\n{detail}")
 
     return errors
 

@@ -190,6 +190,66 @@
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
           "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/policy_original_text.py",
+          "to": "scripts/policy_original_text.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/office_watermark.py",
+          "to": "scripts/office_watermark.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
+          "to": "scripts/brand_config.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/references/brand_config.json",
+          "to": "references/brand_config.json"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-07.png",
+          "to": "assets/brand-gold-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-10.png",
+          "to": "assets/brand-gold-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-12.png",
+          "to": "assets/brand-gold-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-16.png",
+          "to": "assets/brand-gold-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
+          "to": "assets/brand-mark.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-07.png",
+          "to": "assets/brand-red-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-10.png",
+          "to": "assets/brand-red-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-12.png",
+          "to": "assets/brand-red-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-16.png",
+          "to": "assets/brand-red-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-10.png",
+          "to": "assets/brand-white-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-16.png",
+          "to": "assets/brand-white-16.png"
         }
       ],
       "linkRewrites": {}
@@ -478,6 +538,10 @@
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
           "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/policy_original_text.py",
+          "to": "scripts/policy_original_text.py"
         }
       ],
       "linkRewrites": {}
@@ -622,6 +686,14 @@
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
           "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/result_digest.py",
+          "to": "scripts/result_digest.py"
+        },
+        {
+          "from": "skills/_runtime/sync_fields.py",
+          "to": "scripts/sync_fields.py"
         }
       ],
       "linkRewrites": {}
@@ -1079,6 +1151,10 @@
         {
           "from": "skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py",
           "to": "scripts/validate_docx_text_only.py"
+        },
+        {
+          "from": "skills/project-application-assistant/scripts/document_format_detection.py",
+          "to": "scripts/document_format_detection.py"
         }
       ],
       "linkRewrites": {
@@ -1267,6 +1343,70 @@
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
           "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
+          "to": "scripts/pdf_two_pass.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
+          "to": "scripts/brand_config.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/references/brand_config.json",
+          "to": "references/brand_config.json"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-07.png",
+          "to": "assets/brand-gold-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-10.png",
+          "to": "assets/brand-gold-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-12.png",
+          "to": "assets/brand-gold-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-16.png",
+          "to": "assets/brand-gold-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
+          "to": "assets/brand-mark.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-07.png",
+          "to": "assets/brand-red-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-10.png",
+          "to": "assets/brand-red-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-12.png",
+          "to": "assets/brand-red-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-16.png",
+          "to": "assets/brand-red-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-10.png",
+          "to": "assets/brand-white-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-16.png",
+          "to": "assets/brand-white-16.png"
+        },
+        {
+          "from": "skills/evidence-ledger/scripts/create_docx_from_text.py",
+          "to": "scripts/create_docx_from_text.py"
+        },
+        {
+          "from": "skills/evidence-ledger/scripts/grounded_evidence.py",
+          "to": "scripts/grounded_evidence.py"
         }
       ],
       "linkRewrites": {}
@@ -1310,6 +1450,14 @@
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
           "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/result_digest.py",
+          "to": "scripts/result_digest.py"
+        },
+        {
+          "from": "skills/_runtime/policy_original_text.py",
+          "to": "scripts/policy_original_text.py"
         }
       ],
       "linkRewrites": {}

@@ -15,11 +15,15 @@ if __name__ == "__main__":
 
 import pymupdf as fitz
 
+LOCAL_SCRIPTS = Path(__file__).resolve().parent
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
 BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
-if not BRANDING_SCRIPTS.is_dir():
+if BRANDING_SCRIPTS.is_dir():
+    sys.path.insert(0, str(BRANDING_SCRIPTS))
+elif (LOCAL_SCRIPTS / "pdf_two_pass.py").is_file():
+    sys.path.insert(0, str(LOCAL_SCRIPTS))
+else:
     raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
-sys.path.insert(0, str(BRANDING_SCRIPTS))
 from pdf_two_pass import brand_pdf_bytes  # noqa: E402
 
 

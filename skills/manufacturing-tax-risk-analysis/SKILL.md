@@ -59,7 +59,7 @@ python3 scripts/generate_report_html.py report-data.json report.html --metrics-j
 默认 PDF，可按用户请求生成 Word 或两种格式；HTML、指标和共享事实作为任务源文件保留。Word 复用同一 HTML 和资料状态，使用 `evidence-ledger.create-docx-from-file` 的 `input`、新 `output`，再用 `evidence-ledger.apply-office-branding-gold`。其他宿主：
 
 ```bash
-python3 ../evidence-ledger/scripts/create_docx_from_text.py --input-file /abs/report.html /abs/report.docx
+python3 scripts/create_docx_from_text.py --input-file /abs/report.html /abs/report.docx
 
 python3 scripts/validate_report.py /abs/report.docx
 ```
