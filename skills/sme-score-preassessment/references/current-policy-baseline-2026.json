@@ -10,7 +10,11 @@
   "project_levels": {
     "省级专精特新中小企业": {
       "project_id": "zhejiang-specialized-sme",
-      "aliases": ["省级专精特新", "省专", "专精特新中小企业"],
+      "aliases": [
+        "省级专精特新",
+        "省专",
+        "专精特新中小企业"
+      ],
       "application_types": {
         "recognition": {
           "rule_branch": "2026-current",
@@ -19,20 +23,19 @@
           "rule_id": "specialized-sme-quality-score"
         },
         "review": {
-          "rule_branch": "2026-current-notice-required",
+          "rule_branch": "2026-management-review",
           "quality_score_threshold": 50,
           "operator": "gte",
           "rule_id": "specialized-sme-quality-score"
         }
-      },
-      "annual_source": {
-        "title": "浙江省2026年度当期申报通知",
-        "requires_fresh_verification": true
       }
     },
     "专精特新“小巨人”": {
       "project_id": "little-giant",
-      "aliases": ["小巨人", "专精特新小巨人"],
+      "aliases": [
+        "小巨人",
+        "专精特新小巨人"
+      ],
       "application_types": {
         "recognition": {
           "rule_branch": "2026-current",
@@ -41,23 +44,27 @@
           "rule_id": "little-giant-quality-score"
         },
         "review": {
-          "rule_branch": "2026-notice-review-transition",
-          "quality_score_threshold": null,
-          "operator": null,
-          "rule_id": null,
-          "requires_current_notice": true
+          "rule_branch": "2026-management-review",
+          "quality_score_threshold": 60,
+          "operator": "gte",
+          "rule_id": "little-giant-quality-score"
         }
-      },
-      "annual_source": {
-        "title": "工业和信息化部办公厅关于开展2026年度专精特新“小巨人”企业认定和复核工作的通知",
-        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
       }
     }
   },
   "method_boundary": {
     "official_evaluation": "质量得分只接受主管部门平台实际结果及其可验证记录。",
     "internal_preassessment": "本技能只做2026硬门槛和质量评价输入预评估，不生成内部总分。",
-    "quality_score_statuses": ["verified-platform-score", "pending-platform-evaluation"],
-    "prohibited_outputs": ["内部百分制总分", "区间估分", "保守分", "条件分", "获批概率"]
+    "quality_score_statuses": [
+      "verified-platform-score",
+      "pending-platform-evaluation"
+    ],
+    "prohibited_outputs": [
+      "内部百分制总分",
+      "区间估分",
+      "保守分",
+      "基于未达条件的假设估分",
+      "获批概率"
+    ]
   }
 }

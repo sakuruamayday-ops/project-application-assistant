@@ -5,9 +5,9 @@
 1. 用 `plan_hightech_inputs.py` 嗅探器盘点输入；旧 `.doc` 使用签名提取器，转换状态集中给清单并复用已有结果；
 2. 用 `expand_rd_ps_tables.py` 将RD、PS数量调整为实际数量；
 3. 核验企业规模、主营产品、生产方式、研发基础和公开专利；
-4. 按本规范准备结构化JSON；
-5. 用 `fill_rd_core_innovation.py` 同批回填RD核心技术、创新点与四项阶段性成果；
-6. 脚本重新打开输出DOCX并核对每个目标单元格后，再运行 `audit_application_docx.py` 和逐页视觉检查。
+4. 按本规范准备结构化 JSON，将盘点回执的 `batch_check` 放入顶层。映射方式见[批次核对表](application-fields-format.md#批次核对表)。
+5. 用 `fill_rd_core_innovation.py` 同批回填 RD 核心技术、创新点与四项阶段性成果。
+6. 重新打开输出 DOCX 核对项目编号、数量和逐格内容，再运行 `audit_application_docx.py` 和逐页视觉检查。回读失败时按原机制恢复覆盖前文件，并在回执中提供中间成品路径、具体差异与批次结果。
 
 ## 输入JSON
 
@@ -18,7 +18,7 @@ python3 scripts/plan_hightech_inputs.py \
   输入清单.json --state 输入状态.json --report 输入盘点.json
 ```
 
-旧 `.doc` 首次返回转换清单，指纹及格式未变时复用 `stopped_no_progress` 状态，继续其他资料。
+旧 `.doc` 的指纹及格式未变时复用已有盘点结果，继续读取其他资料。
 
 ```json
 {

@@ -1,0 +1,801 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-07-24",
+  "policy_version": "2026-current",
+  "common_policy": {
+    "title": "《高新技术企业认定管理办法》",
+    "document_number": "国科发火〔2016〕32号",
+    "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+    "guideline": {
+      "title": "《高新技术企业认定管理工作指引》",
+      "document_number": "国科发火〔2016〕195号",
+      "official_url": "http://heilongjiang.chinatax.gov.cn/art/2016/6/22/art_4912_153619.html"
+    },
+    "normal_rerecognition_example": {
+      "recognition_year": 2026,
+      "rerecognition_year": 2029
+    }
+  },
+  "conditions": [
+    {
+      "rule_id": "hnte-registration-one-year",
+      "name": "注册成立一年以上",
+      "description": "申请认定时注册成立一年以上",
+      "type": "boolean",
+      "value": true,
+      "operator": "eq",
+      "source_ref": "硬门槛第1条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-intellectual-property-ownership",
+      "name": "知识产权所有权",
+      "description": "通过自主研发、受让、受赠、并购等方式获得对主要产品或服务发挥核心支持作用的知识产权所有权",
+      "type": "boolean",
+      "value": true,
+      "operator": "eq",
+      "source_ref": "硬门槛第2条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-supported-technology-field",
+      "name": "核心技术属于《国家重点支持的高新技术领域》",
+      "description": "核心技术属于《国家重点支持的高新技术领域》",
+      "type": "boolean",
+      "value": true,
+      "operator": "eq",
+      "source_ref": "硬门槛第3条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-science-technology-personnel-ratio",
+      "name": "科技人员占比",
+      "description": "科技人员占企业当年职工总数比例不低于 10%",
+      "type": "number",
+      "value": 0.10,
+      "operator": "gte",
+      "unit": "ratio",
+      "numerator": "科技人员",
+      "denominator": "企业当年职工总数",
+      "source_ref": "硬门槛第4条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-rd-expense-ratio",
+      "name": "研发费用占比",
+      "description": "近三个会计年度研发费用总额占同期销售收入总额比例达到对应档次：",
+      "type": "tiered_ratio",
+      "period": "近三个会计年度",
+      "numerator": "研发费用总额",
+      "denominator": "同期销售收入总额",
+      "tier_basis": "最近一年销售收入",
+      "verification_status": "verified",
+      "tiers": [
+        {
+          "revenue_range_text": "最近一年销售收入小于 5,000 万元（含）",
+          "revenue_upper": 5000,
+          "revenue_upper_operator": "lte",
+          "revenue_unit": "万元",
+          "ratio": 0.05,
+          "operator": "gte",
+          "unit": "ratio",
+          "source_ref": "硬门槛第5条：最近一年销售收入小于 5,000 万元（含）",
+          "verification_status": "verified",
+          "source_basis": "国科发火〔2016〕32号原文，第十一条第（五）项，见 policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+        },
+        {
+          "revenue_range_text": "5,000 万元至 2 亿元（含 2 亿元）",
+          "revenue_lower": 5000,
+          "revenue_lower_operator": "gt",
+          "revenue_upper": 20000,
+          "revenue_upper_operator": "lte",
+          "revenue_unit": "万元",
+          "ratio": 0.04,
+          "operator": "gte",
+          "unit": "ratio",
+          "source_ref": "硬门槛第5条：5,000 万元至 2 亿元（含 2 亿元）",
+          "verification_status": "verified",
+          "source_basis": "国科发火〔2016〕32号原文，第十一条第（五）项，见 policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+        },
+        {
+          "revenue_range_text": "2 亿元以上",
+          "revenue_lower": 20000,
+          "revenue_lower_operator": "gt",
+          "revenue_unit": "万元",
+          "ratio": 0.03,
+          "operator": "gte",
+          "unit": "ratio",
+          "source_ref": "硬门槛第5条：2 亿元以上",
+          "verification_status": "verified",
+          "source_basis": "国科发火〔2016〕32号原文，第十一条第（五）项，见 policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+        }
+      ],
+      "source_ref": "硬门槛第5条"
+    },
+    {
+      "rule_id": "hnte-domestic-rd-expense-ratio",
+      "name": "境内研发费用占比",
+      "description": "境内研发费用占全部研发费用比例不低于 60%",
+      "type": "number",
+      "value": 0.60,
+      "operator": "gte",
+      "unit": "ratio",
+      "numerator": "境内研发费用",
+      "denominator": "全部研发费用",
+      "source_ref": "硬门槛第6条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-high-tech-revenue-ratio",
+      "name": "高新技术产品或服务收入占比",
+      "description": "近一年高新技术产品或服务收入占同期总收入比例不低于 60%",
+      "type": "number",
+      "value": 0.60,
+      "operator": "gte",
+      "unit": "ratio",
+      "period": "近一年",
+      "numerator": "高新技术产品或服务收入",
+      "denominator": "同期总收入",
+      "source_ref": "硬门槛第7条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-innovation-capability",
+      "name": "创新能力评价达到要求",
+      "description": "创新能力评价达到要求",
+      "type": "boolean",
+      "value": true,
+      "operator": "eq",
+      "scoring_ref": "/scoring/pass_threshold",
+      "source_ref": "硬门槛第8条",
+      "verification_status": "verified"
+    },
+    {
+      "rule_id": "hnte-no-major-incidents",
+      "name": "无重大安全、重大质量事故或严重环境违法行为",
+      "description": "申请认定前一年内未发生重大安全、重大质量事故或严重环境违法行为",
+      "type": "boolean",
+      "value": true,
+      "operator": "eq",
+      "period": "申请认定前一年内",
+      "source_ref": "硬门槛第9条",
+      "verification_status": "verified"
+    }
+  ],
+  "scoring": {
+    "total": 100,
+    "pass_threshold": {
+      "value": 70,
+      "operator": "gt"
+    },
+    "dimensions": {
+      "intellectual_property": {
+        "max": 30,
+        "sub_items": [
+          {
+            "name": "技术先进程度",
+            "max": 8,
+            "type": "item",
+            "source_ref": "创新能力评价/知识产权/主要评价项：技术先进程度",
+            "verification_status": "verified"
+          },
+          {
+            "name": "对主要产品或服务的核心支持作用",
+            "max": 8,
+            "type": "item",
+            "source_ref": "创新能力评价/知识产权/主要评价项：对主要产品或服务的核心支持作用",
+            "verification_status": "verified"
+          },
+          {
+            "name": "数量",
+            "max": 8,
+            "type": "item",
+            "source_ref": "创新能力评价/知识产权/主要评价项：数量",
+            "verification_status": "verified"
+          },
+          {
+            "name": "获得方式",
+            "max": 6,
+            "type": "item",
+            "source_ref": "创新能力评价/知识产权/主要评价项：获得方式",
+            "verification_status": "verified"
+          },
+          {
+            "name": "参与标准、检测方法或技术规范",
+            "max": 2,
+            "type": "reference_bonus",
+            "source_ref": "创新能力评价/知识产权/主要评价项：参与标准、检测方法或技术规范",
+            "verification_status": "verified"
+          }
+        ],
+        "quantity_tiers": [
+          {
+            "ip_class": "Ⅰ类",
+            "quantity": {
+              "value": 1,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 7,
+              "max": 8
+            },
+            "source_text": "Ⅰ类 1 项及以上：7—8 分",
+            "source_ref": "创新能力评价/知识产权/数量档：Ⅰ类 1 项及以上：7—8 分",
+            "verification_status": "verified"
+          },
+          {
+            "ip_class": "Ⅱ类",
+            "quantity": {
+              "value": 5,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 5,
+              "max": 6
+            },
+            "source_text": "Ⅱ类 5 项及以上：5—6 分",
+            "source_ref": "创新能力评价/知识产权/数量档：Ⅱ类 5 项及以上：5—6 分",
+            "verification_status": "verified"
+          },
+          {
+            "ip_class": "Ⅱ类",
+            "quantity": {
+              "min": 3,
+              "max": 4,
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 3,
+              "max": 4
+            },
+            "source_text": "Ⅱ类 3—4 项：3—4 分",
+            "source_ref": "创新能力评价/知识产权/数量档：Ⅱ类 3—4 项：3—4 分",
+            "verification_status": "verified"
+          },
+          {
+            "ip_class": "Ⅱ类",
+            "quantity": {
+              "min": 1,
+              "max": 2,
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 1,
+              "max": 2
+            },
+            "source_text": "Ⅱ类 1—2 项：1—2 分",
+            "source_ref": "创新能力评价/知识产权/数量档：Ⅱ类 1—2 项：1—2 分",
+            "verification_status": "verified"
+          },
+          {
+            "quantity": {
+              "value": 0,
+              "operator": "eq",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 0,
+              "max": 0
+            },
+            "source_text": "0 项：0 分",
+            "source_ref": "创新能力评价/知识产权/数量档：0 项：0 分",
+            "verification_status": "verified"
+          }
+        ],
+        "score_cap_including_reference_bonus": 30,
+        "classification": "发明专利等按Ⅰ类评价；实用新型、外观设计、软件著作权等按Ⅱ类评价。",
+        "classification_basis": "具体分类、有效性和共有权属按当期工作指引核验。"
+      },
+      "transformation": {
+        "max": 30,
+        "evaluation_basis": "由技术专家结合总体情况和近三年年平均转化数量综合评价：",
+        "tiers": [
+          {
+            "annual_average": {
+              "value": 5,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 25,
+              "max": 30
+            },
+            "source_ref": "创新能力评价/科技成果转化：不低于 5 项",
+            "verification_status": "verified"
+          },
+          {
+            "annual_average": {
+              "value": 4,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 19,
+              "max": 24
+            },
+            "source_ref": "创新能力评价/科技成果转化：不低于 4 项",
+            "verification_status": "verified"
+          },
+          {
+            "annual_average": {
+              "value": 3,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 13,
+              "max": 18
+            },
+            "source_ref": "创新能力评价/科技成果转化：不低于 3 项",
+            "verification_status": "verified"
+          },
+          {
+            "annual_average": {
+              "value": 2,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 7,
+              "max": 12
+            },
+            "source_ref": "创新能力评价/科技成果转化：不低于 2 项",
+            "verification_status": "verified"
+          },
+          {
+            "annual_average": {
+              "value": 1,
+              "operator": "gte",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 1,
+              "max": 6
+            },
+            "source_ref": "创新能力评价/科技成果转化：不低于 1 项",
+            "verification_status": "verified"
+          },
+          {
+            "annual_average": {
+              "value": 0,
+              "operator": "eq",
+              "unit": "项"
+            },
+            "score_range": {
+              "min": 0,
+              "max": 0
+            },
+            "source_ref": "创新能力评价/科技成果转化：0 项",
+            "verification_status": "verified"
+          }
+        ],
+        "aggregation": "同一科技成果统一归集，多个地区、应用或产品的转化分别说明。"
+      },
+      "rd_management": {
+        "max": 20,
+        "items": [
+          {
+            "name": "研发组织管理制度、研发投入核算体系和研发费用辅助账",
+            "max": 6,
+            "source_ref": "创新能力评价/研发组织管理第1项",
+            "verification_status": "verified"
+          },
+          {
+            "name": "内部研发机构、科研条件及产学研合作",
+            "max": 6,
+            "source_ref": "创新能力评价/研发组织管理第2项",
+            "verification_status": "verified"
+          },
+          {
+            "name": "成果转化组织实施、激励奖励及开放创新平台",
+            "max": 4,
+            "source_ref": "创新能力评价/研发组织管理第3项",
+            "verification_status": "verified"
+          },
+          {
+            "name": "人员培养培训、人才引进及绩效评价奖励",
+            "max": 4,
+            "source_ref": "创新能力评价/研发组织管理第4项",
+            "verification_status": "verified"
+          }
+        ]
+      },
+      "growth": {
+        "max": 20,
+        "each_max": 10,
+        "formula": "增长率 = 1/2 × (第二年 ÷ 第一年 + 第三年 ÷ 第二年) - 1",
+        "formula_condition": "正常三年正数口径下",
+        "calculation_period": "采用完整三年口径计算。",
+        "tiers": [
+          {
+            "value": 0.35,
+            "operator": "gte",
+            "unit": "ratio",
+            "score_range": {
+              "min": 9,
+              "max": 10
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：不低于 35%",
+            "verification_status": "verified"
+          },
+          {
+            "value": 0.25,
+            "operator": "gte",
+            "unit": "ratio",
+            "score_range": {
+              "min": 7,
+              "max": 8
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：不低于 25%",
+            "verification_status": "verified"
+          },
+          {
+            "value": 0.15,
+            "operator": "gte",
+            "unit": "ratio",
+            "score_range": {
+              "min": 5,
+              "max": 6
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：不低于 15%",
+            "verification_status": "verified"
+          },
+          {
+            "value": 0.05,
+            "operator": "gte",
+            "unit": "ratio",
+            "score_range": {
+              "min": 3,
+              "max": 4
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：不低于 5%",
+            "verification_status": "verified"
+          },
+          {
+            "value": 0,
+            "operator": "gt",
+            "unit": "ratio",
+            "score_range": {
+              "min": 1,
+              "max": 2
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：大于 0",
+            "verification_status": "verified"
+          },
+          {
+            "value": 0,
+            "operator": "lte",
+            "unit": "ratio",
+            "score_range": {
+              "min": 0,
+              "max": 0
+            },
+            "source_ref": "创新能力评价/企业成长性/每项评分档：不大于 0",
+            "verification_status": "verified"
+          }
+        ],
+        "each_of": [
+          "净资产增长率",
+          "销售收入增长率"
+        ],
+        "example": {
+          "sales_revenue": {
+            "values": [
+              2800,
+              5200,
+              7900
+            ],
+            "growth_rate_percent": 68.82,
+            "score_range": {
+              "min": 9,
+              "max": 10
+            }
+          },
+          "net_assets": {
+            "values": [
+              1800,
+              3100,
+              4700
+            ],
+            "growth_rate_percent": 61.92,
+            "score_range": {
+              "min": 9,
+              "max": 10
+            }
+          },
+          "total_score_range": {
+            "min": 18,
+            "max": 20
+          }
+        },
+        "special_cases": "零基期、负净资产、范围变化和重述按指引及实际资料采用适用公式，注明过程与影响。"
+      }
+    }
+  },
+  "practice_notes": [
+    {
+      "note": "曾申报未通过时使用的Ⅱ类知识产权不消耗使用次数，可以在后续申报再次使用",
+      "source_type": "user_confirmed_practice",
+      "confirmed_at": "2026-07-24",
+      "official_basis": null
+    },
+    {
+      "note": "曾在通过认定中使用的Ⅱ类知识产权标为已使用，后续评价选择符合使用规则的其他权利",
+      "source_type": "user_confirmed_practice",
+      "confirmed_at": "2026-07-24",
+      "official_basis": null
+    }
+  ],
+  "source_map": {
+    "/as_of": {
+      "section": "使用规则",
+      "quote": "截至 2026-07-24 核验的国家工作基线："
+    },
+    "/policy_version": {
+      "section": "使用规则",
+      "quote": "截至 2026-07-24 核验的国家工作基线："
+    },
+    "/common_policy/title": {
+      "section": "使用规则",
+      "quote": "- 《高新技术企业认定管理办法》，国科发火〔2016〕32号，科技部页面标注有效："
+    },
+    "/common_policy/guideline/title": {
+      "section": "使用规则",
+      "quote": "- 《高新技术企业认定管理工作指引》，国科发火〔2016〕195号，国家税务总局系统公开文本："
+    },
+    "/common_policy/document_number": {
+      "section": "使用规则",
+      "quote": "- 《高新技术企业认定管理办法》，国科发火〔2016〕32号，科技部页面标注有效："
+    },
+    "/common_policy/guideline/document_number": {
+      "section": "使用规则",
+      "quote": "- 《高新技术企业认定管理工作指引》，国科发火〔2016〕195号，国家税务总局系统公开文本："
+    },
+    "/common_policy/official_url": {
+      "section": "使用规则",
+      "quote": "  <https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html>"
+    },
+    "/common_policy/guideline/official_url": {
+      "section": "使用规则",
+      "quote": "  <http://heilongjiang.chinatax.gov.cn/art/2016/6/22/art_4912_153619.html>"
+    },
+    "/common_policy/normal_rerecognition_example": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "采用完整三年口径计算。示例：收入2800、5200、7900的增长率为68.82%；净资产1800、3100、4700为61.92%，各落9至10分区间，合计18至20分。2026年认定后的正常到期重新认定节点为2029年。"
+    },
+    "/conditions/0": {
+      "section": "硬门槛",
+      "quote": "1. 申请认定时注册成立一年以上；"
+    },
+    "/conditions/1": {
+      "section": "硬门槛",
+      "quote": "2. 通过自主研发、受让、受赠、并购等方式获得对主要产品或服务发挥核心支持作用的知识产权所有权；"
+    },
+    "/conditions/2": {
+      "section": "硬门槛",
+      "quote": "3. 核心技术属于《国家重点支持的高新技术领域》；"
+    },
+    "/conditions/3": {
+      "section": "硬门槛",
+      "quote": "4. 科技人员占企业当年职工总数比例不低于 10%；"
+    },
+    "/conditions/4": {
+      "section": "硬门槛",
+      "quote": "5. 近三个会计年度研发费用总额占同期销售收入总额比例达到对应档次："
+    },
+    "/conditions/5": {
+      "section": "硬门槛",
+      "quote": "6. 境内研发费用占全部研发费用比例不低于 60%；"
+    },
+    "/conditions/6": {
+      "section": "硬门槛",
+      "quote": "7. 近一年高新技术产品或服务收入占同期总收入比例不低于 60%；"
+    },
+    "/conditions/7": {
+      "section": "硬门槛",
+      "quote": "8. 创新能力评价达到要求；"
+    },
+    "/conditions/8": {
+      "section": "硬门槛",
+      "quote": "9. 申请认定前一年内未发生重大安全、重大质量事故或严重环境违法行为。"
+    },
+    "/conditions/4/tiers/0": {
+      "section": "硬门槛/研发费用比例",
+      "quote": "   - 最近一年销售收入不超过 5,000 万元：不低于 5%；"
+    },
+    "/conditions/4/tiers/1": {
+      "section": "硬门槛/研发费用比例",
+      "quote": "   - 5,000 万元至 2 亿元：不低于 4%；"
+    },
+    "/conditions/4/tiers/2": {
+      "section": "硬门槛/研发费用比例",
+      "quote": "   - 2 亿元以上：不低于 3%；"
+    },
+    "/scoring/dimensions/intellectual_property/sub_items/0": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 技术先进程度 | 不超过 8 |"
+    },
+    "/scoring/dimensions/intellectual_property/sub_items/1": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 对主要产品或服务的核心支持作用 | 不超过 8 |"
+    },
+    "/scoring/dimensions/intellectual_property/sub_items/2": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 数量 | 不超过 8 |"
+    },
+    "/scoring/dimensions/intellectual_property/sub_items/3": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 获得方式 | 不超过 6 |"
+    },
+    "/scoring/dimensions/intellectual_property/sub_items/4": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 参与标准、检测方法或技术规范 | 参考加分不超过 2，且知识产权总分不超过 30 |"
+    },
+    "/scoring/dimensions/intellectual_property/quantity_tiers/0": {
+      "section": "创新能力评价/知识产权/数量档",
+      "quote": "- Ⅰ类 1 项及以上：7—8 分；"
+    },
+    "/scoring/dimensions/intellectual_property/quantity_tiers/1": {
+      "section": "创新能力评价/知识产权/数量档",
+      "quote": "- Ⅱ类 5 项及以上：5—6 分；"
+    },
+    "/scoring/dimensions/intellectual_property/quantity_tiers/2": {
+      "section": "创新能力评价/知识产权/数量档",
+      "quote": "- Ⅱ类 3—4 项：3—4 分；"
+    },
+    "/scoring/dimensions/intellectual_property/quantity_tiers/3": {
+      "section": "创新能力评价/知识产权/数量档",
+      "quote": "- Ⅱ类 1—2 项：1—2 分；"
+    },
+    "/scoring/dimensions/intellectual_property/quantity_tiers/4": {
+      "section": "创新能力评价/知识产权/数量档",
+      "quote": "- 0 项：0 分。"
+    },
+    "/scoring/dimensions/intellectual_property/max": {
+      "section": "创新能力评价",
+      "quote": "| 知识产权 | 30 |"
+    },
+    "/scoring/dimensions/intellectual_property/score_cap_including_reference_bonus": {
+      "section": "创新能力评价/知识产权/主要评价项",
+      "quote": "| 参与标准、检测方法或技术规范 | 参考加分不超过 2，且知识产权总分不超过 30 |"
+    },
+    "/scoring/dimensions/intellectual_property/classification": {
+      "section": "创新能力评价/知识产权",
+      "quote": "发明专利等按Ⅰ类评价；实用新型、外观设计、软件著作权等按Ⅱ类评价。具体分类、有效性和共有权属按当期工作指引核验。"
+    },
+    "/scoring/dimensions/intellectual_property/classification_basis": {
+      "section": "创新能力评价/知识产权",
+      "quote": "发明专利等按Ⅰ类评价；实用新型、外观设计、软件著作权等按Ⅱ类评价。具体分类、有效性和共有权属按当期工作指引核验。"
+    },
+    "/scoring/dimensions/transformation/tiers/0": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 不低于 5 项 | 25—30 |"
+    },
+    "/scoring/dimensions/transformation/tiers/1": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 不低于 4 项 | 19—24 |"
+    },
+    "/scoring/dimensions/transformation/tiers/2": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 不低于 3 项 | 13—18 |"
+    },
+    "/scoring/dimensions/transformation/tiers/3": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 不低于 2 项 | 7—12 |"
+    },
+    "/scoring/dimensions/transformation/tiers/4": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 不低于 1 项 | 1—6 |"
+    },
+    "/scoring/dimensions/transformation/tiers/5": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "| 0 项 | 0 |"
+    },
+    "/scoring/dimensions/transformation/max": {
+      "section": "创新能力评价",
+      "quote": "| 科技成果转化能力 | 30 |"
+    },
+    "/scoring/dimensions/transformation/evaluation_basis": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "由技术专家结合总体情况和近三年年平均转化数量综合评价："
+    },
+    "/scoring/dimensions/transformation/aggregation": {
+      "section": "创新能力评价/科技成果转化",
+      "quote": "同一科技成果统一归集，多个地区、应用或产品的转化分别说明。"
+    },
+    "/scoring/dimensions/rd_management/items/0": {
+      "section": "创新能力评价/研发组织管理",
+      "quote": "1. 研发组织管理制度、研发投入核算体系和研发费用辅助账，不超过 6 分；"
+    },
+    "/scoring/dimensions/rd_management/items/1": {
+      "section": "创新能力评价/研发组织管理",
+      "quote": "2. 内部研发机构、科研条件及产学研合作，不超过 6 分；"
+    },
+    "/scoring/dimensions/rd_management/items/2": {
+      "section": "创新能力评价/研发组织管理",
+      "quote": "3. 成果转化组织实施、激励奖励及开放创新平台，不超过 4 分；"
+    },
+    "/scoring/dimensions/rd_management/items/3": {
+      "section": "创新能力评价/研发组织管理",
+      "quote": "4. 人员培养培训、人才引进及绩效评价奖励，不超过 4 分。"
+    },
+    "/scoring/dimensions/rd_management/max": {
+      "section": "创新能力评价",
+      "quote": "| 研发组织管理水平 | 20 |"
+    },
+    "/scoring/dimensions/growth/tiers/0": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 不低于 35% | 9—10 |"
+    },
+    "/scoring/dimensions/growth/tiers/1": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 不低于 25% | 7—8 |"
+    },
+    "/scoring/dimensions/growth/tiers/2": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 不低于 15% | 5—6 |"
+    },
+    "/scoring/dimensions/growth/tiers/3": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 不低于 5% | 3—4 |"
+    },
+    "/scoring/dimensions/growth/tiers/4": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 大于 0 | 1—2 |"
+    },
+    "/scoring/dimensions/growth/tiers/5": {
+      "section": "创新能力评价/企业成长性/每项评分档",
+      "quote": "| 不大于 0 | 0 |"
+    },
+    "/scoring/dimensions/growth/max": {
+      "section": "创新能力评价",
+      "quote": "| 企业成长性 | 20 |"
+    },
+    "/scoring/dimensions/growth/each_max": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "分别评价净资产增长率和销售收入增长率，每项不超过 10 分。正常三年正数口径下："
+    },
+    "/scoring/dimensions/growth/each_of": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "分别评价净资产增长率和销售收入增长率，每项不超过 10 分。正常三年正数口径下："
+    },
+    "/scoring/dimensions/growth/formula_condition": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "分别评价净资产增长率和销售收入增长率，每项不超过 10 分。正常三年正数口径下："
+    },
+    "/scoring/dimensions/growth/formula": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "`增长率 = 1/2 × (第二年 ÷ 第一年 + 第三年 ÷ 第二年) - 1`"
+    },
+    "/scoring/dimensions/growth/calculation_period": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "采用完整三年口径计算。示例：收入2800、5200、7900的增长率为68.82%；净资产1800、3100、4700为61.92%，各落9至10分区间，合计18至20分。2026年认定后的正常到期重新认定节点为2029年。"
+    },
+    "/scoring/dimensions/growth/example": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "采用完整三年口径计算。示例：收入2800、5200、7900的增长率为68.82%；净资产1800、3100、4700为61.92%，各落9至10分区间，合计18至20分。2026年认定后的正常到期重新认定节点为2029年。"
+    },
+    "/scoring/dimensions/growth/special_cases": {
+      "section": "创新能力评价/企业成长性",
+      "quote": "零基期、负净资产、范围变化和重述按指引及实际资料采用适用公式，注明过程与影响。"
+    },
+    "/scoring/total": {
+      "section": "创新能力评价",
+      "quote": "总分 100 分，综合得分超过 70 分："
+    },
+    "/scoring/pass_threshold": {
+      "section": "创新能力评价",
+      "quote": "总分 100 分，综合得分超过 70 分："
+    },
+    "/practice_notes/0": {
+      "section": "创新能力评价/知识产权/主人于 2026-07-24 确认的实务口径",
+      "quote": "主人于 2026-07-24 确认的实务口径：\n- 曾申报未通过时使用的Ⅱ类知识产权不消耗使用次数，可以在后续申报再次使用；"
+    },
+    "/practice_notes/1": {
+      "section": "创新能力评价/知识产权/主人于 2026-07-24 确认的实务口径",
+      "quote": "主人于 2026-07-24 确认的实务口径：\n- 曾在通过认定中使用的Ⅱ类知识产权标为已使用，后续评价选择符合使用规则的其他权利。"
+    }
+  }
+}

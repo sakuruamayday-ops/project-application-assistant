@@ -11,6 +11,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from import_batch import source_rows
+
 
 SHARED_DETECTOR_DIR = Path(__file__).resolve().parents[2] / "project-application-assistant" / "scripts"
 if str(SHARED_DETECTOR_DIR) not in sys.path:
@@ -94,7 +96,7 @@ def atomic_json(path: Path, value: dict[str, object]) -> None:
     os.replace(temporary, path)
 
 
-def load_manifest(path: Path) -> list[tuple[Path, str]]:
+def load_manifest(path: Path) -> tuple[list[tuple[Path, str]], list[dict]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or data.get("schema_version") != 1:
         raise ValueError("输入清单schema_version必须为1")
@@ -115,7 +117,7 @@ def load_manifest(path: Path) -> list[tuple[Path, str]]:
         if not candidate.is_absolute():
             candidate = path.parent / candidate
         documents.append((candidate.absolute(), role))
-    return documents
+    return documents, source_rows(data.get("source_fields", []), path)
 
 
 def main() -> int:
@@ -125,7 +127,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True, help="本轮能力盘点报告")
     args = parser.parse_args()
     try:
-        documents = load_manifest(args.manifest.resolve())
+        documents, rows = load_manifest(args.manifest.resolve())
         records = [inspect_document(path, role) for path, role in documents]
         blocked = [
             record
@@ -133,6 +135,13 @@ def main() -> int:
             if record["role"] == "essential" and record["status"] not in {"supported", "legacy_doc_probe"}
         ]
         signature = fingerprint(records)
+        for record in records:
+            if record["status"] not in {"supported", "legacy_doc_probe"}:
+                rows.append({
+                    "source_file": record["path"], "source_location": "整份文件",
+                    "original_value": None, "target_field": None, "converted_value": None,
+                    "reason": record["reason"], "status": "unrecognized",
+                })
         previous: dict[str, object] = {}
         if args.state.is_file():
             try:
@@ -175,6 +184,7 @@ def main() -> int:
             "fingerprint": signature,
             "documents": records,
             "originals_modified": False,
+            "batch_check": {"batch_id": signature, "rows": rows},
         }
         atomic_json(args.state.resolve(), state)
         atomic_json(args.report.resolve(), report)

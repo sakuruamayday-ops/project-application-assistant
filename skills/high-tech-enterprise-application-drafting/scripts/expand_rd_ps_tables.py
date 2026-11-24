@@ -5,17 +5,29 @@ import argparse
 import copy
 import json
 import sys
+from bisect import bisect_right
 from datetime import datetime
 from pathlib import Path
 
 from docx import Document
-from docx.oxml import OxmlElement
+from docx.opc.constants import CONTENT_TYPE
+from docx.opc.oxml import serialize_part_xml
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
-from docx.table import _Cell
+from docx.table import Table, _Cell
+
+from rd_ps_codes import FORM_LABELS, iter_codes, number_code, number_width, parse_form_code
 
 
-RD_MARKER = "研发活动编号"
-PS_MARKER = "编号：PS"
+TEMPLATE_NUMBERING_NOTE = "IP、RD、PS后取两位数（01、02、……）。"
+ADAPTIVE_NUMBERING_NOTE = (
+    "IP后取两位数（01、02、……）。RD、PS表按用户申报的研发项目与产品数量生成，"
+    "编号分别按各自表数统一位数，最少两位。"
+)
+REFERENCE_PARTS = {
+    CONTENT_TYPE.WML_HEADER, CONTENT_TYPE.WML_FOOTER, CONTENT_TYPE.WML_COMMENTS,
+    CONTENT_TYPE.WML_FOOTNOTES, CONTENT_TYPE.WML_ENDNOTES,
+}
 
 RD_LABELS = {
     "研发活动名称",
@@ -71,11 +83,15 @@ def paragraph_text(element) -> str:
     return "".join(node.text or "" for node in element.iter(qn("w:t")))
 
 
-def find_previous_marker(table_element, marker: str):
+def find_previous_marker(table_element, kind: str):
+    kind = kind.upper()
+    placeholder = FORM_LABELS[kind] if kind == "RD" else f"{FORM_LABELS[kind]}：PS"
     current = table_element.getprevious()
     while current is not None:
-        if current.tag == qn("w:p") and marker in normalize(paragraph_text(current)):
-            return current
+        if current.tag == qn("w:p"):
+            text = paragraph_text(current)
+            if placeholder in normalize(text) or parse_form_code(text, kind):
+                return current
         current = current.getprevious()
     return None
 
@@ -147,22 +163,148 @@ def is_page_break_only(paragraph_element) -> bool:
 
 
 def collect_units(document, kind: str):
-    marker = RD_MARKER if kind == "rd" else PS_MARKER
     units = []
     for table in document.tables:
         if table_kind(table) != kind:
             continue
-        marker_paragraph = find_previous_marker(table._tbl, marker)
+        marker_paragraph = find_previous_marker(table._tbl, kind)
         if marker_paragraph is None:
             raise ValueError(f"找到{kind.upper()}表，但未找到其编号段落")
         units.append((marker_paragraph, table))
     return units
 
 
-def renumber_units(units, prefix: str) -> None:
-    marker = "研发活动编号：" if prefix.upper() == "RD" else "编号："
+def renumber_units(units, kind: str, prefix: str, count: int) -> None:
+    marker = f"{FORM_LABELS[kind.upper()]}："
     for index, (paragraph, _) in enumerate(units, 1):
-        set_paragraph_text_preserve_format(paragraph, f"{marker}{prefix.upper()}{index:02d}")
+        set_paragraph_text_preserve_format(paragraph, marker + number_code(prefix, index, count))
+
+
+def replace_paragraph_references(paragraph, replacements, removed_codes=(), *, adapt_note=False) -> bool:
+    paragraph_tag = qn("w:p")
+    text_tag = qn("w:t")
+    separators = {qn(tag) for tag in ("w:tab", "w:br", "w:cr")}
+    nodes, parts, ends = [], [], []
+    length = 0
+    for node in paragraph.iter():
+        if node.tag != text_tag and node.tag not in separators:
+            continue
+        if next(node.iterancestors(paragraph_tag), None) is not paragraph:
+            continue
+        text = (node.text or "") if node.tag == text_tag else "\n"
+        if text:
+            length += len(text)
+            nodes.append(node)
+            parts.append(text)
+            ends.append(length)
+
+    text = "".join(parts)
+    edits = []
+    for match in iter_codes(text):
+        original = match[0].upper()
+        if original in removed_codes:
+            raise ValueError(f"原编号{original}仍有引用，无法删除对应空白表")
+        if original not in replacements:
+            continue
+        replacement = replacements[original]
+        if replacement is None:
+            raise ValueError(f"原编号{original}重复，无法同步引用")
+        edits.append((*match.span(), replacement))
+    if adapt_note and (start := text.find(TEMPLATE_NUMBERING_NOTE)) != -1:
+        edits.append((start, start + len(TEMPLATE_NUMBERING_NOTE), ADAPTIVE_NUMBERING_NOTE))
+
+    # Use the original offsets from right to left, including edits spanning runs.
+    for start, end, replacement in sorted(edits, reverse=True):
+        first = bisect_right(ends, start)
+        last = bisect_right(ends, end - 1)
+        for index in range(first, last + 1):
+            offset = ends[index - 1] if index else 0
+            left, right = max(0, start - offset), min(ends[index], end) - offset
+            width = right - left if index < last else len(replacement)
+            node = nodes[index]
+            node.text = node.text[:left] + replacement[:width] + node.text[right:]
+            replacement = replacement[width:]
+            if node.text != node.text.strip():
+                node.set(qn("xml:space"), "preserve")
+    return bool(edits)
+
+
+def replace_references(root, replacements, removed_codes, excluded=(), *, adapt_note=False) -> bool:
+    changed = False
+    for paragraph in root.iter(qn("w:p")):
+        if paragraph not in excluded:
+            changed |= replace_paragraph_references(
+                paragraph, replacements, removed_codes, adapt_note=adapt_note,
+            )
+    return changed
+
+
+def collect_reference_changes(targets):
+    replacements = {}
+    removed_codes = set()
+    for kind, count, prefix, units in targets:
+        for position, (paragraph, _) in enumerate(units, 1):
+            original = parse_form_code(paragraph_text(paragraph), kind.upper())
+            if original is None:
+                continue
+            if position > count:
+                if number_width(len(units)) > 2:
+                    removed_codes.add(original)
+                continue
+            updated = number_code(prefix, position, count)
+            if replacements.setdefault(original, updated) != updated:
+                replacements[original] = None
+
+    removed_codes.difference_update(replacements)
+    replacements = {original: updated for original, updated in replacements.items() if original != updated}
+    return replacements, removed_codes
+
+
+def update_blank_expense_headers(document, count: int, prefix: str):
+    """The blank expense template has example columns before any RD is numbered."""
+    updated_paragraphs = set()
+    for table in document.element.body.findall(qn("w:tbl")):
+        rows = table.findall(qn("w:tr"))
+        if not rows:
+            continue
+        cells = rows[0].findall(qn("w:tc"))
+        labels = [normalize(paragraph_text(cell)) for cell in cells]
+        if not labels or "研发项目编号" not in labels[0] or "RD…" not in labels:
+            continue
+        if any(
+            normalize(paragraph_text(cell))
+            for row in rows[1:] for cell in row.findall(qn("w:tc"))[1:]
+        ):
+            continue
+        for paragraph in rows[0].iter(qn("w:p")):
+            replacements = {}
+            for match in iter_codes(paragraph_text(paragraph)):
+                code = match[0].upper()
+                if code.startswith("RD"):
+                    replacements[code] = number_code(prefix, int(code[2:]), count)
+            if replacements:
+                replace_paragraph_references(paragraph, replacements)
+                updated_paragraphs.add(paragraph)
+    return updated_paragraphs
+
+
+def update_number_references(document, replacements, removed_codes, excluded, *, adapt_note):
+    if not replacements and not removed_codes and not adapt_note:
+        return
+    replace_references(document.element, replacements, removed_codes, excluded, adapt_note=adapt_note)
+    if not replacements and not removed_codes:
+        return
+    for part in document.part.related_parts.values():
+        if part.content_type not in REFERENCE_PARTS:
+            continue
+        root = getattr(part, "element", None)
+        if root is not None:
+            replace_references(root, replacements, removed_codes)
+        else:
+            # python-docx loads footnotes and endnotes as raw XML parts.
+            root = parse_xml(part.blob)
+            if replace_references(root, replacements, removed_codes):
+                part._blob = serialize_part_xml(root)
 
 
 def meaningful_table_values(table, kind: str):
@@ -195,13 +337,13 @@ def remove_unit(marker_paragraph, table) -> None:
 
 
 def resize_kind(
-    document,
     kind: str,
     target_count: int,
     prefix: str,
+    units,
+    markers,
     trim_empty_tail: bool = False,
 ):
-    units = collect_units(document, kind)
     original_count = len(units)
     if original_count == 0:
         raise ValueError(f"文档中未找到可复制的{kind.upper()}表")
@@ -221,7 +363,7 @@ def resize_kind(
             if values:
                 blocked.append(
                     {
-                        "code": f"{prefix.upper()}{original_index:02d}",
+                        "code": number_code(prefix, original_index, original_count),
                         "values": values,
                     }
                 )
@@ -246,7 +388,7 @@ def resize_kind(
             removed.append(
                 {
                     "position": index,
-                    "code": f"{prefix.upper()}{index:02d}",
+                    "code": number_code(prefix, index, original_count),
                     "original_marker": paragraph_text(marker_paragraph).strip(),
                     "reason": "末尾完全空白表",
                 }
@@ -254,19 +396,18 @@ def resize_kind(
         for marker_paragraph, table in reversed(trailing_units):
             remove_unit(marker_paragraph, table)
 
-        final_units = collect_units(document, kind)
-        renumber_units(final_units, prefix)
+        renumber_units(units[:target_count], kind, prefix, target_count)
         return {
             "before": original_count,
             "requested": target_count,
-            "after": len(final_units),
+            "after": target_count,
             "operation": "trim",
             "added": [],
             "removed": removed,
             "renumbered_continuously": True,
         }
 
-    renumber_units(units, prefix)
+    renumber_units(units, kind, prefix, target_count)
     added = []
     if target_count == original_count:
         return {
@@ -281,6 +422,7 @@ def resize_kind(
 
     source_paragraph, source_table = units[-1]
     cursor = source_table._tbl
+    marker = f"{FORM_LABELS[kind.upper()]}："
     for index in range(original_count + 1, target_count + 1):
         paragraph_clone = copy.deepcopy(source_paragraph)
         table_clone = copy.deepcopy(source_table._tbl)
@@ -290,22 +432,19 @@ def resize_kind(
         page_break.addnext(paragraph_clone)
         paragraph_clone.addnext(table_clone)
 
-        table_proxy = next(table for table in document.tables if table._tbl is table_clone)
-        clear_table_data(table_proxy, kind)
+        clear_table_data(Table(table_clone, source_table._parent), kind)
 
-        code = f"{prefix.upper()}{index:02d}"
-        marker = "研发活动编号：" if kind == "rd" else "编号："
+        code = number_code(prefix, index, target_count)
         set_paragraph_text_preserve_format(paragraph_clone, f"{marker}{code}")
+        markers.add(paragraph_clone)
 
         cursor = table_clone
         added.append(code)
 
-    final_units = collect_units(document, kind)
-    renumber_units(final_units, prefix)
     return {
         "before": original_count,
         "requested": target_count,
-        "after": len(final_units),
+        "after": target_count,
         "operation": "expand",
         "added": added,
         "removed": [],
@@ -363,22 +502,21 @@ def main():
         "ps": None,
     }
 
-    if args.rd_count is not None:
-        report["rd"] = resize_kind(
-            document,
-            "rd",
-            args.rd_count,
-            args.rd_prefix,
-            trim_empty_tail=args.trim_empty_tail,
-        )
-    if args.ps_count is not None:
-        report["ps"] = resize_kind(
-            document,
-            "ps",
-            args.ps_count,
-            args.ps_prefix,
-            trim_empty_tail=args.trim_empty_tail,
-        )
+    targets = [
+        (kind, count, prefix, collect_units(document, kind))
+        for kind, count, prefix in (("rd", args.rd_count, args.rd_prefix), ("ps", args.ps_count, args.ps_prefix))
+        if count is not None
+    ]
+    replacements, removed_codes = collect_reference_changes(targets)
+    markers = {paragraph for _, _, _, units in targets for paragraph, _ in units}
+    for kind, count, prefix, units in targets:
+        report[kind] = resize_kind(kind, count, prefix, units, markers, trim_empty_tail=args.trim_empty_tail)
+        if kind == "rd" and number_width(max(count, len(units))) > 2:
+            markers.update(update_blank_expense_headers(document, count, prefix))
+    update_number_references(
+        document, replacements, removed_codes, markers,
+        adapt_note=any(number_width(count) > 2 for _, count, _, _ in targets),
+    )
 
     trim_performed = any(
         report[kind] is not None and report[kind]["operation"] == "trim"

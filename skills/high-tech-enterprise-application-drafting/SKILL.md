@@ -7,7 +7,7 @@ description: 按高企申请书模板撰写、回填和核稿，按用户要求�
 
 ## 任务与资料
 
-申请书使用原 Word 母版回填可编辑 DOCX；材料体检采用 [材料体检报告模板](references/material-checkup-report-template.md) 的章节、表头和问题卡，默认 PDF，呈现具体问题与依据。申报前资格、评分及年度比较按需使用 `high-tech-enterprise-preassessment`。单栏目、PS 名称候选和完整申请书分别按用户目标处理。
+申请书使用原 Word 母版回填可编辑 DOCX；材料体检采用 [材料体检报告模板](references/material-checkup-report-template.md) 的章节、表头和问题卡，默认 PDF，呈现具体问题与依据。申报前资格、缺陷诊断及年度比较按需使用 `high-tech-enterprise-preassessment`。单栏目、PS 名称候选和完整申请书分别按用户目标处理。
 
 资料优先使用本轮申请书、RD、PS、知识产权、成果转化、人员、财务和制度原件；政策与模板按当期版本核验；登记字段参考[企业数据源说明](../_runtime/enterprise-source-fallback.md)；专利公开信息用于技术与权利核验，同类产品用于方向及指标建议。
 
@@ -19,13 +19,13 @@ description: 按高企申请书模板撰写、回填和核稿，按用户要求�
 
 专利 ID 取 `patents[].id`，技术卡 ID 单列，关联采用输入中明确关系。同产品大类的资料分别呈现；组合方案及六问使用“若确认……可……”的条件表达。生产支撑设备列未覆盖或支撑用途，具有对外产品或服务依据的对象进入 `candidates` 并计数。
 
-方向确认取本轮用户或已确认上游记录，新候选保持待确认并提出具体问题，`directionConfirmed` 随真实确认记录填写。
+方向确认取本轮用户或已确认上游记录，新候选提出具体方向问题并记录确认结果，`directionConfirmed` 随真实确认记录填写。
 
 ## 模板与回填接口
 
-从 [高新技术企业认定申请书空白模板.docx](assets/高新技术企业认定申请书空白模板.docx) 或用户模板复制到任务目录的新路径。原样填充替换既有 `w:t`，保留字体、字号、颜色、红字、抬头、页眉页脚、网格、列宽、行高、合并、边框、节及页边距；过长正文优先精简。用 `skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py` 和实际逐页渲染核对版式。
+从 [高新技术企业认定申请书空白模板.docx](assets/高新技术企业认定申请书空白模板.docx) 或用户模板复制到任务目录的新路径。原样填充优先写入既有文字运行。空白数据格缺文字运行时，在原段落补最小文字节点。保留原段落、换行、字体、字号、颜色、表格及页面布局。整表回填完成后，以回填入口接收的 DOCX 为基准，按[严格保真校验](references/application-fields-format.md#严格保真校验)检查并逐页渲染。
 
-用户要求增减 RD、PS 时，`scripts/expand_rd_ps_tables.py` 深拷贝完整编号段与 OOXML 表格，保留版式，清空新增数据区，连续编为 `RD01`、`PS01`。知识产权与转化表复制同类完整表格，IP 按用户汇总顺序。扩缩表和原样文字填充分别记录。
+`scripts/expand_rd_ps_tables.py` 按用户申报的研发项目与产品数量生成 RD、PS 表，深拷贝完整编号段与 OOXML 表格，保留版式，清空新增数据区。RD、PS 分别按各自表数统一编号位数，最少两位，并同步更新引用。知识产权与转化表复制同类完整表格，IP 按用户汇总顺序。扩缩表和原样文字填充分别记录。
 
 ```bash
 python3 scripts/expand_rd_ps_tables.py 输入申请书.docx 输出申请书.docx --rd-count 18 --ps-count 3 --report 扩表审计.json
@@ -36,13 +36,15 @@ python3 scripts/expand_rd_ps_tables.py 输入申请书.docx 输出申请书.docx
 
 RD 批量回填用 `scripts/fill_rd_core_innovation.py`，格式见 [rd-core-innovation-format.md](references/rd-core-innovation-format.md)。`basic_fields` 一次写名称、起止、领域、来源、IP、预算、目的和实施方式；按物理 OOXML 单元格与语义标签定位，省略字段沿用原值，输出重新打开逐 RD 核对。
 
-完整申请书按复制母版、所需扩缩、RD 正文、整表字段组织。客户端操作 `high-tech-enterprise-application-drafting.fill-application-fields` 使用 `input`、`spec`、`output`，格式见 [整表字段回填](references/application-fields-format.md)。具名 JSON 填登记、主要情况、RD 支出、PS 和创新能力，程序合计年度支出，缺值保留未知，三年费用结构分别生成。
+完整申请书按复制母版、所需扩缩、RD 正文、整表字段组织。客户端操作 `high-tech-enterprise-application-drafting.fill-application-fields` 使用 `input`、`spec`、`output`，格式见 [整表字段回填](references/application-fields-format.md)。具名 JSON 填登记、主要情况、RD 支出、PS 和创新能力。费用金额按原表可用位置逐年填列，缺值保留未知。
 
 ## 资料读取与能力校准
 
 `scripts/plan_hightech_inputs.py` 盘点本轮文件，复用 `project-application-assistant/scripts/document_format_detection.py`，按真实 OOXML、OLE、ODF、RTF、PDF 和文本容器使用可用提取器。旧 DOC 可尝试兼容提取；返回 `conversion_required` 时汇总需另存为 DOCX、ODT、RTF 的文件，其他文件继续读取。加密、损坏、专有及未知容器保留原件并列待转换项。
 
 提取登记主体、RD 周期目的路线人员预算进度验收、IP 类型权属日期与映射、PS 收入场景指标及测试销售、转化、组织和场地设备资料。申请正文按表单重新组织，立项报告提供事实及技术背景。
+
+导入和批量回填共用 `batch_check`。从盘点登记源文件、位置和原值，按映射记录目标字段、转换值和处理原因。将盘点回执的 `batch_check` 随结构化输入交给回填脚本。字段格式见[批次核对表](references/application-fields-format.md#批次核对表)。
 
 规模、主营、生产方式、人员、设备及公开知识产权用于校准技术复杂度，记录主体、来源和检索日期。传统制造场景可围绕材料、结构、工装、工艺、参数、检测、联动和过程控制写作；AI、数字孪生等术语对应企业资料、人才、产品、专利或测试的具体依据。检索未命中说明本轮范围。
 
@@ -61,10 +63,19 @@ RD 批量回填用 `scripts/fill_rd_core_innovation.py`，格式见 [rd-core-inn
 
 ## 检查与交付
 
-内容与文件生成后提供入口；核稿或用户要求深入检查时使用以下方法。字体沿用原模板；技能母版正文为宋体 12 磅。检查对象包括数字来源、领域、编号、四栏顺序、篇幅、法律状态、制度与人员、汇总字段、页眉页脚和品牌。
+内容与文件生成后提供入口；核稿或用户要求深入检查时使用以下方法。字体沿用原模板；技能母版正文为宋体 12 磅。检查对象包括数字来源、领域、编号、四栏顺序、篇幅、法律状态、制度与人员、汇总字段、页眉页脚。
 
 可用接口：`scripts/audit_application_docx.py --innovation-evidence <证据JSON>`；`scripts/hightech_delivery_gate.py template-copy`、`summary-lint`、`record-wps-review`、`finalize`。真实运行结果、候选 SHA-256 和实际视觉检查绑定同一文件。WPS 可用时逐页记录页码、结论及截图哈希；其他宿主采用实际文档渲染能力并说明验收状态，修改后重新检查受影响页。主申请书、待补清单和各类回执分别对应自身文件，当前可用草稿直接交付并列待完成项。
+
+回填后重新打开成品，对照同批预期字段、项目数量和费用合计。回执列明逐项回读结果，未识别和载入不一致项随中间成品交付，重复无进展的分支沿盘点状态处理。结构化交付由 `finalize` 返回独立的 [delivery 信封](references/delivery-envelope.md)。
 
 当前业务模板基线 V1.3.1，套件标签取发布清单。详情见 [v1.3.1-release-plan.md](references/v1.3.1-release-plan.md)。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。
+
+## 政策原文
+
+申报时间、截止日期与当年申报范围由客户按当期通知确认。技能依据管理办法判断条件、生成材料、开展体检。 按客户给定或包内通用申请书结构填写，缺项目专用表单时先写有证据的正文。
+
+- [高新技术企业认定管理办法（国科发火〔2016〕32号）](<../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md>)
+- [高新技术企业认定管理工作指引（国科发火〔2016〕195号）](<../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md>)

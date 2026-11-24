@@ -16,8 +16,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 from docx import Document
+from docx.opc.exceptions import PackageNotFoundError
+from lxml.etree import XMLSyntaxError
 
 
 PROHIBITED_SUMMARY_PHRASES = (
@@ -414,10 +417,55 @@ def validate_bound_receipt(
     return value, errors
 
 
+def attach_delivery(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload["delivery_allowed"]:
+        status = "success" if payload["status"] == "pass" else "partial"
+        files = {
+            "高企申请书": payload["docx"],
+            "模板复制回执": payload["template_copy_receipt"],
+            "字段粒度回执": payload["summary_lint_receipt"],
+            "WPS验收回执": payload["wps_review_receipt"],
+            "品牌回执": payload["brand_receipt"],
+        }
+        content = "# 高企申请书文件索引\n\n" + "\n".join(
+            f"- {label} `{info['path']}`，SHA-256 `{info['sha256']}`"
+            for label, info in files.items() if info is not None
+        )
+    else:
+        status = "fail"
+        content = "# 高企申请书交付结果\n\n" + "\n".join(f"- {error}" for error in payload["errors"])
+    payload["delivery"] = {
+        "status": status,
+        "resource_id": payload["gate"],
+        "content": content,
+        "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        "delivered_at": payload["generated_at"],
+    }
+    return payload
+
+
+def write_delivery_report(path: Path, payload: dict[str, Any]) -> None:
+    result = attach_delivery(payload)
+    atomic_json(path, result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def command_finalize(args: argparse.Namespace) -> int:
-    Document(args.docx)
+    inputs = (args.docx, args.copy_receipt, args.summary_receipt, args.wps_receipt, args.brand_receipt)
+    if args.report.resolve() in {path.resolve() for path in inputs if path is not None}:
+        payload = receipt("finalize", "fail", artifact=None, delivery_allowed=False,
+                          errors=["交付回执需另存，当前路径与成品或输入回执相同"])
+        print(json.dumps(attach_delivery(payload), ensure_ascii=False, indent=2))
+        return 2
+    try:
+        Document(args.docx)
+        current_hash = sha256(args.docx)
+    except (OSError, ValueError, KeyError, BadZipFile, PackageNotFoundError, XMLSyntaxError) as error:
+        payload = receipt("finalize", "fail", artifact=None, delivery_allowed=False,
+                          errors=[f"成品不可读取：{args.docx.resolve()}（{error}）"])
+        write_delivery_report(args.report, payload)
+        return 2
     errors: list[str] = []
-    current_hash = sha256(args.docx)
     copy_value, copy_errors = validate_bound_receipt("模板复制回执", args.copy_receipt, "template-copy")
     lint_value, lint_errors = validate_bound_receipt(
         "字段粒度回执", args.summary_receipt, "summary-lint", current_hash
@@ -486,8 +534,7 @@ def command_finalize(args: argparse.Namespace) -> int:
         wps=wps_value,
         errors=errors,
     )
-    atomic_json(args.report, payload)
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    write_delivery_report(args.report, payload)
     return 0
 
 

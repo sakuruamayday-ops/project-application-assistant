@@ -1,15 +1,17 @@
 ---
 name: sme-score-preassessment
-description: 按 2026 适用规则评估专精特新中小企业与小巨人申报条件、平台质量分和企业差距，形成产品、专利、财务及培育路径建议。
+description: 按适用规则逐项核验专精特新中小企业与小巨人申报条件，给出产品、专利、财务等方面的差距、补强动作和优先级。
 ---
 
 # 专精特新申报前预评估
 
-按现有资料直接判断并形成行动报告，规则采用 2026 办法及适用通知，质量分使用真实平台记录。客户报告围绕条件、企业值、产品、专利和行动；质量分原文、技术元数据及内部核验保留在工作底稿。省级报告按目标条件组织，小巨人对应项目核对省级专精特新身份。
+地方条件按[省级管理办法检索指引](references/policy-lookup.md)核对适用办法。申报时间、截止日期与当年申报范围由客户按当期通知确认。
+
+按工信部企业〔2026〕2号管理办法直接核对企业事实，逐项列条件差距和行动。发展质量评价以同主体、同年度的主管平台正式结果核对资格，客户报告写条件状态、依据与待补事项。省级报告按目标条件组织，小巨人对应项目核对省级专精特新身份。
 
 ## 政策与接口
 
-参考 [current-policy-baseline-2026.md](references/current-policy-baseline-2026.md)，记录层级、新报或复核、地区、年度与版本。2026 新报的政策质量分要求为省级 50、小巨人 60；2026 小巨人复核过渡分支对应当期指定对象和期间。历史评分模型作为历史资料，当前结论按适用政策和企业事实形成。
+参考 [current-policy-baseline-2026.md](references/current-policy-baseline-2026.md)，记录层级、新报或复核、地区、年度与版本。2026 新报的政策质量分要求为省级 50、小巨人 60；小巨人专项复核由客户提供适用口径和对象证明，先做共同事实与材料核对。历史评分模型作为历史资料，当前结论按适用政策和企业事实形成。
 
 客户端可用 `sme-score-preassessment.run-preflight`，参数 `{"taskType":"quality-preassessment","projectLevel":"省级专精特新中小企业","applicationType":"新申报"}`，其他项目类型按工具清单值填写；其他宿主：
 
@@ -17,13 +19,14 @@ description: 按 2026 适用规则评估专精特新中小企业与小巨人申�
 python3 <本技能目录>/scripts/preflight.py --task-type quality-preassessment --project-level "省级专精特新中小企业" --application-type "新申报"
 ```
 
-`schema_version`、`policy_version`、`rule_branch`、`rule_id` 留在机器记录，实际政策名称、文号、年度及申请类型用于业务说明。计算回执按真实操作 ID 绑定。
+`schema_version`、`policy_version`、`rule_branch`、`rule_id` 留在机器记录，实际政策名称、文号、年度及申请类型用于业务说明。计算回执按真实操作 ID 绑定。已有企业数据时，在命令行增加 `--input 企业事实.json` 联验收入、研发、前置资质和正式平台回执，按数据契约读取 `assessment.items`。
 
 ## 事实与判断
 
 1. 企业身份、资质、IP 和荣誉使用当前工具与材料核验，未命中说明本轮范围。财务、经营、研发、人员、产品、客户、产能和份额取用户资料及明确陈述，按原口径计算。
+   旧采集工作簿先按[财务核验](../financial-verification/SKILL.md)核对来源主体和原始比率，评估只接收同主体、同年度可用的财务证据。
 2. 每个条件记规则、企业值、证据状态和结论，分已核、自述、计算、冲突及待补；主导产品、补短板、填空白和替代可依据自述判断，结合边界、因果、环节及跨章一致性评价。
-3. 平台分采用 `{"status":"verified-platform-score","value":58,"source":"平台记录"}`，待取时 `{"status":"pending-platform-evaluation","value":null}`。当前判断说明关键未知与成立条件。
+3. 按[数据契约](references/data-contract.md)记录发展质量评价条件的已满足、不满足或缺正式结果状态。未满足时列可核验的经营、研发、人员及其他指标差距，缺正式结果时列取得回执的动作。
 4. 单元状态用“已具备、存在差距、待补强、待定、冲突待核、不适用”：未提供且未核的字段待定，已检索核对但未取得的资料待补强，保留业务现状与证据状态差别。
 
 ## 报告方法
@@ -37,6 +40,6 @@ python3 <本技能目录>/scripts/preflight.py --task-type quality-preassessment
 - 财务写已知趋势与可复算营收、增长、研发强度、主营占比、负债、利润及人员口径，公式与来源对应，缺项集中成短清单。
 - 数字化诊断参考 `references/digital-transformation-diagnostic-strengthening.md`，写五维、对标、优势短板和两年提升任务；原报告待取时列“待企业确认，建议补强”。
 
-客户正文呈现事实、判断和行动，详细方向利弊、十二字段路径底稿、内部责任表及评分记录存工作底稿，按用户深度要求展开。已有申请书核稿衔接 `sme-development-projects`；合作后可行性展开实际条件、证据、动作、完成标准和年度节点。
+客户正文呈现事实、判断和行动。每项缺陷以 `items` 登记 `item`、`requirement`、`actual`、`gap`、`evidence`、`action`、`priority`。先补会影响资格的事项，再补可共用的证据。详细方向利弊、十二字段路径底稿、内部责任表及平台回执出处留底稿。已有申请书核稿衔接 `sme-development-projects`，合作后可行性展开实际条件、证据、动作、完成标准和年度节点。
 
 内容或文件生成后交付，缺项集中列一次。报告表达采用[报告写作规则](../_runtime/report-writing.md)。

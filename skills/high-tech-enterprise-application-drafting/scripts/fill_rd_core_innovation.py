@@ -15,11 +15,12 @@ from pathlib import Path
 
 from lxml import etree
 
+from import_batch import ImportBatch, pointer
+from rd_ps_codes import FORM_LABELS, parse_form_code
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 W = f"{{{W_NS}}}"
 NS = {"w": W_NS}
-RD_PATTERN = re.compile(r"研发活动编号[:：]?\s*(RD\d{2})", re.IGNORECASE)
 ADVANCED_TERMS = (
     "人工智能",
     "深度学习",
@@ -77,9 +78,9 @@ def collect_rd_targets(root: etree._Element, *, require_field: bool = True) -> d
     targets: dict[str, dict[str, object]] = {}
     for child in body:
         if child.tag == W + "p":
-            match = RD_PATTERN.search(paragraph_text(child))
-            if match:
-                current_rd = match.group(1).upper()
+            text = paragraph_text(child)
+            if FORM_LABELS["RD"] in text:
+                current_rd = parse_form_code(text, "RD")
             continue
         if child.tag != W + "tbl" or current_rd is None:
             continue
@@ -206,7 +207,7 @@ def set_simsun_xiaosi(run: etree._Element) -> None:
         node.set(W + "val", "24")
 
 
-def replace_cell_content(cell: etree._Element, value: str) -> None:
+def replace_cell_content(cell: etree._Element, value: str, *, use_template_font: bool = False) -> None:
     paragraphs = cell.xpath("./w:p", namespaces=NS)
     if not paragraphs:
         paragraph = etree.SubElement(cell, W + "p")
@@ -217,7 +218,8 @@ def replace_cell_content(cell: etree._Element, value: str) -> None:
     for child in list(run):
         if child.tag != W + "rPr":
             run.remove(child)
-    set_simsun_xiaosi(run)
+    if not use_template_font:
+        set_simsun_xiaosi(run)
     lines = value.split("\n")
     for index, line in enumerate(lines):
         text = etree.SubElement(run, W + "t")
@@ -315,11 +317,17 @@ def unique_recovery_path(path: Path, marker: str) -> Path:
     return candidate
 
 
+def write_report(path, report):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     args = parse_args()
     input_path = args.input.resolve()
     spec_path = args.spec.resolve()
     output_path = args.output.resolve()
+    report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
     if input_path == output_path:
         raise SystemExit("输出文件不得与输入文件相同")
     if not input_path.is_file() or not spec_path.is_file():
@@ -337,25 +345,36 @@ def main() -> None:
             items = []
         if not isinstance(items, list):
             raise ValueError("items必须为数组")
+        batch = ImportBatch(data.get("batch_check", {}), spec_path, output_path)
         warnings: list[str] = []
 
         with zipfile.ZipFile(input_path, "r") as source_zip:
             root = etree.fromstring(source_zip.read("word/document.xml"))
             targets = collect_rd_targets(root, require_field=False)
-            seen: set[str] = set()
+            items_by_id = {}
+            item_indexes = {}
             formatted: dict[str, dict[str, object]] = {}
             all_text = []
-            for raw_item in items:
+            for index, raw_item in enumerate(items):
                 if not isinstance(raw_item, dict):
                     raise ValueError("items中的每一项必须为对象")
                 rd_id = require_string(raw_item, "rd_id", "item").upper()
-                if rd_id in seen:
+                if rd_id in items_by_id:
                     raise ValueError(f"JSON存在重复编号：{rd_id}")
                 if rd_id not in targets:
-                    raise ValueError(f"文档中未找到目标RD表：{rd_id}")
-                seen.add(rd_id)
+                    batch.add(pointer("items", index), raw_item, None, f"文档中未找到目标RD表：{rd_id}")
+                    continue
+                items_by_id[rd_id] = raw_item
+                item_indexes[rd_id] = index
                 target = targets[rd_id]
-                basic_fields = prepare_basic_fields(raw_item, target, rd_id)
+                raw_basic = raw_item.get("basic_fields", {})
+                if not isinstance(raw_basic, dict):
+                    raise ValueError(f"{rd_id}.basic_fields必须为对象")
+                for label in sorted(raw_basic.keys() - target["basic_cells"].keys()):
+                    batch.add(pointer("items", index, "basic_fields", label), raw_basic[label], None,
+                              f"{rd_id}不支持或未找到基本字段：{label}")
+                known = {label: value for label, value in raw_basic.items() if label in target["basic_cells"]}
+                basic_fields = prepare_basic_fields({"basic_fields": known}, target, rd_id)
                 field = basic_fields.get("技术领域", str(target["field"]))
                 if not field or (field != PENDING_FIELD and "—" not in field):
                     warnings.append(f"{rd_id}: 四级领域待核对，已保留原值")
@@ -386,13 +405,26 @@ def main() -> None:
                 warnings.append("高阶技术词的能力依据待补：" + "、".join(unsupported))
 
             for rd_id, record in formatted.items():
+                index = item_indexes[rd_id]
+                raw_item = items_by_id[rd_id]
                 # 同一物理表内按标签定位，避免合并单元格展开和RD编号延续到后续非RD表。
                 for label, value in record["basic_fields"].items():
-                    replace_cell_content(targets[rd_id]["basic_cells"][label], value)
-                replace_cell_content(targets[rd_id]["core_cell"], str(record["core_value"]))
+                    cell = targets[rd_id]["basic_cells"][label]
+                    batch.add(pointer("items", index, "basic_fields", label), raw_item["basic_fields"][label], value,
+                              "日期补零并沿母版字段回填" if label == "起止时间" else "按母版标签定位回填", node=cell)
+                    replace_cell_content(cell, value)
+                core_cell = targets[rd_id]["core_cell"]
+                core_raw = {key: raw_item.get(key) for key in ("core_technologies", "innovations")}
+                batch.add(pointer("items", index, "core_technologies"), core_raw, str(record["core_value"]),
+                          "按领域、核心技术和创新点编排", node=core_cell)
+                replace_cell_content(core_cell, str(record["core_value"]))
                 if record["result_value"] is not None:
-                    replace_cell_content(targets[rd_id]["result_cell"], str(record["result_value"]))
+                    result_cell = targets[rd_id]["result_cell"]
+                    batch.add(pointer("items", index, "stage_results"), raw_item["stage_results"], str(record["result_value"]),
+                              "按阶段成果顺序编排", node=result_cell)
+                    replace_cell_content(result_cell, str(record["result_value"]))
             verify_written_targets(root, formatted)
+            batch.locate(root.getroottree())
             new_xml = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             backup_path = None
@@ -401,6 +433,7 @@ def main() -> None:
                 shutil.move(output_path, backup_path)
             with tempfile.NamedTemporaryFile(dir=output_path.parent, suffix=".docx", delete=False) as handle:
                 temporary_path = Path(handle.name)
+            readback_counts = {"RD": {"expected": len(targets), "actual": None, "status": "incomplete"}}
             try:
                 with zipfile.ZipFile(temporary_path, "w") as output_zip:
                     for member in source_zip.infolist():
@@ -409,8 +442,15 @@ def main() -> None:
                 temporary_path.replace(output_path)
                 with zipfile.ZipFile(output_path, "r") as written_zip:
                     written_root = etree.fromstring(written_zip.read("word/document.xml"))
+                batch.check(written_root, NS, lambda node: xml_cell_text(node).strip())
+                written_targets = collect_rd_targets(written_root, require_field=False)
+                readback_counts["RD"].update(actual=len(written_targets),
+                                               status="completed" if targets.keys() == written_targets.keys() else "incomplete")
                 verify_written_targets(written_root, formatted)
-            except Exception:
+                if readback_counts["RD"]["status"] != "completed":
+                    raise ValueError("成品研发项目编号或数量不一致")
+            except Exception as error:
+                failed_path = None
                 if temporary_path.exists():
                     failed_path = unique_recovery_path(output_path, "failed-write")
                     shutil.move(temporary_path, failed_path)
@@ -419,15 +459,21 @@ def main() -> None:
                     shutil.move(output_path, failed_path)
                 if backup_path and backup_path.exists():
                     shutil.move(backup_path, output_path)
+                if failed_path is not None:
+                    write_report(report_path, {
+                        "schema_version": 1, "status": "fail", "input": str(input_path), "spec": str(spec_path),
+                        "output": str(output_path), "postcondition_verified": False,
+                        "batch_check": batch.report(readback_counts, failed_path, [str(error)]),
+                    })
                 raise
 
-        report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
+        batch_report = batch.report(readback_counts, output_path)
         report = {
             "schema_version": 1,
             "status": "draft" if any(
                 record["field"] == PENDING_FIELD or PENDING_INDICATOR in record["core_value"]
                 for record in formatted.values()
-            ) else "pass",
+            ) or batch_report["status"] == "partial" else "pass",
             "input": str(input_path),
             "spec": str(spec_path),
             "output": str(output_path),
@@ -448,9 +494,9 @@ def main() -> None:
                 rd_id: {
                     "field": record["field"],
                     "body_length": record["body_length"],
-                    "core_technology_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("core_technologies") or []),
-                    "innovation_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("innovations") or []),
-                    "stage_result_count": len(next(item for item in items if item["rd_id"].upper() == rd_id).get("stage_results") or []),
+                    "core_technology_count": len(items_by_id[rd_id].get("core_technologies") or []),
+                    "innovation_count": len(items_by_id[rd_id].get("innovations") or []),
+                    "stage_result_count": len(items_by_id[rd_id].get("stage_results") or []),
                     "stage_result_length": record["result_length"],
                     "basic_fields": record["basic_fields"],
                     "pending_field": record["field"] == PENDING_FIELD,
@@ -463,9 +509,9 @@ def main() -> None:
             "field_source": "each RD header",
             "indicator_status": "draft targets unless source-backed actual values are supplied outside this formatter",
             "postcondition_verified": True,
+            "batch_check": batch_report,
         }
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        write_report(report_path, report)
         print(json.dumps(report, ensure_ascii=False, indent=2))
     except (ValueError, json.JSONDecodeError, zipfile.BadZipFile, etree.XMLSyntaxError) as exc:
         raise SystemExit(str(exc)) from exc
