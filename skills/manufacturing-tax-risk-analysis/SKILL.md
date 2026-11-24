@@ -1,9 +1,16 @@
 ---
 name: manufacturing-tax-risk-analysis
-description: 基于制造企业财务与税务资料，复算三表、分析现金流和财务健康、筛查智慧税务及账票税款货一致性，形成整改建议。完整报告默认金色顾问版 PDF，按请求交付同正文 Word；单指标咨询按问题范围处理。
+description: 基于制造企业财务与税务资料，复算三表、分析现金流和财务健康、筛查智慧税务及账票税款货一致性，形成整改建议。完整报告默认深度分析版 PDF，按请求交付同正文 Word；单指标咨询按问题范围处理。
 ---
 
 # 制造企业财税体检
+
+## 商业定位、MCP 双态与黑板接力
+
+本技能属于 **WorkBuddy 收费深度分析与成品交付能力（制造企业财税体检 · 收费 MCP 服务端 / 付费交付端）**，遵循 [WorkBuddy 商业分层与 MCP 规范](../_runtime/workbuddy-core/mcp-routing-and-tiering.md)：
+
+- **业务范围**：承接制造企业财税深度体检与整改行动报告成品交付；商业报告母版与服务端生成资产留在收费侧，严认原件实绩与可验证数据、绝不虚构财务/司法/实测指标、绝不输出废弃的内部估分，提供四列缺口与可执行整改动作。
+- **主体隔离黑板与 MCP 故障显式报错**：按当前企业主体读写 `.facts/<企业标识>.facts.json` 实现组合包无缝接力并杜绝跨企业串户；已配置付费 MCP 若遇鉴权过期、配额归零或超时，显式向用户报错排查，绝不静默降级。
 
 以可复算、可追溯的财务事实支持风险判断，风险信号与违法认定分别表述。完整分析、整改方案和报告按下列方法组织，单点咨询直接核验对应问题。
 
@@ -36,7 +43,7 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 
 ## 写作与生成
 
-采用 [report-spec.md](references/report-spec.md)，按经营变化、资产现金流、税务一致性、重点核验和 30/60/90 天动作组织。封面为“完成人：共创知识产权”；正文面向读者，资料说明使用财报、科目和计算口径，执行过程留在对话。
+采用 [report-spec.md](references/report-spec.md)，按经营变化、资产现金流、税务一致性、重点核验和 30/60/90 天动作组织。正文面向读者。
 
 按 [report-input-schema.md](references/report-input-schema.md) 准备分析字段，财务段落参考 [financial-paragraph-templates.md](references/financial-paragraph-templates.md)。金额、比例和周转天数保留具名引用，生成器从计算结果回填，已有输入可局部修订。
 
@@ -45,7 +52,7 @@ python3 scripts/generate_report_html.py report-data.json --metrics-json metrics.
 python3 scripts/generate_report_html.py report-data.json report.html --metrics-json artifacts/manufacturing-tax-risk-metrics.v1.json
 ```
 
-运行时使用工作区及脚本实际绝对路径。`completion` 写可核验完成条件。生成器采用金色顾问模板，输出 17 个基础页面区块，来源超过 10 行自动续页；财务总览、风险地图、90 天路线、计算来源四表与必填、长度、主体及占位检查由生成器处理。实际页数取返回 `pages`，错误定向修复，成功结果继续渲染交付。
+运行时使用工作区及脚本实际绝对路径。`completion` 写可核验完成条件。生成器采用深度分析版的金色模板，输出 17 个基础页面区块，来源超过 10 行自动续页；财务总览、风险地图、90 天路线、计算来源四表与必填、长度、主体及占位检查由生成器处理。实际页数取返回 `pages`，错误定向修复，成功结果继续渲染交付。
 
 ## 文件与验收
 
@@ -53,18 +60,20 @@ python3 scripts/generate_report_html.py report-data.json report.html --metrics-j
 
 ```bash
 python3 ../evidence-ledger/scripts/create_docx_from_text.py --input-file /abs/report.html /abs/report.docx
-python3 ../evidence-ledger/scripts/apply_office_branding.py /abs/report.docx --variant gold
-python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.docx
+
+python3 scripts/validate_report.py /abs/report.docx
 ```
 
-PDF 沿用 `assets/gold-advisor.css` 的深棕黑、香槟金、米金体系及共享金色水印、署名和元数据。客户端以同一 HTML 调用 `gongchuang_deliver_pdf`；其他宿主使用当前 Node、Playwright、Chromium 和 PyMuPDF 能力：
+PDF 沿用 `assets/gold-analysis.css` 的深棕黑、香槟金、米金体系。使用当前 Node、Playwright 和 Chromium 渲染：
 
 ```bash
-node scripts/render_pdf_stdout.js /abs/report.html | python3 scripts/brand_gold_pdf.py /abs/report.pdf --audit-json /abs/brand-audit.json
-python3 ../_runtime/gongchuang-branding/scripts/delivery_gate.py /abs/report.pdf --expected-pages "$REPORT_PAGES" --expected-author 共创知识产权 --expected-title-contains 金税四期
+node scripts/render_pdf_stdout.js /abs/report.html > /abs/report.pdf
+python3 scripts/validate_report.py /abs/report.pdf --expected-pages "$REPORT_PAGES"
 ```
 
-`REPORT_PAGES` 取本次生成器返回值。已有品牌及成品直接复用交付；用户需要深度检查时核对页数、作者、每页一个同尺寸居中金色水印，并渲染核对封面、正文、风险矩阵、长表和来源的裁切、重叠、空白、乱码及断表。Word 和 PDF 分别绑定各自检查结果。
+按生成器返回值核对成品页数、封面、正文、风险矩阵、长表和来源。
+
+生成器的输出位置用 `-` 时从标准输出传入 `node scripts/render_pdf_stdout.js -`，生成回执在标准错误。受限宿主仅允许本地 Chromium 单进程时，可设置 `REPORT_CHROMIUM_SINGLE_PROCESS=1`。
 
 交付说明实际稿件状态、资料缺口与 OCR 不确定性，鉴证及法律结论衔接相应专业审查；归档和模板沉淀按用户要求办理。
 

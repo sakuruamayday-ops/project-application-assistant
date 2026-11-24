@@ -5,6 +5,8 @@ import argparse
 import json
 from pathlib import Path
 
+from validate_financial_assessment import (BOUNDED_RATIOS, SHARED_METRICS, bounded_ratio, decimal_value,
+                                           source_subjects, subject_text)
 
 VALID_QUALITY = {"verified", "partially_verified", "unverified"}
 
@@ -18,10 +20,17 @@ def validate(
     if payload.get("schema") != "enterprise-financial-facts/v1":
         errors.append("不支持的财务事实契约")
     company = payload.get("company")
-    if not isinstance(company, dict) or not str(company.get("name") or "").strip():
-        errors.append("缺少企业名称")
-    elif expected_company and str(company.get("name")).strip() != expected_company.strip():
-        errors.append("企业名称与当前任务不一致")
+    name = subject_text(company.get("name")) if isinstance(company, dict) else ""
+    if not name:
+        errors.append("缺主体信息")
+    names = [item for item in (expected_company.strip(), name) if item]
+    for index, subject, source in source_subjects(payload.get("source_artifacts") or []):
+        if subject:
+            names.append(subject)
+        else:
+            errors.append(f"{source.get('path') or source.get('name') or index + 1}：缺主体信息")
+    if len(set(names)) > 1:
+        errors.append("主体不一致：" + "、".join(dict.fromkeys(names)))
     if isinstance(company, dict) and expected_credit_code:
         actual_credit_code = str(company.get("unified_social_credit_code") or "").strip()
         if actual_credit_code != expected_credit_code.strip():
@@ -40,6 +49,7 @@ def validate(
     if not isinstance(periods, dict) or not periods:
         errors.append("缺少财务期间")
     else:
+        has_financial_rows = False
         for year, period in periods.items():
             if not str(year).isdigit() or len(str(year)) != 4 or not isinstance(period, dict):
                 errors.append(f"无效财务期间：{year}")
@@ -48,9 +58,26 @@ def validate(
                 errors.append(f"{year}缺少facts")
             if not isinstance(period.get("metrics"), dict):
                 errors.append(f"{year}缺少metrics")
+            if isinstance(period.get("facts"), dict) and isinstance(period.get("metrics"), dict):
+                has_financial_rows |= bool(period["facts"] or period["metrics"])
+                for field, (formula_id, (numerator, denominator)) in SHARED_METRICS.items():
+                    if formula_id not in BOUNDED_RATIOS:
+                        continue
+                    supplied = period["metrics"].get(field)
+                    base = period["facts"].get(denominator)
+                    part = period["facts"].get(numerator)
+                    try:
+                        if part is not None and base is not None and decimal_value(base):
+                            bounded_ratio(decimal_value(part) / decimal_value(base), formula_id)
+                        if supplied is not None:
+                            bounded_ratio(decimal_value(supplied), formula_id)
+                    except ValueError as error:
+                        errors.append(f"{year}/{field}：{error}")
             quality = period.get("quality")
             if not isinstance(quality, dict) or quality.get("status") not in VALID_QUALITY:
                 errors.append(f"{year}质量状态无效")
+        if not has_financial_rows:
+            errors.append("未提供财务事实或指标")
     return errors
 
 

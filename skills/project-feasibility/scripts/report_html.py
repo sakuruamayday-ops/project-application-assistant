@@ -90,7 +90,7 @@ def report_html(document) -> str:
 def html_document(title: str, body: str) -> str:
     """Wrap program-rendered report blocks in the fixed local PDF stylesheet."""
     return (f'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>{escape(title)}</title>'
-            '<meta name="author" content="共创知识产权"><style>'
+            '<style>'
             '@page{size:A4;margin:18mm 18mm 16mm}html,body{margin:0;padding:0;background:white;color:#20262f;letter-spacing:0}'
             'body{width:174mm;font-size:10.5pt;line-height:1.55}h1{font-size:19pt;color:#233d66;margin:10pt 0}'
             'h2{font-size:14pt;color:#233d66;margin:10pt 0 6pt}h3{font-size:11.5pt;margin:8pt 0 5pt}'

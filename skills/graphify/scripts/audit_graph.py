@@ -47,7 +47,7 @@ def write_atomic(path: Path, text: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit a Graphify graph for Gongchuang Research Institute evidence-chain requirements.")
+    parser = argparse.ArgumentParser(description="Audit a Graphify graph for evidence-chain requirements.")
     parser.add_argument("graph", type=Path)
     parser.add_argument("--profile", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
@@ -62,6 +62,8 @@ def main() -> int:
     nodes = graph.get("nodes", [])
     edges = graph.get("edges", graph.get("links", []))
     node_ids = {str(n.get("id")) for n in nodes if isinstance(n, dict) and n.get("id")}
+    if not node_ids:
+        parser.error("图谱未提供可核验节点")
     warnings: list[str] = []
 
     missing_source_nodes = [

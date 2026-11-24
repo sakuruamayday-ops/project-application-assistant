@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from io import BytesIO
 import struct
 import subprocess
@@ -15,7 +16,11 @@ from pptx.util import Inches
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "extract_workspace_document.py"
 FIXTURES = Path(__file__).parent / "fixtures"
-OPERATIONS = Path(__file__).parents[2] / "client-runtime-operations.json"
+# 宿主操作注册表契约见 ../references/document-host.md。
+OPERATIONS = Path(os.environ.get(
+    "GONGCHUANG_TEST_OPERATIONS_PATH",
+    str(Path(__file__).parents[2] / "client-runtime-operations.json"),
+))
 
 
 def run(path: Path) -> tuple[int, dict[str, object]]:
@@ -691,11 +696,11 @@ def test_signed_operation_requires_the_document_extraction_schema_only() -> None
 
 def test_reading_guidance_distinguishes_remote_ocr_from_offline_and_human_review() -> None:
     guidance = (SCRIPT.parents[1] / "SKILL.md").read_text(encoding="utf-8")
-    assert "references/gongchuang-document-host.md" in guidance
-    host = (SCRIPT.parents[1] / "references/gongchuang-document-host.md").read_text(encoding="utf-8")
+    assert "references/document-host.md" in guidance
+    host = (SCRIPT.parents[1] / "references/document-host.md").read_text(encoding="utf-8")
     assert "`description` 是可选" in host
     assert "tools.mcp__paddle_ocr__workspace_pdf" in host
     assert "pages:ocr_pages" in host
-    assert "未联网检索”不等于“全程未联网" in guidance
-    assert "没有真实人员参与就不得称“人工复核”" in guidance
-    assert "用户明确禁止网络传输时，不发送到云端 OCR 或远端视觉服务" in guidance
+    assert "本地处理、云端 OCR、远端视觉和联网检索分别记录" in guidance
+    assert "模型检查标为“模型视觉核对”，真实人员的核对标为“人工复核”" in guidance
+    assert "用户明确禁止网络传输时，只使用本地处理能力" in guidance

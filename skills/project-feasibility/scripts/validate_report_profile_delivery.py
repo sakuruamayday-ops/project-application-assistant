@@ -153,22 +153,21 @@ def _compact_text(value: str) -> str:
     return re.sub(r"\s+", "", value or "")
 
 
-def _validate_branding(plugin_root: Path, artifacts: list[Path]) -> list[str]:
-    scripts = plugin_root / "skills/_runtime/gongchuang-branding/scripts"
-    sys.path.insert(0, str(scripts))
-    try:
-        from delivery_gate import validate_artifact
 
-        errors: list[str] = []
-        for artifact in artifacts:
-            try:
-                validate_artifact(artifact, check_stamp=False)
-            except Exception as exc:
-                errors.append(f"{artifact.name}品牌校验失败:{exc}")
-        return errors
-    finally:
-        if sys.path and sys.path[0] == str(scripts):
-            sys.path.pop(0)
+
+
+def _load_delivery_contract(plugin_root: Path) -> dict[str, Any]:
+    skills_root = plugin_root if (plugin_root / "_runtime").is_dir() else plugin_root / "skills"
+    paths = (
+        skills_root / "_runtime" / "delivery-contracts.json",
+        skills_root / "delivery-contracts.json",
+    )
+    for path in paths:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+    raise FileNotFoundError(f"找不到交付契约，已尝试 {'、'.join(map(str, paths))}")
 
 
 def validate_profile(
@@ -177,9 +176,7 @@ def validate_profile(
     profile_id: str,
     artifacts: list[Path],
 ) -> dict[str, Any]:
-    contract = json.loads(
-        (plugin_root / "skills/delivery-contracts.json").read_text(encoding="utf-8")
-    )
+    contract = _load_delivery_contract(plugin_root)
     profile = contract.get("delivery_profiles", {}).get(profile_id)
     if not isinstance(profile, dict):
         raise ValueError(f"未知报告画像:{profile_id}")
@@ -231,7 +228,7 @@ def validate_profile(
             errors.extend(_pdf_cjk_font_errors(pdf))
         except Exception as exc:
             errors.append(f"PDF文本读取失败:{exc}")
-    errors.extend(_validate_branding(plugin_root, [path for path in (docx, pdf) if path]))
+
     return {
         "status": "pass" if not errors else "fail",
         "profile_id": profile_id,
@@ -241,7 +238,7 @@ def validate_profile(
             "required-tables",
             "docx-pdf-structure",
             "cjk-font-embedded",
-            "branding",
+
         ],
         "errors": errors,
         "artifacts": [

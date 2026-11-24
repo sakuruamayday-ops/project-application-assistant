@@ -39,12 +39,39 @@ SECTIONS = (
     ("tasks", "5.1 补强任务表", ("补强动作", "补强价值", "建议节点")),
 )
 SCORE_TEXT = re.compile(
-    r"评分|得分|分数|平台分|质量分|\d+(?:\.\d+)?\s*分(?!钟|贝|米|秒|之)"
-    r"|综合评价\s*[:：]\s*\d+(?:\.\d+)?\s*[/／]\s*\d+"
+    r"评分|得分|估分|计分|分数|分值|平台分|质量分"
+    r"|(?:确定|条件|目标|保守|压力)分(?!析|别|类|支|布|段)"
+    r"|\d+(?:\.\d+)?\s*分(?!钟|贝|米|秒|之|别|析|类|支|布|段|期|区|线|项|量)"
+    r"|(?:综合评价|预计)\s*[:：]\s*\d+(?:\.\d+)?\s*[/／]\s*\d+"
 )
-PROVINCIAL_PREREQUISITE = re.compile(
-    r"前置(?:称号|资格|身份)|科技和创新型中小企业|创新型中小企业|省级科技型中小企业"
-)
+PREREQUISITE = re.compile(r"前置(?:称号|资格|身份|条件|要求)")
+MISSING_PREREQUISITE = "未取得，需核实"
+
+
+def prerequisite_task(fixture, sections):
+    current = sections.get("current_tasks")
+    if not isinstance(current, dict) or not isinstance(rows := current.get("rows", []), list):
+        return
+    condition = next((item for item in fixture.get("conditions", [])
+                      if PREREQUISITE.search(item["match"])), {})
+    known = condition.get("value")
+    if not known:
+        known = MISSING_PREREQUISITE
+    requirement = ("已获认定的省级专精特新中小企业"
+                   if fixture.get("project_id") == "little-giant" else "已获科技和创新型中小企业称号")
+    fallback = ["前置称号", "优先", requirement, str(known),
+                str(condition.get("gap") or ("缺有效前置称号或适用批次证明" if known == MISSING_PREREQUISITE else "—")),
+                str(condition.get("action") or "核对有效称号、对应年度和认定或复核批次")]
+    for index, row in enumerate(rows):
+        if not isinstance(row, list) or len(row) != len(fallback) or not isinstance(row[0], str):
+            continue
+        if PREREQUISITE.fullmatch(row[0].strip()):
+            rows[index] = [value if isinstance(value, str) and value.strip() else default
+                           for value, default in zip(row, fallback, strict=True)]
+            if re.fullmatch(r"档案暂缺|缺资料|未提供|未取得|待核实|待企业确认", rows[index][3].strip()):
+                rows[index][3] = MISSING_PREREQUISITE
+            return
+    current["rows"] = [fallback, *rows]
 
 
 def screen_research_equipment(fixed_assets_yuan, tiers):
@@ -72,7 +99,10 @@ def screen_research_equipment(fixed_assets_yuan, tiers):
 
 
 def prepare_sections(fixture):
-    sections = deepcopy(validate_sections(fixture))
+    sections = deepcopy(fixture.get("report_sections"))
+    if isinstance(sections, dict):
+        prerequisite_task(fixture, sections)
+    validate_sections({**fixture, "report_sections": sections})
     screening = fixture.get("research_equipment_screen")
     if screening is None:
         return sections
@@ -104,8 +134,6 @@ def public_text(value, project_id=None):
                 r"\s*(?:获取不到|无法获取|系统自动评定)[。；\n]?", clause
             ):
                 continue
-            if project_id == "specialized-sme" and PROVINCIAL_PREREQUISITE.search(clause):
-                continue
             retained.append(clause + separator)
         text = "".join(retained)
         if len(retained) != len(clauses):
@@ -123,8 +151,6 @@ def public_rows(rows, project_id=None):
         if label == "资格与专注" or SCORE_TEXT.search(label):
             continue
         if label == "发展质量" and any(SCORE_TEXT.search(cell) for cell in row[1:]):
-            continue
-        if project_id == "specialized-sme" and PROVINCIAL_PREREQUISITE.search(label):
             continue
         cleaned = [public_text(cell, project_id) for cell in row]
         if not all(cleaned):
@@ -276,7 +302,7 @@ def build_action_document(template_path: Path, fixture):
     label = "专精特新中小企业" if fixture["project_id"] == "specialized-sme" else "专精特新小巨人"
     document.add_paragraph(fixture["enterprise"], "Title")
     document.add_paragraph(f"{label}前期评估报告", "Subtitle")
-    document.add_paragraph(f"报告日期：{fixture['report_date']}　建议申报年度：{fixture['suggested_year']}\n报告人：共创研究院")
+    document.add_paragraph(f"报告日期：{fixture['report_date']}　建议申报年度：{fixture['suggested_year']}")
     blocks = {key: (heading, headers) for key, heading, headers in SECTIONS}
     for group_heading, keys in GROUPS:
         group_title = document.add_heading(group_heading, 1)
@@ -305,7 +331,7 @@ def build_action_html(fixture):
     label = "专精特新中小企业" if fixture["project_id"] == "specialized-sme" else "专精特新小巨人"
     body = [f'<h1 style="font-size:18pt;color:#000000">{escape(fixture["enterprise"])}</h1>',
             f'<p style="font-size:12pt">{label}前期评估报告</p>',
-            f'<p>报告日期：{escape(fixture["report_date"])}　建议申报年度：{escape(fixture["suggested_year"])}<br>报告人：共创研究院</p>']
+            f'<p>报告日期：{escape(fixture["report_date"])}　建议申报年度：{escape(fixture["suggested_year"])}</p>']
     blocks = {key: (heading, headers) for key, heading, headers in SECTIONS}
     for group_heading, keys in GROUPS:
         body.append(f"<h1>{escape(group_heading)}</h1>")

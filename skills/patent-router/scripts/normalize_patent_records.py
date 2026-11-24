@@ -2,6 +2,7 @@
 import argparse
 import json
 import re
+from itertools import chain
 from pathlib import Path
 
 
@@ -34,9 +35,15 @@ def main():
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
     arguments = parser.parse_args()
-    with arguments.input.open(encoding="utf-8") as source, arguments.output.open("w", encoding="utf-8") as target:
-        for line in source:
-            if line.strip():
+    if arguments.input.resolve() == arguments.output.resolve():
+        parser.error("输入和输出须为不同文件")
+    with arguments.input.open(encoding="utf-8-sig") as source:
+        rows = (line for line in source if line.strip())
+        first = next(rows, None)
+        if first is None:
+            parser.error("未提供待规范化的专利记录")
+        with arguments.output.open("w", encoding="utf-8") as target:
+            for line in chain((first,), rows):
                 target.write(json.dumps(normalize_record(json.loads(line)), ensure_ascii=False) + "\n")
 
 

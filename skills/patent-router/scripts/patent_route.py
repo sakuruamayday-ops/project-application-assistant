@@ -9,13 +9,13 @@ ROUTES = {
     "patentability": ("patent-router", ["P1"]),
     "claims": ("patent-router", ["P1"]),
     "fto": ("patent-router", ["P1"]),
-    "layout": ("patent-router", ["P1"]),
+    "layout": ("patent-router", ["P2"]),
     "mining": ("patent-router", ["P2"]),
     "disclosure": ("patent-router", ["P2"]),
     "ai_patent": ("patent-router", ["TECHNICAL_FEATURE_MAP", "P1", "P2"]),
     "preexam": ("patent-router", ["P3"]),
     "review": ("checking-patdocx-cn-single-agent", ["DOCUMENT_REVIEW"]),
-    "project": ("patent-router", ["P1", "P2", "P3", "PROJECT_LINK"]),
+    "project": ("patent-router", ["PROJECT_LINK"]),
 }
 
 PREEXAM_CENTER_POOL = [

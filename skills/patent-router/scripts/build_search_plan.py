@@ -140,6 +140,8 @@ def build_plan(payload):
         payload.get("schema_version") == "technical-feature-map/v1"
         and source_search_status != "READY"
     )
+    if not units and not blocked_by_source:
+        raise ValueError("未提供可生成检索单元的技术特征")
     return {
         "schema_version": "patent-search-plan/v2",
         "case_id": payload.get("case_id"),
@@ -219,14 +221,43 @@ def build_plan(payload):
     }
 
 
+def run_async_search_unit(
+    plan, unit_id, provider, checkpoint_path, *, query=None, registry_path=None, retry_authorized=False,
+):
+    """Execute or resume a planned query through the host's async provider."""
+    from async_search_checkpoint import run_async_search
+
+    if plan["readiness"]["status"] != "READY":
+        raise ValueError("The source search plan is blocked")
+    unit = next((item for item in plan["search_units"] if item["unit_id"] == unit_id), None)
+    if unit is None:
+        raise ValueError(f"Unknown search unit: {unit_id}")
+    checkpoint = Path(checkpoint_path).expanduser().resolve()
+    case_id = plan.get("case_id")
+    scope = f"case:{case_id}" if case_id else f"workspace:{checkpoint.parent}"
+    return run_async_search(
+        provider,
+        unit["generic_expression"] if query is None else query,
+        checkpoint,
+        scope=scope,
+        registry_path=registry_path,
+        retry_authorized=retry_authorized,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="生成专利检索计划JSON")
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--strict", action="store_true", help="来源特征图不可检索时返回失败")
     arguments = parser.parse_args()
-    payload = json.loads(arguments.input.read_text(encoding="utf-8"))
-    result = build_plan(payload)
+    try:
+        payload = json.loads(arguments.input.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("检索计划输入须为 JSON 对象")
+        result = build_plan(payload)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     arguments.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     if arguments.strict and result["readiness"]["status"] != "READY":
         raise SystemExit(2)

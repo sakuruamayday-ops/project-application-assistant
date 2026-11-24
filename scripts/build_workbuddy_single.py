@@ -3,6 +3,8 @@
 
 Builds self-contained single-skill directories and ZIP archives into dist/workbuddy/
 directly from the single-source Git tree (zero duplicated runtime files committed to Git).
+Automatically vendors lightweight shared references/policy MDs referenced via ../ links
+and enforces strict commercial, link, and persona isolation gates on every built skill.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import os
 import re
 import shutil
 import stat
@@ -20,9 +23,10 @@ from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILLS_ROOT = REPO_ROOT / "skills"
 DEFAULT_MANIFEST = REPO_ROOT / "config" / "workbuddy-bundles.json"
 DEFAULT_OUT = REPO_ROOT / "dist" / "workbuddy"
-MD_LINK_TARGET = re.compile(r"\]\((?:<)?([^)\n>]+)(?:>)?\)")
+MD_LINK_RE = re.compile(r"\[([^\]]+)\]\((?:<)?([^)\n>]+)(?:>)?\)")
 INTERNAL_PERSONA = re.compile(r"主人")
 
 
@@ -35,33 +39,110 @@ def _matches_any(rel_posix: str, patterns: list[str]) -> bool:
     return False
 
 
-def _rewrite_markdown_links(content: str, rewrites: dict[str, str]) -> str:
-    updated = content
+def _relpath_posix(from_dir: Path, to_file: Path) -> str:
+    return Path(os.path.relpath(to_file, from_dir)).as_posix()
+
+
+def _format_link_target(target: str, fragment: str) -> str:
+    full = f"{target}#{fragment}" if fragment else target
+    return f"<{full}>" if " " in full else full
+
+
+def _auto_vendor_and_rewrite(
+    md_dest: Path,
+    md_src: Path,
+    skill_dir: Path,
+    src_skill_dir: Path,
+    rewrites: dict[str, str],
+    tier: str,
+) -> None:
+    content = md_dest.read_text(encoding="utf-8")
     for old, new in sorted(rewrites.items(), key=lambda kv: -len(kv[0])):
-        updated = updated.replace(old, new)
-    return updated
+        content = content.replace(old, new)
+
+    resolved_skill = skill_dir.resolve()
+    resolved_src_skill = src_skill_dir.resolve()
+    resolved_skills_root = SKILLS_ROOT.resolve()
+
+    def replace_match(match: re.Match[str]) -> str:
+        label, raw_target = match.group(1), match.group(2).strip()
+        if not raw_target or raw_target.startswith(("http://", "https://", "mailto:", "file://", "#")):
+            return match.group(0)
+        target_part, _, fragment = raw_target.partition("#")
+        target_part = target_part.strip()
+        if not target_part:
+            return match.group(0)
+
+        # Already inside built skill and exists? Keep as-is.
+        dest_candidate = (md_dest.parent / target_part).resolve()
+        try:
+            dest_candidate.relative_to(resolved_skill)
+            if dest_candidate.exists():
+                return match.group(0)
+        except ValueError:
+            pass
+
+        # Resolve against original source location in Git repo.
+        src_candidate = (md_src.parent / target_part).resolve()
+        # Check if it points to another skill's SKILL.md -> convert to non-linking skill badge
+        if src_candidate.name == "SKILL.md" and src_candidate.parent != resolved_src_skill:
+            return f"`{label}`"
+
+        # If free tier references an excluded commercial .docx/.xlsx/.doc asset -> replace with plain text
+        if tier in {"free-checkup", "free-data-mcp"} and src_candidate.suffix.lower() in {".docx", ".xlsx", ".doc"}:
+            return f"《{label}》（收费 MCP 端提供）"
+
+        # If link points to an excluded .pdf/.doc policy binary whose sibling .md exists -> point to .md
+        if src_candidate.suffix.lower() in {".pdf", ".doc"}:
+            sibling_md = src_candidate.with_suffix(".md")
+            if sibling_md.is_file():
+                src_candidate = sibling_md
+
+        # If target is a lightweight readable file inside skills/ -> auto-vendor into references/_shared/
+        try:
+            rel_in_skills = src_candidate.relative_to(resolved_skills_root)
+        except ValueError:
+            rel_in_skills = None
+
+        if rel_in_skills is not None and src_candidate.is_file() and src_candidate.suffix.lower() in {".md", ".json", ".py", ".txt"}:
+            if src_candidate.suffix.lower() == ".py":
+                vendored = skill_dir / "scripts" / src_candidate.name
+            else:
+                flat_name = rel_in_skills.name
+                vendored = skill_dir / "references" / "_shared" / flat_name
+            vendored.parent.mkdir(parents=True, exist_ok=True)
+            if not vendored.exists():
+                shutil.copy2(src_candidate, vendored)
+                if vendored.suffix.lower() == ".md":
+                    _auto_vendor_and_rewrite(vendored, src_candidate, skill_dir, src_skill_dir, rewrites, tier)
+            new_rel = _relpath_posix(md_dest.parent, vendored)
+            return f"[{label}]({_format_link_target(new_rel, fragment)})"
+
+        # If it pointed to a non-existent or excluded large binary -> render as plain text without dead link
+        if not src_candidate.exists() or src_candidate.suffix.lower() in {".pdf", ".doc", ".docx", ".xlsx"}:
+            return f"`{label}`"
+
+        return match.group(0)
+
+    updated = MD_LINK_RE.sub(replace_match, content)
+    md_dest.write_text(updated, encoding="utf-8")
 
 
 def _build_skillhub_meta(bundle: dict[str, Any], version: str) -> dict[str, Any]:
     now_ms = int(time.time() * 1000)
     return {
-        "skillId": bundle["skillId"],
-        "skillName": bundle["skillName"],
-        "displayName": bundle["displayName"],
-        "tier": bundle["tier"],
+        "name": bundle["displayName"],
+        "installedAt": now_ms,
         "source": "local",
         "version": version,
+        "skillId": bundle["skillId"],
+        "tier": bundle["tier"],
+        "examples_zh": bundle["examplesZh"],
+        "examples_en": bundle["examplesEn"],
+        "description_zh": bundle["descriptionZh"],
+        "description_en": bundle["descriptionEn"],
         "iconSource": "letter:auto",
-        "installedAt": now_ms,
-        "updatedAt": now_ms,
-        "description": {
-            "zh": bundle["descriptionZh"],
-            "en": bundle["descriptionEn"],
-        },
-        "examples": [
-            {"zh": zh, "en": en}
-            for zh, en in zip(bundle["examplesZh"], bundle["examplesEn"])
-        ],
+        "skillName": bundle["skillName"],
     }
 
 
@@ -72,23 +153,23 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
     if skill_mds != [skill_dir / "SKILL.md"]:
         errors.append(f"必须且仅允许顶层存在 1 份 SKILL.md，实际发现：{[str(p.relative_to(skill_dir)) for p in skill_mds]}")
 
-    # 2. Zero _runtime/dependencies leaks or portable_skill_runtime bloat.
+    # 2. Zero _runtime directory or portable_skill_runtime bloat.
     if (skill_dir / "_runtime").exists():
         errors.append("不得携带 _runtime 目录到单技能包")
     if list(skill_dir.rglob("portable_skill_runtime.py")):
         errors.append("不得携带冗余的 422 行 portable_skill_runtime.py")
 
-    # 3. Free-checkup commercial isolation: zero DOCX/XLSX commercial master assets.
-    if bundle["tier"] == "free-checkup":
+    # 3. Free tiers commercial isolation: zero DOCX/XLSX/DOC commercial master assets.
+    if bundle["tier"] in {"free-checkup", "free-data-mcp"}:
         leaked_masters = [
             str(p.relative_to(skill_dir))
             for p in skill_dir.rglob("*")
             if p.is_file() and p.suffix.lower() in {".docx", ".xlsx", ".doc"}
         ]
         if leaked_masters:
-            errors.append(f"免费体检包严禁泄露商业母版/受保护工作簿：{leaked_masters}")
+            errors.append(f"免费技能包严禁泄露商业母版/受保护工作簿：{leaked_masters}")
 
-    # 4. Every relative markdown link must resolve strictly inside skill_dir AND exist (zero escapes/dead links);
+    # 4. Every relative markdown link must resolve strictly inside skill_dir AND exist;
     #    zero internal persona leaks ("主人").
     resolved_root = skill_dir.resolve()
     for path in skill_dir.rglob("*"):
@@ -98,7 +179,7 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
             text = path.read_text(encoding="utf-8", errors="ignore")
             rel = str(path.relative_to(skill_dir))
             if path.suffix.lower() == ".md":
-                for raw_target in MD_LINK_TARGET.findall(text):
+                for _, raw_target in MD_LINK_RE.findall(text):
                     target = raw_target.strip().split("#", 1)[0].strip()
                     if not target or target.startswith(("http://", "https://", "mailto:", "file://")):
                         continue
@@ -160,7 +241,7 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
         excludes = list(bundle.get("excludeGlobs", [])) + [".DS_Store", "**/__pycache__/**", "**/*.pyc"]
         rewrites = dict(bundle.get("linkRewrites", {}))
 
-        # Copy source skill files excluding blocked assets/legacy bloat.
+        copied_mds: list[tuple[Path, Path]] = []
         for item in sorted(src_dir.rglob("*")):
             if item.is_dir():
                 continue
@@ -169,24 +250,24 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
                 continue
             dest = tier_dir / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, dest)
             if item.suffix.lower() == ".md":
-                text = _rewrite_markdown_links(item.read_text(encoding="utf-8"), rewrites)
-                dest.write_text(text, encoding="utf-8")
-            else:
-                shutil.copy2(item, dest)
+                copied_mds.append((dest, item))
 
-        # Vendor minimal declared shared files from single-source tree.
+        # Vendor explicit shared files from single-source tree.
         for vendor in bundle.get("vendorFiles", []):
             src_file = REPO_ROOT / vendor["from"]
             if not src_file.is_file():
                 raise FileNotFoundError(f"内联共享文件不存在：{src_file}")
             dest_file = tier_dir / vendor["to"]
             dest_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_file, dest_file)
             if src_file.suffix.lower() == ".md":
-                text = _rewrite_markdown_links(src_file.read_text(encoding="utf-8"), rewrites)
-                dest_file.write_text(text, encoding="utf-8")
-            else:
-                shutil.copy2(src_file, dest_file)
+                copied_mds.append((dest_file, src_file))
+
+        # Rewrite and auto-vendor any remaining relative markdown links cleanly.
+        for md_dest, md_src in copied_mds:
+            _auto_vendor_and_rewrite(md_dest, md_src, tier_dir, src_dir, rewrites, bundle["tier"])
 
         # Write WorkBuddy _skillhub_meta.json.
         meta = _build_skillhub_meta(bundle, version)
@@ -218,6 +299,10 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
         "status": "pass" if not all_errors else "fail",
         "version": version,
         "built_count": len(results),
+        "tier_counts": {
+            tier: sum(1 for r in results if r["tier"] == tier)
+            for tier in ("free-checkup", "free-data-mcp", "paid-mcp-engine")
+        },
         "bundles": results,
         "errors": all_errors,
     }

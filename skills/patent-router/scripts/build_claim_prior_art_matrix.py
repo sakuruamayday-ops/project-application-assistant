@@ -521,7 +521,16 @@ def main():
     parser.add_argument("--out-json")
     parser.add_argument("--out-md")
     args = parser.parse_args()
-    chain = load_json(args.evidence_chain)
+    try:
+        chain = load_json(args.evidence_chain)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
+    if not isinstance(chain, dict) or not any(
+        claim.get("necessary_technical_features")
+        for claim in chain.get("independent_claim_feature_tree") or []
+        if isinstance(claim, dict)
+    ):
+        parser.error("独立权利要求证据链缺少可对照的技术特征")
     prior_art = load_json(args.prior_art) if args.prior_art else {"documents": []}
     documents = normalized_documents(prior_art)
     equivalence_rules = load_json(EQUIVALENCE_RULES)

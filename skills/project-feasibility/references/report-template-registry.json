@@ -94,21 +94,21 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/high-tech-enterprise/preassessment.docx",
-          "sha256": "37cf7a6002fba73118f1e99ddff2c395db3f95427f8bcc8c42c5154e6b9a2363"
+          "sha256": "c69745091c85429de9b94c6460c112b14018631b70b1437537ebea5aac131ffe"
         },
         "feasibility": {
           "path": "assets/report-templates/high-tech-enterprise/feasibility.docx",
-          "sha256": "a2407a71f01e313735e5273b02ffb146eeb68fc36bfcd4c3b9bdecd524818651"
+          "sha256": "5e17afe0f15e1c930eda48af9dab459914548b31715153fa7413edb9ba27105c"
         }
       },
       "html_templates": {
         "preassessment": {
           "path": "assets/report-templates/high-tech-enterprise/preassessment.html",
-          "sha256": "710fee4ad92312f137a51b4b9631a102ff62319732291c5e55d425af23ce2a95"
+          "sha256": "669568bdfdc514c1cbd9e2c4665f48913deb935d6ad3dded83c8ade009c5878b"
         },
         "feasibility": {
           "path": "assets/report-templates/high-tech-enterprise/feasibility.html",
-          "sha256": "2fcdbc2195ab1409fd8b62952cc8da2167edeed600d3dc1398305aeaa7e8388d"
+          "sha256": "45b1f71dd57c9a3c840e990326331629bbe743c8f4fa60de93f35d28fc104262"
         }
       }
     },
@@ -124,21 +124,21 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/specialized-sme/preassessment.docx",
-          "sha256": "05c9afe014c730aefc5334fb4f95eb12663e4a9bd788f5c08e45d810ca72161e"
+          "sha256": "73139a2f16d92074c83da78fb5bff2eaa0bdcc16494d0e450913f2d9a7f973c2"
         },
         "feasibility": {
           "path": "assets/report-templates/specialized-sme/feasibility.docx",
-          "sha256": "4740a5783fc98b9dc62c4dafe3163a43962274151f5d0d065effba0155a0f522"
+          "sha256": "10a7946972e2e10d3ea7fbff621cff2324739bd77f37d9d978441df031d524d4"
         }
       },
       "html_templates": {
         "preassessment": {
           "path": "assets/report-templates/specialized-sme/preassessment.html",
-          "sha256": "172966ded39f9e50d5bdde55775ac1572256fc03a1a9d51d7981ce2985252691"
+          "sha256": "3878059024b3a748b4e51a608a70a705897c151d7c21e5c8d892153ea0c8f064"
         },
         "feasibility": {
           "path": "assets/report-templates/specialized-sme/feasibility.html",
-          "sha256": "1471a29aa271af4f1e0bcd661c5af351f74027fea485b289ccb7c30fdfe513b1"
+          "sha256": "8ada2eb071e87416435ea043618be5c3a3a04332e8bfdbada3f0b52fa38edbd5"
         }
       }
     },
@@ -154,21 +154,21 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/little-giant/preassessment.docx",
-          "sha256": "4f07d6d7e5744b59ee0942bcd31a2dd68c2c80debcb0fa937646a6cd3ed0690d"
+          "sha256": "fb45c37855e9792617a3581b25b691b4ea797724ae9a5982a4a6e0c2696c8995"
         },
         "feasibility": {
           "path": "assets/report-templates/little-giant/feasibility.docx",
-          "sha256": "aab910b75281341386d48266e32301d5954f6030994e3a5ded5fee38be31a870"
+          "sha256": "bf999c20685d67acb7c397fc5947344824f5307cc3cfa065106751de45d34111"
         }
       },
       "html_templates": {
         "preassessment": {
           "path": "assets/report-templates/little-giant/preassessment.html",
-          "sha256": "e47171b164b56726e2152553ccb5b3864697244210accdf90083b7bcb5ce7c9f"
+          "sha256": "26f352112dd67e7d6fc2e9488403eff3aa2be5b50be9341a846627a0e3fbd5a9"
         },
         "feasibility": {
           "path": "assets/report-templates/little-giant/feasibility.html",
-          "sha256": "9033b81ca72b7872076c6e78ada69e41a82c299de8c24cc9045858e9f7cb9b9c"
+          "sha256": "564d45fbed94e14ab21e0fdf29f53286a50edf813ffccb8a7b23a2403fd2e2d3"
         }
       }
     },
@@ -184,11 +184,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/first-equipment/preassessment.docx",
-          "sha256": "bd8ac28036f06afc0bafba91fdc0b2825d1d4188061c2687af328c2e731bc1e4"
+          "sha256": "c22b9204a2c318f9a5ea32b8837af258392a3c9a63fe1f76ec749ada3fc8a0d1"
         },
         "feasibility": {
           "path": "assets/report-templates/first-equipment/feasibility.docx",
-          "sha256": "c043048ad2c57a708a38dac231dce42eafc9158667f73f3d03719a6cf3176a70"
+          "sha256": "54d2e09d2e69a289a0476cffa2f2eb2d985c56c4ed61086fd85225d9c0ca53cb"
         }
       }
     },
@@ -203,11 +203,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/first-material/preassessment.docx",
-          "sha256": "8b771145c8fb9b908942a02a9669dd934b371e1e97cf8e4f9a80b28863f08222"
+          "sha256": "b6d09362093a8082f747dab0df2e7ca31acb9f8a06bdd66d29b5798ecdfc5a69"
         },
         "feasibility": {
           "path": "assets/report-templates/first-material/feasibility.docx",
-          "sha256": "3ff2c6a09c28f7141c77f85928514b0c9c47080e3b2ba4f3ea95006f747ddf45"
+          "sha256": "64a54e7d413dcbfa1c41e74ab15b2c5bc126e306192d5264769e1f9f3418ace8"
         }
       }
     },
@@ -222,11 +222,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/first-software/preassessment.docx",
-          "sha256": "2ec68bfb20eac19dcd99934d942853d57e135a87761c7adadfa1d6c6b39c7c14"
+          "sha256": "c994936f9b5d71af2e5f375a5b384a142d1f5066ce4f1217519bbaffb1309297"
         },
         "feasibility": {
           "path": "assets/report-templates/first-software/feasibility.docx",
-          "sha256": "627ec82d6970c26c8431ad914ed5f63f1a29473e0400a940ebf80ef093a25927"
+          "sha256": "ab317b20e08ee1b97f0b72e9d950c07d42b00d16734f850ba8d643e5cb9b5226"
         }
       }
     },
@@ -243,11 +243,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/enterprise-rd-center/preassessment.docx",
-          "sha256": "fc90112da9aaf6f2ef526df05559d0e3c460e4a1c1e958b6aab4452c3690df64"
+          "sha256": "89d034dd613ac454e47ded121b1becf7d7d4d267cdbe0b987479d02a59c95e2c"
         },
         "feasibility": {
           "path": "assets/report-templates/enterprise-rd-center/feasibility.docx",
-          "sha256": "170f3d7191f9dd7948bc84945fffb94abec70ba5cb87096fd0e8f0d7149bb12a"
+          "sha256": "b5b4f4d2dc706e2ddc65f97f679687e4baf87a0219897e4f96fefe8ef14801b9"
         }
       }
     },
@@ -262,11 +262,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/manufacturing-excellence/preassessment.docx",
-          "sha256": "e972308418df9183a977cb71d9d116ae717eaa104db494d7fff66cffd2b8d68f"
+          "sha256": "8ef46ea8916d8f4d7306a19058f354088530a4ddbbfc2b0cb2136495d23cc85a"
         },
         "feasibility": {
           "path": "assets/report-templates/manufacturing-excellence/feasibility.docx",
-          "sha256": "03cb2bf224c8284ce3962e2d449de923e33c624791d6fac3badaad9e8db50338"
+          "sha256": "48a1097292b32c5d0ba6394a9f59e4c5ae4af5f33b12e84de1917fca056cf571"
         }
       }
     },
@@ -282,11 +282,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/single-champion/preassessment.docx",
-          "sha256": "4c3f660bea673ae322268b2c1ac107f6f83193c8c630d17a4a37fd3da3e8d732"
+          "sha256": "15b2ee05ec325d5b691d9775577604d19499c623257e941b089d649ee49f6f36"
         },
         "feasibility": {
           "path": "assets/report-templates/single-champion/feasibility.docx",
-          "sha256": "fc00231ab7df5e0c6dbbc36bdfd6018f5c25d185fb80eba562932fed316209e7"
+          "sha256": "59170c4ee7b8003af040153b06ef28b58bede0f5fbd042c96f45f7e9499135b0"
         }
       }
     },
@@ -302,11 +302,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/green-factory/preassessment.docx",
-          "sha256": "2a956dca5ea6b14f45fdafb0baecd3c7a2d440e800fa72ae2ca3f882475c1011"
+          "sha256": "f81a12f92dca9974b611ae5a8308719f37e045f03fcf0339e7725ade0028a2bc"
         },
         "feasibility": {
           "path": "assets/report-templates/green-factory/feasibility.docx",
-          "sha256": "ae1415ba5eb4bc5aab9ef167c7d3e5c56db69c33b15ae1911babec465de900c3"
+          "sha256": "480c33da4baab53b558900b6b4e019afb8b6b3fa65af38f911cc47a7e9d1dedd"
         }
       }
     },
@@ -323,11 +323,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/digitalization/preassessment.docx",
-          "sha256": "ef1468029b9add75adc27b6c4dbe8354c38ca3e4e27d15108759194cf13cc8ee"
+          "sha256": "6e7c32e9647f9960f4ef0663e695ec3d9eec10ec67bfedcf423bdaf1b119a16a"
         },
         "feasibility": {
           "path": "assets/report-templates/digitalization/feasibility.docx",
-          "sha256": "bf9dc6141dfb0d8dbc9f31cc888533c08e7b8301e813222fcd7a8d9322ce6fd4"
+          "sha256": "1e5f869dffb83775ccbedc0ece57636ef0322b3b0d1f4d8428ff2e9864583bce"
         }
       }
     },
@@ -344,11 +344,11 @@
       "templates": {
         "preassessment": {
           "path": "assets/report-templates/science-plan/preassessment.docx",
-          "sha256": "65d24fa727751a8ec6850e97dcdee835e11719bd6b0c2406e4ea8e640ffc45b8"
+          "sha256": "cb475614773ebe375e84aaff2aaf811d25b89f9d180655ef1f7639bd958b8a78"
         },
         "feasibility": {
           "path": "assets/report-templates/science-plan/feasibility.docx",
-          "sha256": "b5f5943d17323f6de36db2e8649a74c96531ecd8bb633b7f8d447f8860824e5c"
+          "sha256": "e9b11418497df8747f862cd9dc6af8135376544529a7ba5690df328b62f7697d"
         }
       }
     }

@@ -18,14 +18,18 @@ DEFAULT_OUTPUT = (
 
 def parse_candidate(value: str) -> dict:
     name, separator, score = value.rpartition(":")
-    if not separator or not name:
-        raise argparse.ArgumentTypeError("候选格式应为 名称:分数")
+    if not separator:
+        if not value.strip():
+            raise argparse.ArgumentTypeError("请填写候选名称")
+        return {"name": value}
+    if not name.strip():
+        raise argparse.ArgumentTypeError("请填写候选名称")
     try:
         number = float(score)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("候选分数必须是数字") from exc
+        raise argparse.ArgumentTypeError("请输入有效数值") from exc
     if not 0 <= number <= 100:
-        raise argparse.ArgumentTypeError("候选分数必须在 0 至 100 之间")
+        raise argparse.ArgumentTypeError("请输入 0 至 100 的数值")
     return {"name": name, "score": number}
 
 
@@ -47,7 +51,8 @@ def main() -> None:
     parser.add_argument("--field", default="通用文本")
     parser.add_argument("--source-file")
     parser.add_argument("--source-sha256")
-    parser.add_argument("--candidate", action="append", type=parse_candidate, required=True)
+    parser.add_argument("--candidate", action="append", type=parse_candidate, required=True,
+                        help="候选名称，可用 名称:分数 登记已有评测值")
     parser.add_argument("--winner", required=True)
     parser.add_argument("--issue", action="append", default=[])
     parser.add_argument("--note", default="")

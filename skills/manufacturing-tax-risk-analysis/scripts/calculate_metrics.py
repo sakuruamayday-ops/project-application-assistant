@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 from pathlib import Path
 
 
@@ -24,6 +25,53 @@ PERCENTAGE_METRICS = {
     "research_to_revenue", "cash_tax_payment_rate", "sales_cash_to_revenue",
     "ocf_to_profit",
 }
+
+BALANCE_TOLERANCE = Decimal("0.005")
+
+
+def normalize_amount(value, field):
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    try:
+        amount = Decimal(str(value))
+    except InvalidOperation:
+        amount = None
+    if amount is None or not amount.is_finite():
+        raise ValueError(f"invalid amount for {field}: {value!r}")
+    return amount
+
+
+def normalize_facts(data, year=None):
+    missing = sorted(REQUIRED - data.keys())
+    if missing:
+        raise ValueError(f"missing fields: {', '.join(missing)}")
+    facts = dict(data)
+    for field in sorted(REQUIRED):
+        field_path = field if year is None else f"{year}.{field}"
+        facts[field] = normalize_amount(data[field], field_path)
+    return facts
+
+
+def dump_financial_json(value, indent=0):
+    """Write Decimal values as JSON numbers without losing decimal places."""
+    if isinstance(value, Decimal):
+        if not value.is_finite():
+            raise ValueError(f"invalid JSON number: {value!r}")
+        return str(value)
+    if isinstance(value, dict) and value:
+        opening, closing = "{", "}"
+        items = (
+            f"{json.dumps(key, ensure_ascii=False)}: {dump_financial_json(item, indent + 2)}"
+            for key, item in value.items()
+        )
+    elif isinstance(value, list) and value:
+        opening, closing = "[", "]"
+        items = (dump_financial_json(item, indent + 2) for item in value)
+    else:
+        return json.dumps(value, ensure_ascii=False, allow_nan=False)
+    padding = " " * (indent + 2)
+    content = ",\n".join(padding + item for item in items)
+    return f"{opening}\n{content}\n{' ' * indent}{closing}"
 
 
 def div(numerator, denominator):
@@ -55,9 +103,15 @@ def turnover_days(average_balance, denominator):
 
 
 def calc(data):
-    missing = sorted(REQUIRED - data.keys())
-    if missing:
-        raise ValueError(f"missing fields: {', '.join(missing)}")
+    """Return ordinary Python numbers for direct callers."""
+    metrics = calculate(normalize_facts(data))
+    for name, value in metrics.items():
+        if value is not None:
+            metrics[name] = int(value) if value == value.to_integral_value() else float(value)
+    return metrics
+
+
+def calculate(data):
     average_assets = average(data["assets"], data["assets_open"])
     average_equity = average(data["equity"], data["equity_open"])
     average_receivables = average(data["receivables"], data["receivables_open"])
@@ -65,6 +119,9 @@ def calc(data):
     gross_profit = subtract(data["revenue"], data["cost"])
     quick_assets = subtract(data["current_assets"], data["inventory"])
     earnings_before_interest = add(data["profit_before_tax"], data["interest_expense"])
+    research_ratio = div(data["research_expense"], data["revenue"])
+    if research_ratio is not None and not 0 <= research_ratio <= 1:
+        raise ValueError(f"研发费率为 {research_ratio:.2%}，超出 0% 到 100%，核对研发费用和营业收入")
     return {
         "gross_margin": div(gross_profit, data["revenue"]),
         "net_margin": div(data["net_profit"], data["revenue"]),
@@ -80,7 +137,7 @@ def calc(data):
         "other_ar_to_assets": div(data["other_receivables"], data["assets"]),
         "other_ar_to_revenue": div(data["other_receivables"], data["revenue"]),
         "advance_to_revenue": div(data["advances_from_customers"], data["revenue"]),
-        "research_to_revenue": div(data["research_expense"], data["revenue"]),
+        "research_to_revenue": research_ratio,
         "cash_tax_payment_rate": div(data["taxes_paid"], data["revenue"]),
         "sales_cash_to_revenue": div(data["sales_cash"], data["revenue"]),
         "ocf_to_profit": div(data["operating_cash_flow"], data["net_profit"]),
@@ -131,9 +188,15 @@ def format_ratio(value):
 def format_amount(value, unit):
     if value is None:
         return "无法计算"
+    if value == 0:
+        return "0.00"
     if unit == "yuan" and abs(value) >= 10000:
         return f"{value:,.2f}元（{value / 10000:,.2f}万元）"
-    return f"{value:,.2f}{unit}"
+    with localcontext() as context:
+        context.rounding = ROUND_HALF_UP
+        amount = f"{value:,.2f}"
+    unit_label = {"yuan": "元", "cny": "元", "wanyuan": "万元"}.get(unit, unit)
+    return f"{amount}{unit_label}"
 
 
 def unavailable_reason(metric, facts):
@@ -144,8 +207,12 @@ def unavailable_reason(metric, facts):
             ("inventory_open", "期初存货"),
         ),
     }
-    missing = [label for field, label in requirements.get(metric, ()) if facts.get(field) in (None, 0)]
-    return f"缺少{'、'.join(missing)}，无法计算" if missing else "输入不足，无法计算"
+    missing = [label for field, label in requirements.get(metric, ()) if facts.get(field) in (None, "")]
+    if missing:
+        return f"缺少{'、'.join(missing)}，无法计算"
+    if metric == "inventory_days" and facts.get("cost") == 0:
+        return "营业成本为 0，无法计算"
+    return "输入不足，无法计算"
 
 
 def build_display_values(financial_facts):
@@ -220,20 +287,26 @@ def build_metrics_summary(financial_facts):
             previous_year = str(int(year) - 1)
             previous_period = periods.get(previous_year)
             previous = previous_period["facts"] if previous_period is not None else {}
-            indicators["revenue_growth"]["values"][year] = div(
-                subtract(facts.get("revenue"), previous.get("revenue")),
-                previous.get("revenue"),
-            )
-            indicators["receivables_growth"]["values"][year] = div(
-                subtract(facts.get("receivables"), previous.get("receivables")),
-                previous.get("receivables"),
-            )
-            if previous_period is None:
-                for key in ("revenue_growth", "receivables_growth"):
+            for key, field in (("revenue_growth", "revenue"), ("receivables_growth", "receivables")):
+                indicator = indicators[key]
+                current_value = facts.get(field)
+                previous_value = previous.get(field)
+                indicator["values"][year] = div(subtract(current_value, previous_value), previous_value)
+                if previous_period is None:
+                    reason = f"缺少{previous_year}年度数据，无法计算同比增长率"
+                elif current_value is None:
+                    reason = "本年值缺失"
+                elif previous_value is None:
+                    reason = "上年基数缺失"
+                elif previous_value == 0:
+                    reason = "上年基数为 0，同比不成立"
+                else:
+                    reason = None
+                if reason is not None:
                     unavailable.append({
-                        "indicator": indicators[key]["label"],
+                        "indicator": indicator["label"],
                         "year": year,
-                        "reason": f"缺少{previous_year}年度数据，无法计算同比增长率",
+                        "reason": reason,
                     })
         if metrics.get("inventory_days") is None:
             unavailable.append(
@@ -275,7 +348,7 @@ def build_metrics_summary(financial_facts):
         )
     for year in recent_growth_years:
         gap = indicators["balance_equation_gap"]["values"].get(year)
-        if gap not in (None, 0):
+        if gap is not None and abs(gap) >= BALANCE_TOLERANCE:
             report_rows.append(
                 {
                     "indicator": f"{year}年资产负债表恒等式差额",
@@ -327,9 +400,7 @@ def build_validation_values(financial_facts, metrics_summary):
             values.append(text)
 
     def add_amount(value):
-        if value is None or isinstance(value, bool):
-            return
-        numeric = float(value)
+        numeric = Decimal(value)
         unit = str(financial_facts["basis"].get("unit") or "").lower()
         add(value)
         add(f"{numeric:,.2f}")
@@ -343,10 +414,10 @@ def build_validation_values(financial_facts, metrics_summary):
     for year, period in financial_facts["periods"].items():
         add(year)
         for value in period["facts"].values():
-            if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if isinstance(value, (int, Decimal)) and not isinstance(value, bool):
                 add_amount(value)
         for name, value in period["metrics"].items():
-            if not isinstance(value, (int, float)) or isinstance(value, bool):
+            if value is None:
                 continue
             add(value)
             add(f"{value:.2f}")
@@ -363,7 +434,7 @@ def build_validation_values(financial_facts, metrics_summary):
     if metrics_summary is not None:
         for name, indicator in metrics_summary["indicators"].items():
             for value in indicator["values"].values():
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if value is not None:
                     add(value)
                     add(f"{value:.2f}")
                     if name in {"revenue_growth", "receivables_growth", "research_to_revenue"}:
@@ -387,7 +458,7 @@ def main():
         help="optional manufacturing-tax-risk-metrics/v1 companion output",
     )
     args = parser.parse_args()
-    source = json.loads(args.input.read_text(encoding="utf-8"))
+    source = json.loads(args.input.read_text(encoding="utf-8"), parse_float=Decimal)
     years = source.get("years")
     if not isinstance(years, dict) or not years:
         raise ValueError("input must contain a non-empty years object")
@@ -408,30 +479,30 @@ def main():
     }
     evidence = source.get("evidence") if isinstance(source.get("evidence"), dict) else {}
     for year in sorted(years):
-        facts = years[year]
+        facts = normalize_facts(years[year], year)
         result["periods"][year] = {
             "facts": facts,
-            "metrics": calc(facts),
+            "metrics": calculate(facts),
             "evidence": evidence.get(year, {}),
             "quality": quality_for(source, year, facts),
         }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    metrics_output = None
-    if args.metrics_output:
-        metrics_output = build_metrics_summary(result)
-        args.metrics_output.parent.mkdir(parents=True, exist_ok=True)
-        args.metrics_output.write_text(
-            json.dumps(metrics_output, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    print(json.dumps({
+    metrics_output = build_metrics_summary(result) if args.metrics_output else None
+    receipt = json.dumps({
         "schema_version": "manufacturing-tax-risk-calculation-operation/v1",
         "financial_facts": str(args.output),
         "metrics": str(args.metrics_output) if args.metrics_output else None,
         # 这些值来自同一确定性计算过程，供客户端宿主直接绑定；模型不再逐页抄录数字。
         "validation_values": build_validation_values(result, metrics_output),
-    }, ensure_ascii=False))
+    }, ensure_ascii=False)
+    facts_json = dump_financial_json(result)
+    metrics_json = dump_financial_json(metrics_output) if metrics_output is not None else None
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(facts_json, encoding="utf-8")
+    if metrics_json is not None:
+        args.metrics_output.parent.mkdir(parents=True, exist_ok=True)
+        args.metrics_output.write_text(metrics_json, encoding="utf-8")
+    print(receipt)
 
 
 if __name__ == "__main__":

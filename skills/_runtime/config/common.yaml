@@ -1,0 +1,7 @@
+evolution:
+  correction_batch:
+    min_signal_count: 3
+    min_distinct_tasks: 2
+    max_batch_skills: 2
+    cooldown_days: 7
+    require_verified: true

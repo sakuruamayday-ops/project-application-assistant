@@ -7,6 +7,8 @@ import argparse
 import json
 import re
 import runpy
+from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 
 from docx import Document
@@ -16,6 +18,8 @@ from docx.oxml import OxmlElement
 from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.shared import Cm, Pt, RGBColor
 from markdown_it import MarkdownIt
+
+from grounded_evidence import docx_metadata_errors
 
 
 SCHEMA_VERSION = "gongchuang-docx-generation-operation/v1"
@@ -274,11 +278,7 @@ def add_html_body(document: Document, content: str) -> None:
             return
         tag = node.tag.lower()
         classes = set(node.get("class", "").split())
-        if "gongchuang-document-header" in classes:
-            page_furniture(text(node), "header")
-            return
-        if "gongchuang-cover-signature" in classes:
-            page_furniture(text(node), "cover-signature")
+        if classes & {"gongchuang-document-header", "gongchuang-cover-signature"}:
             return
         if tag == "footer" and "page-footer" in classes:
             page_furniture(text(node), "footer")
@@ -322,8 +322,14 @@ def build_document(content: str, output: Path, *, html_input: bool = False) -> d
 
     document = Document()
     configure_document(document)
-    document.core_properties.author = "共创研究院"
-    document.core_properties.subject = "共创专业交付"
+    properties = document.core_properties
+    properties.author = "文档编制组"
+    properties.last_modified_by = properties.author
+    properties.subject = ""
+    properties.comments = ""
+    timestamp = datetime.now(timezone.utc).replace(microsecond=0)
+    properties.created = timestamp
+    properties.modified = timestamp
 
     if html_input:
         add_html_body(document, content)
@@ -349,14 +355,19 @@ def build_document(content: str, output: Path, *, html_input: bool = False) -> d
         index += 1
 
     font_helper = Path(__file__).resolve().parents[2] / "project-feasibility/scripts/fill_report_template.py"
-    runpy.run_path(str(font_helper))["_apply_portable_cjk_font"](document)
-    document.save(output)
-    # 保存后立即用同一原生解析器重开，避免返回一个损坏或空壳 OOXML 文件。
-    reopened = Document(output)
+    runpy.run_path(str(font_helper))["_apply_report_fonts"](document)
+    generated = BytesIO()
+    document.save(generated)
+    reopened = Document(generated)
+    metadata_errors = docx_metadata_errors(reopened.core_properties._element)
+    if metadata_errors:
+        raise ValueError("DOCX 元数据自检失败：" + "；".join(metadata_errors))
     paragraph_count = len(reopened.paragraphs)
     table_count = len(reopened.tables)
     if paragraph_count == 0 and table_count == 0:
         raise ValueError("生成的 DOCX 不包含可解析正文或表格")
+    with output.open("xb") as stream:
+        stream.write(generated.getbuffer())
     return {
         "schema_version": SCHEMA_VERSION,
         "status": "passed",

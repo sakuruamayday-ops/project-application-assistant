@@ -1,36 +1,326 @@
 {
   "schema_version": "workbuddy-bundles/v1",
-  "version": "2.0.0-pilot",
+  "version": "2.0.0",
   "bundles": [
     {
-      "skillId": "skill_gongchuang_free_01",
+      "skillId": "skill_gongchuang_01",
+      "skillName": "application-version-diff",
+      "displayName": "申报材料版本对比",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/application-version-diff",
+      "descriptionZh": "对照同一项目的两版申报材料，标出改了哪里、哪些数字和依据变了。",
+      "descriptionEn": "Compare two versions of an application and show what changed in the text, figures, and supporting evidence.",
+      "examplesZh": [
+        "旧稿和改好的那版都发你了，帮我看看这次到底改了哪些地方。",
+        "帮我对一下两版里的营收和研发费，看看改过的数有没有换成对应的附件。",
+        "老板让我交最终版，你帮我看看这版跟上周那份比，有没有把关键的专利或政策依据删掉。"
+      ],
+      "examplesEn": [
+        "I've sent you the old and revised drafts. Can you show me what actually changed?",
+        "Compare the revenue and R&D spending in both versions and see whether the supporting attachments were updated for the changed figures.",
+        "My boss wants the final version. Compared with last week's draft, did we drop any key patents or policy references?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_04",
+      "skillName": "consistency-check",
+      "displayName": "申报材料交叉核对",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/consistency-check",
+      "descriptionZh": "把一套申报材料里的数字、名称和说法互相核对，指出对不上的地方。",
+      "descriptionEn": "Cross-check the figures, names, and statements across an application and flag inconsistencies.",
+      "examplesZh": [
+        "申请书前面写三条产线，后面变成了四条，帮我看看还有没有这种对不上的地方。",
+        "公司改过名，帮我把申请书和附件过一遍，看看哪里还写着旧名字。",
+        "申报书里的研发起止时间，和后面附的立项书、验收报告对得上吗？"
+      ],
+      "examplesEn": [
+        "The application says three production lines up front and four later. Can you find any other inconsistencies like that?",
+        "We changed our company name. Can you check the application and attachments for places that still use the old one?",
+        "Do the R&D dates in the application match the project approvals and acceptance reports attached at the back?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_07",
+      "skillName": "enterprise-profile",
+      "displayName": "企业申报资料盘点",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/enterprise-profile",
+      "descriptionZh": "把企业的产品、研发、资质和知识产权资料整理成能用于申报的底稿。",
+      "descriptionEn": "Organize a company's product, R&D, qualification, and IP records into a fact sheet for applications.",
+      "examplesZh": [
+        "客户把营业执照、产品册和一堆证书都发来了，先帮我整理一份申报用的企业资料清单。",
+        "这些文件里分得清公司做哪些产品、现在有效的资质有哪些吗？帮我汇在一张表上。",
+        "第一次给这家工厂做申报，现有资料我都放这儿了，帮我看看还得找企业要哪些基本材料。"
+      ],
+      "examplesEn": [
+        "The client sent a business license, product brochures, and a stack of certificates. Can you organize them into a checklist for applications?",
+        "Can you tell from these files what the company makes and which credentials are still valid? Put it all in one table for me.",
+        "This is our first application for this factory. All the records we have are here. What basic documents do we still need to ask for?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_08",
+      "skillName": "evidence-ledger",
+      "displayName": "申报依据对照表",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/evidence-ledger",
+      "descriptionZh": "把申报材料里的数字和关键说法逐项对到原件、页码和计算过程。",
+      "descriptionEn": "Link the figures and key claims in an application to their source documents, page numbers, and calculations.",
+      "examplesZh": [
+        "报告里写了市场占有率 18%，帮我把这个数的出处和算法找出来，评审问起来能翻到原件。",
+        "材料说我们给三家头部客户供货，帮我看看各自能拿哪份合同或发票来证明。",
+        "这份申报书里数字太多了，能不能做张表，让我一眼看出每个数字出自哪个文件的哪页？"
+      ],
+      "examplesEn": [
+        "The report says our market share is 18%. Find the source and calculation so I can pull up the original if reviewers ask.",
+        "The application says we supply three major customers. Which contract or invoice can we use to back up each relationship?",
+        "There are so many figures in this application. Can you make a table that shows the file and page each figure came from?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_09",
+      "skillName": "financial-verification",
+      "displayName": "申报财务数据核对",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/financial-verification",
+      "descriptionZh": "根据财务原件复算营收、研发费和增长率等指标，核对报表和申报表里的数字。",
+      "descriptionEn": "Recalculate revenue, R&D costs, growth rates, and other figures from financial records and check them against the application.",
+      "examplesZh": [
+        "审计报告和申报表上的营收差了一截，帮我找找申报表上的数是从哪儿来的。",
+        "这三年的研发费用和销售收入都在附件里，帮我重算一遍研发费占比。",
+        "我填的营收增长率是 12%，麻烦按财务表验一遍，顺便把怎么算的留给我。"
+      ],
+      "examplesEn": [
+        "Revenue in the audit report is quite different from the application. Can you trace where the application figure came from?",
+        "The attachments have three years of R&D costs and sales revenue. Can you recalculate the R&D spending ratio?",
+        "I entered revenue growth of 12%. Please check it against the financial statements and show me how you calculated it."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_10",
+      "skillName": "gongchuang-humanizer-zh",
+      "displayName": "中文稿件润色",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/gongchuang-humanizer-zh",
+      "descriptionZh": "把读起来生硬或像套话的中文改得顺口，保留事实、术语和引用。",
+      "descriptionEn": "Make stiff or formulaic Chinese writing sound natural while preserving facts, terminology, and citations.",
+      "examplesZh": [
+        "这公司简介开头就说赋能、引领，读起来太空了，帮我改成我们平时介绍业务的说法。",
+        "我把公众号初稿发你，帮我把句子写顺一点，里面的数字和引文照原样留着。",
+        "这段申报材料写得太像模板了，帮我改得自然些，改完我想直接贴回申请书。"
+      ],
+      "examplesEn": [
+        "This profile opens with talk of empowering and leading. It feels empty. Can you rewrite it the way we actually introduce our business?",
+        "I'll send you the first draft for our WeChat account. Smooth out the writing and leave the numbers and quotes as they are.",
+        "This application paragraph sounds like a template. Make it read more naturally so I can paste it back into the form."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_14",
       "skillName": "high-tech-enterprise-preassessment",
       "displayName": "高新技术企业申报体检",
       "tier": "free-checkup",
       "sourceSkill": "skills/high-tech-enterprise-preassessment",
-      "descriptionZh": "免费版高企申报资格与材料体检：依据国科发火〔2016〕32号与195号逐项核验八大硬门槛、双年度成长性与四列缺口清单，严认原件不估分。",
-      "descriptionEn": "Free High-Tech Enterprise eligibility and material checkup against national guidelines with deterministic growth checks and four-column remediation gaps.",
+      "descriptionZh": "免费版高企申报体检：依据国科发火〔2016〕32号与195号逐项核验八大硬门槛、双年度成长性与四列缺口清单，严认原件不估分。",
+      "descriptionEn": "Use R&D, IP, and financial records to assess high-tech enterprise eligibility and compare application years.",
       "examplesZh": [
-        "我们今年能报高企吗，帮我按原件核对一下八大硬门槛还缺什么。",
-        "今年报还是明年报更稳？财务报表和专利清单都发你了，做个双年度高企体检。",
-        "帮我核一下我们近三年研发费用占比和成长性，列一份四列补强清单。"
+        "我们今年能报高企吗，帮我看看条件够不够。",
+        "今年报还是明年报更稳？我们只有两件软著，还有一件专利今年没下来。",
+        "财务表和专利清单我发你，帮我核对一下高企硬门槛和双年度缺口，列一份四列补强清单。"
       ],
       "examplesEn": [
-        "Check whether our company meets the eight hard criteria for High-Tech Enterprise recognition.",
-        "Compare this year vs next year eligibility windows using our financial statements and IP list.",
-        "Recalculate our three-year R&D ratio and growth rates and list four-column remediation gaps."
+        "Can we apply for high-tech enterprise status this year? Please check if we meet the requirements.",
+        "Is it safer to apply this year or next? We only have two software copyrights and one patent still hasn't been granted this year.",
+        "I'll send you the financial statements and patent list. Check our High-Tech eligibility gates and list four-column remediation gaps."
       ],
       "excludeGlobs": [
-        "assets/*.xlsx",
-        "assets/*.docx",
-        "references/policies/*.doc",
         "references/portable-runtime-protocol.md",
         "scripts/portable_skill_runtime.py",
         "scripts/verify_skill_installation.py",
         "release-manifest*",
         "release-signature*",
         "publisher-ed25519.pub",
-        "tests/**"
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
       ],
       "vendorFiles": [
         {
@@ -43,54 +333,462 @@
         },
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
-          "to": "references/mcp-routing-and-tiering.md"
-        },
-        {
-          "from": "skills/_runtime/report-writing.md",
-          "to": "references/report-writing.md"
-        },
-        {
-          "from": "skills/_runtime/policy-jurisdiction-clarification.md",
-          "to": "references/policy-jurisdiction-clarification.md"
-        },
-        {
-          "from": "skills/_runtime/policy-online-lookup.md",
-          "to": "references/policy-online-lookup.md"
+          "to": "references/_shared/mcp-routing-and-tiering.md"
         }
       ],
-      "linkRewrites": {
-        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
-        "../_runtime/report-writing.md": "references/report-writing.md",
-        "../../_runtime/report-writing.md": "report-writing.md",
-        "../../_runtime/policy-jurisdiction-clarification.md": "policy-jurisdiction-clarification.md",
-        "../../_runtime/policy-online-lookup.md": "policy-online-lookup.md",
-        "../financial-verification/SKILL.md": "references/mcp-routing-and-tiering.md",
-        "[高企预评估双年度采集表.xlsx](assets/高企预评估双年度采集表.xlsx)": "《高企预评估双年度采集表》（收费 MCP 端提供）",
-        "国科发火〔2016〕32号-高新技术企业认定管理办法-2016-国家重点支持的高新技术领域.doc": "国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
-      }
+      "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_free_02",
+      "skillId": "skill_gongchuang_16",
+      "skillName": "industry-chain-foundation-matcher",
+      "displayName": "产业链归属查询",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/industry-chain-foundation-matcher",
+      "descriptionZh": "按给定目录查产品落在哪条产业链、哪个环节或哪类产业基础。",
+      "descriptionEn": "Use the supplied catalogs to find the industry chain, link, or industrial foundation category a product belongs to.",
+      "examplesZh": [
+        "按我发的产业链目录找一下，我们做伺服电机的归在哪一条、哪一环？",
+        "这款工业相机在《产业基础创新发展目录》里有对应条目吗？该往“工业六基”哪一类找？",
+        "我们的齿轮箱是给农机用的，目录里该看农机那一条，还是看基础零部件？"
+      ],
+      "examplesEn": [
+        "Can you use the industry chain catalog I sent to find the right chain and link for our servo motors?",
+        "Is there an entry for this industrial camera in the Catalog for Industrial Foundation Innovation and Development? Which of the six industrial foundation categories should I check?",
+        "Our gearboxes go into farm machinery. In the catalog, should we look under farm machinery or basic components?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_19",
+      "skillName": "ip-assessment",
+      "displayName": "知识产权清单核对",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/ip-assessment",
+      "descriptionZh": "核对专利、商标和软著的权利人、状态及产品归属，挑出能用于申报的证据。",
+      "descriptionEn": "Check ownership, status, and product links for patents, trademarks, and software copyrights, and identify usable application evidence.",
+      "examplesZh": [
+        "这几件专利有两件是后来转过来的，帮我查查权利人现在是不是我们公司。",
+        "有件专利可能忘了交年费，我把编号发你，帮我看看现在还有效吗？",
+        "专利、商标和软著清单我发你，能用来报项目的帮我挑出来，顺手标下各对应哪个产品。"
+      ],
+      "examplesEn": [
+        "Two of these patents were transferred to us later. Can you check whether our company is now listed as the owner?",
+        "We may have missed a patent renewal fee. I'll send the number. Can you check if it's still in force?",
+        "I'll send our patent, trademark, and software copyright list. Pick the ones we can use in applications and mark which products they relate to."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_24",
+      "skillName": "policy-retrieval",
+      "displayName": "申报政策与附件查询",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/policy-retrieval",
+      "descriptionZh": "找齐项目适用的管理办法、工作指引和原版附件，查清该按哪版条件和表格办。",
+      "descriptionEn": "Find the program rules, guidance, and original attachments and identify which requirements and forms apply.",
+      "examplesZh": [
+        "今年浙江专精特新看哪个管理办法？把现行文件和原版评分表一起发我。",
+        "我们下载了两份高企申报附件，版号不一样，这次该填哪份？",
+        "听说研发费的算法调了，麻烦帮我找找正式文件里这条到底怎么写。"
+      ],
+      "examplesEn": [
+        "Which rules apply to Zhejiang's specialized SME program this year? Send me the current rules and original scoring sheet.",
+        "We downloaded two high-tech application attachments with different version numbers. Which one should we fill in this time?",
+        "I heard the R&D cost calculation changed. Can you find exactly what the official document says?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_25",
+      "skillName": "project-application-assistant",
+      "displayName": "申报任务规划与分派",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/project-application-assistant",
+      "descriptionZh": "把查政策、收材料、撰写和复核排成申报计划，方便团队按分工推进。",
+      "descriptionEn": "Turn policy research, document collection, drafting, and review into a plan the application team can follow.",
+      "examplesZh": [
+        "下周五要交专精特新申请，财务、研发和行政各自先做什么？",
+        "老板让我们同时报高企和省级研发中心，帮我排个时间表，哪些材料能共用也一起标出来。",
+        "客户资料才收了一半，帮我排一下从补资料到交表的顺序，最后谁负责检查也写上。"
+      ],
+      "examplesEn": [
+        "Our specialized SME application is due next Friday. What should finance, R&D, and admin each do first?",
+        "My boss wants us to apply for high-tech status and a provincial R&D center at the same time. Build a schedule and mark the documents we can reuse.",
+        "We've collected only half the client's documents. Put the remaining steps through submission in order and show who should do the final check."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_27",
+      "skillName": "project-matching",
+      "displayName": "企业申报项目筛选",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/project-matching",
+      "descriptionZh": "按企业所在地区、产品、研发和投资计划筛选可报项目，排出先后顺序。",
+      "descriptionEn": "Find suitable government programs based on a company's location, products, R&D, and investment plans, then rank them.",
+      "examplesZh": [
+        "我们在余杭做精密零件，今年有两条产线要改，有哪些项目可以报？",
+        "高企刚过，手里还有几件授权专利，接下来有什么项目值得提前准备？",
+        "人手只够做两个申报，按我们今年的研发投入和投资计划，帮我挑一下先做哪两个。"
+      ],
+      "examplesEn": [
+        "We make precision parts in Yuhang and are upgrading two production lines this year. Which programs could we apply for?",
+        "We just got high-tech enterprise status and have a few granted patents. What programs are worth preparing for next?",
+        "We only have enough staff for two applications. Based on this year's R&D spending and investment plans, which two should we do first?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_28",
+      "skillName": "project-memory",
+      "displayName": "企业项目进度交接",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/project-memory",
+      "descriptionZh": "汇总客户项目的进度、已确认决定和缺件，方便下次继续或交给同事。",
+      "descriptionEn": "Summarize a client's project status, decisions, and outstanding documents so you or a colleague can pick it up later.",
+      "examplesZh": [
+        "小李下周接手这家客户，把现在报到哪一步、谁手里还有什么资料整理给她。",
+        "接着上次那个技改项目，上回客户确认了哪版投资清单，还有哪几张发票没收？",
+        "这是刚开的客户会纪要，帮我把定下来的事和下次该找谁补资料更新到交接稿里。"
+      ],
+      "examplesEn": [
+        "Li is taking over this client next week. Can you put together a handoff showing where the application stands and who has which documents?",
+        "Let's pick up the equipment upgrade project. Which investment list did the client approve last time, and which invoices are still missing?",
+        "Here are the latest client meeting notes. Update the handoff with what we decided and who to chase for the remaining documents."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_30",
       "skillName": "sme-score-preassessment",
       "displayName": "专精特新申报体检",
       "tier": "free-checkup",
       "sourceSkill": "skills/sme-score-preassessment",
-      "descriptionZh": "免费版专精特新与小巨人申报体检：依据工信部企业〔2026〕2号核验硬门槛、研发强度、主营占比、资产负债率与申请书基础矛盾，输出四列补强清单，严认原件不估分。",
-      "descriptionEn": "Free Specialized SME and Little Giant eligibility checkup under MIIT 2026 rules with deterministic financial checks and four-column remediation gaps.",
+      "descriptionZh": "免费版专精特新与小巨人申报体检：依据工信部企业〔2026〕2号核验硬门槛、研发强度、主营占比、资产负债率与申请书基础矛盾，输出四列缺口清单，严认原件不估分。",
+      "descriptionEn": "Check eligibility and estimate the score for specialized SME or Little Giant recognition, then prioritize the gaps to address.",
       "examplesZh": [
-        "我们想报浙江专精特新，把近两年财报和专利清单发你了，先做个免费体检看看能不能报。",
-        "准备冲国家级小巨人，目前只有两件发明专利，帮我逐项查一下还差哪些硬门槛。",
-        "帮我核一下主营占比、研发强度和资产负债率，列一份带优先级的四列补强清单。"
+        "我们想报浙江专精特新，去年营收不高，先帮我看看能不能报。",
+        "我们准备冲小巨人，目前只有两件发明专利，哪些条件要先补？",
+        "按我发的财务、研发和专利数据，帮我核一下专精特新硬门槛差距和平台评价待补事项。"
       ],
       "examplesEn": [
-        "Run a Specialized SME eligibility checkup using our latest financial statements and IP list.",
-        "Check our Little Giant hard-gate gaps when we currently hold two granted invention patents.",
-        "Verify our core revenue ratio, R&D intensity, and debt ratio with a prioritized gap table."
+        "We want to apply for specialized SME recognition in Zhejiang. Last year's revenue was low. Can you check if we qualify?",
+        "We're aiming for Little Giant recognition and only have two invention patents. Which requirements should we work on first?",
+        "Check our Specialized SME hard-gate gaps and platform evaluation evidence using our financial, R&D, and patent data."
       ],
       "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
         "assets/*.docx",
         "assets/*.xlsx",
+        "assets/*.doc",
         "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_20",
+      "skillName": "local-knowledge-retrieval",
+      "displayName": "申报案例与名单查询",
+      "tier": "free-data-mcp",
+      "sourceSkill": "skills/local-knowledge-retrieval",
+      "descriptionZh": "找申报案例、往期公示名单和填报模板，核对它们的出处和批次。",
+      "descriptionEn": "Find application examples, past public lists, and templates, and verify their sources and rounds.",
+      "examplesZh": [
+        "帮我找一下杭州上一批高企认定的名单，顺便查我们公司有没有上榜。",
+        "去年省级企业研究院公布的名单在哪儿？帮我把原文件和附件都找出来。",
+        "手头有上一批技改项目的公示案例吗？我想看看别人报的是哪条产线。"
+      ],
+      "examplesEn": [
+        "Find the list from the last high-tech enterprise recognition round in Hangzhou and check whether our company made it.",
+        "Where's last year's published list of provincial enterprise research institutes? Can you find the original notice and attachment?",
+        "Do we have any published examples from the last technical upgrade round? I'd like to see what production lines other companies applied with."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_23",
+      "skillName": "peer-benchmarking",
+      "displayName": "申报同行对比",
+      "tier": "free-data-mcp",
+      "sourceSkill": "skills/peer-benchmarking",
+      "descriptionZh": "从官方公示和企业公开资料里找同产品、同项目的获评同行，方便对标。",
+      "descriptionEn": "Find comparable companies recognized under the same program using official lists and public company information.",
+      "examplesZh": [
+        "去官方公示里找几家跟我们一样做工业视觉检测、已经认定小巨人的公司。",
+        "我们做农机传动件，浙江有没有同类企业过了专精特新？帮我核下它们具体做什么产品。",
+        "从这批公示里挑三家跟我们产品接近的，看看它们公开写了哪些技术和专利。"
+      ],
+      "examplesEn": [
+        "Find a few officially recognized Little Giant companies that make industrial visual inspection systems like ours.",
+        "We make farm machinery transmission parts. Have similar companies in Zhejiang received specialized SME recognition? Check which products they actually make.",
+        "Pick three companies from this published list with products close to ours and see what technology and patents they publicly describe."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_02",
+      "skillName": "application-writing",
+      "displayName": "政府申报材料撰写",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/application-writing",
+      "descriptionZh": "用企业已有资料写申报书里的企业简介、主导产品和核心技术等段落。",
+      "descriptionEn": "Draft application sections on the company, its main products, and its core technology from existing business records.",
+      "examplesZh": [
+        "这份公司介绍是给客户看的，帮我改成申报书里能用的企业简介。",
+        "产品手册和检测报告都在这儿，帮我写一段主导产品介绍，把它用在哪、好在哪里说清楚。",
+        "这套设备把换线时间从半小时缩到了十分钟，技术说明和试用记录都发你了，帮我写一段申报书里的核心技术和实际效果。"
+      ],
+      "examplesEn": [
+        "This company profile was written for customers. Can you turn it into an introduction for the application?",
+        "Here's the product manual and test report. Write a main product description that explains what it's used for and what it does well.",
+        "This equipment cut changeover time from half an hour to ten minutes. I sent the specs and trial records. Can you write a paragraph on the core technology and results for the application?"
+      ],
+      "excludeGlobs": [
         "references/portable-runtime-protocol.md",
         "scripts/portable_skill_runtime.py",
         "scripts/verify_skill_installation.py",
@@ -110,53 +808,247 @@
         },
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
-          "to": "references/mcp-routing-and-tiering.md"
+          "to": "references/_shared/mcp-routing-and-tiering.md"
         },
         {
-          "from": "skills/_runtime/report-writing.md",
-          "to": "references/report-writing.md"
-        },
-        {
-          "from": "skills/_runtime/policy-application-path-contract.md",
-          "to": "references/policy-application-path-contract.md"
-        },
-        {
-          "from": "skills/_runtime/policy-jurisdiction-clarification.md",
-          "to": "references/policy-jurisdiction-clarification.md"
-        },
-        {
-          "from": "skills/_runtime/policy-online-lookup.md",
-          "to": "references/policy-online-lookup.md"
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/_shared/v12-drafting-core.md"
         }
       ],
-      "linkRewrites": {
-        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
-        "../_runtime/report-writing.md": "references/report-writing.md",
-        "../../_runtime/report-writing.md": "report-writing.md",
-        "../../_runtime/policy-application-path-contract.md": "policy-application-path-contract.md",
-        "../../_runtime/policy-jurisdiction-clarification.md": "policy-jurisdiction-clarification.md",
-        "../../_runtime/policy-online-lookup.md": "policy-online-lookup.md",
-        "../financial-verification/SKILL.md": "references/mcp-routing-and-tiering.md",
-        "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md"
-      }
+      "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_paid_01",
+      "skillId": "skill_gongchuang_03",
+      "skillName": "checking-patdocx-cn-single-agent",
+      "displayName": "专利申请书核稿",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/checking-patdocx-cn-single-agent",
+      "descriptionZh": "核对中国专利申请 Word 稿里的权利要求、说明书和附图，给出能定位到原文的修改意见。",
+      "descriptionEn": "Review a Chinese patent application in Word and give actionable comments on the claims, specification, and drawings.",
+      "examplesZh": [
+        "这份发明专利稿明天要发给代理人，帮我看看权利要求有没有哪句在说明书里找不到支撑。",
+        "图纸上这个零件标的是 12，正文有几处写成 21，帮我找全了标在 Word 里。",
+        "我把专利申请的 Word 稿发你，摘要和图上的术语帮我对一遍，有问题直接加批注。"
+      ],
+      "examplesEn": [
+        "I'm sending this invention application to our patent agent tomorrow. Can you flag any claims that the specification doesn't support?",
+        "This part is labeled 12 in the drawing, but some places in the text say 21. Find them all and mark them in Word.",
+        "I'll send you the patent application in Word. Please check that the abstract and drawings use the same terms and add comments where needed."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_05",
+      "skillName": "digitalization-projects",
+      "displayName": "工厂数字化评估",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/digitalization-projects",
+      "descriptionZh": "从设备联网、系统使用和生产成效看工厂做到哪一步、离数字化项目申报还差什么。",
+      "descriptionEn": "Assess how far a factory has digitized and what it still needs for an application, using equipment connectivity, system use, and production results.",
+      "examplesZh": [
+        "车间一半设备上了网，系统也能查工单，我们报数字化车间还差哪些东西？",
+        "厂里刚上 MES，想往智能工厂做，现在就该开始留哪些运行记录？",
+        "准备报未来工厂，帮我看看设备、仓库和生产系统这几块的数据现在有没有串起来。"
+      ],
+      "examplesEn": [
+        "Half the equipment is connected and we can look up work orders. What are we still missing for a digital workshop application?",
+        "We've just put in an MES and want to work toward smart factory recognition. What operating records should we start keeping now?",
+        "We're preparing a future factory application. Can you check whether data from our machines, warehouse, and production system is connected?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_06",
+      "skillName": "enterprise-panorama-analysis",
+      "displayName": "企业合作前调查",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/enterprise-panorama-analysis",
+      "descriptionZh": "用公开资料摸清合作企业的股东、业务和经营风险，整理成合作前简报或报告。",
+      "descriptionEn": "Use public records to summarize a prospective partner's ownership, business, and operating risks before you work together.",
+      "examplesZh": [
+        "有家自动化公司想给我们供设备，全称发你了，帮我先看看它和实际控制人都是什么背景。",
+        "对方想做我们的独家代理，签约前帮我查查它的股东、对外投资和公开诉讼记录。",
+        "明天去见这家客户，帮我从公开资料做份会前简报，重点讲它做什么、最近在扩什么业务。"
+      ],
+      "examplesEn": [
+        "An automation company wants to supply us with equipment. I've sent its full name. Can you check the company and who controls it?",
+        "They want to be our exclusive distributor. Before we sign, check their shareholders, investments, and public litigation records.",
+        "I'm meeting this customer tomorrow. Put together a briefing from public sources on what they do and where they're expanding."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_11",
+      "skillName": "graphify",
+      "displayName": "项目资料关系图",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/graphify",
+      "descriptionZh": "把项目、产品、专利和材料之间的关系画出来，方便顺着图找到关联文件。",
+      "descriptionEn": "Map the links among projects, products, patents, and documents so you can find related files from the graph.",
+      "examplesZh": [
+        "把这个申报文件夹里的研发项目、专利和产品连成一张图，我开会要拿给老板看。",
+        "审材料时老找不到一件专利对应哪个项目，能不能做张图，让我顺着关系找到相关文件？",
+        "刚补了几份研发记录，帮我更新原来的关系图，看看哪些项目还连不上产品。"
+      ],
+      "examplesEn": [
+        "Turn the R&D projects, patents, and products in this application folder into a diagram I can show my boss at the meeting.",
+        "When reviewing the application, I keep losing track of which project a patent belongs to. Can you make a map that leads me to the related files?",
+        "We've added some R&D records. Update the existing map and check which projects still can't be linked to a product."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_12",
+      "skillName": "green-development-projects",
+      "displayName": "绿色工厂申报自评",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/green-development-projects",
+      "descriptionZh": "核对绿色工厂申报要填的能耗、用水和环保数据，找出自评缺项和对应材料。",
+      "descriptionEn": "Check energy, water, and environmental data for a green factory application and identify gaps in the self-assessment and its evidence.",
+      "examplesZh": [
+        "厂里电和水都有计量表，做省级绿色工厂自评还得补哪些数据？",
+        "这份绿色工厂自评表填好了，帮我看看污水和能耗这两项算得对不对。",
+        "我们准备报绿色工厂，能耗和产量数据我发你，先看看哪几项最拉分。"
+      ],
+      "examplesEn": [
+        "We meter both electricity and water. What other data do we need for a provincial green factory self-assessment?",
+        "We've filled in the green factory self-assessment. Can you check the calculations for wastewater and energy use?",
+        "We're preparing a green factory application. I'll send you our energy and output figures. Which items are hurting our score most?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_13",
       "skillName": "high-tech-enterprise-application-drafting",
       "displayName": "高新技术企业申请书撰写",
       "tier": "paid-mcp-engine",
       "sourceSkill": "skills/high-tech-enterprise-application-drafting",
-      "descriptionZh": "收费版高企申请书撰写与原 Word 母版无损回填引擎：含 v1.2 行业设计控制目标写法、整栏 400 字网报口径、RD/PS 自动扩缩表与逐格保真审计。",
-      "descriptionEn": "Paid High-Tech Enterprise application drafting and lossless DOCX master template filling engine with v1.2 engineering targets and fidelity auditing.",
+      "descriptionZh": "按高企申请书模板填写或核对研发项目、高新产品和其他申报栏目。",
+      "descriptionEn": "Fill in or review the R&D, high-tech product, and other sections of a high-tech enterprise application form.",
       "examplesZh": [
-        "按这六个研发项目和两个产品清单，帮我撰写 RD/PS 正文并无损回填进高企申请书 Word 母版。",
-        "帮我写高企申请书的 PS01 关键技术及主要技术指标，缺实测参数的地方结合行业成熟工艺写设计控制目标。",
-        "高企申请书已经填好，帮我按网报 400 字口径和黑板估算清单跑一遍保真审计。"
+        "这六个研发项目先帮我填进高企表的 RD 栏，名称和起止时间照我发的清单。",
+        "高企申请书里两个产品的 PS 表帮我补一下，销售收入用我发的这张表。",
+        "高企申请书 Word 发你了，帮我核一下里头的研发项目和高新产品能不能对上。"
       ],
       "examplesEn": [
-        "Draft RD/PS narratives and fill them losslessly into the High-Tech Enterprise DOCX master template.",
-        "Write PS01 key technologies and engineering design control targets where test reports are pending.",
-        "Audit the filled High-Tech DOCX against the 400-character portal limit and blackboard estimates."
+        "Please enter these six projects in the RD section of the high-tech application, using the names and dates in my list.",
+        "Can you fill in the PS forms for the two products in our high-tech application? Use the sales figures from this spreadsheet.",
+        "I've sent the high-tech application in Word. Can you check that the R&D projects tie back to the high-tech products?"
       ],
       "excludeGlobs": [
         "references/portable-runtime-protocol.md",
@@ -178,62 +1070,310 @@
         },
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
-          "to": "references/mcp-routing-and-tiering.md"
+          "to": "references/_shared/mcp-routing-and-tiering.md"
         },
         {
           "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
-          "to": "references/v12-drafting-core.md"
-        },
-        {
-          "from": "skills/_runtime/report-writing.md",
-          "to": "references/report-writing.md"
-        },
-        {
-          "from": "skills/_runtime/enterprise-source-fallback.md",
-          "to": "references/enterprise-source-fallback.md"
+          "to": "references/_shared/v12-drafting-core.md"
         },
         {
           "from": "skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py",
           "to": "scripts/validate_docx_text_only.py"
-        },
-        {
-          "from": "skills/high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md",
-          "to": "references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
-        },
-        {
-          "from": "skills/high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md",
-          "to": "references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md"
         }
       ],
       "linkRewrites": {
-        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
-        "../_runtime/workbuddy-core/v12-drafting-core.md": "references/v12-drafting-core.md",
-        "../_runtime/report-writing.md": "references/report-writing.md",
-        "../../_runtime/report-writing.md": "report-writing.md",
-        "../_runtime/enterprise-source-fallback.md": "references/enterprise-source-fallback.md",
-        "../../_runtime/template-fidelity/scripts/validate_docx_text_only.py": "../scripts/validate_docx_text_only.py",
-        "../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md": "references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md",
-        "../high-tech-enterprise-preassessment/references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md": "references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md",
-        "国科发火〔2016〕32号-高新技术企业认定管理办法-2016-国家重点支持的高新技术领域.doc": "国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md"
+        "_runtime/template-fidelity/scripts/validate_docx_text_only.py": "scripts/validate_docx_text_only.py"
       }
     },
     {
-      "skillId": "skill_gongchuang_paid_02",
+      "skillId": "skill_gongchuang_15",
+      "skillName": "industrialization-projects",
+      "displayName": "新产品申报方向评估",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/industrialization-projects",
+      "descriptionZh": "看新设备、新材料和新软件适合报首台套、首批次、首版次还是工业新产品。",
+      "descriptionEn": "Find the best recognition route for new equipment, materials, or software across first-set, first-batch, first-version, and new industrial product programs.",
+      "examplesZh": [
+        "我们做了套新的视觉检测设备，已经有一家客户在用了，能申首台套吗？",
+        "我们做的是质检软件，首版次和工业新产品该选哪个？",
+        "这款新材料去年就开始卖了，现在还有机会报首批次吗？"
+      ],
+      "examplesEn": [
+        "We built a new visual inspection system and one customer is already using it. Can it qualify for first-set equipment recognition?",
+        "We make quality inspection software. Should we apply for first-version software or new industrial product recognition?",
+        "We started selling this new material last year. Is there still a chance to apply for first-batch recognition?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/_shared/v12-drafting-core.md"
+        },
+        {
+          "from": "skills/project-feasibility/references/two-report-contract.md",
+          "to": "references/_shared/two-report-contract.md"
+        }
+      ],
+      "linkRewrites": {
+        "project-feasibility/references/two-report-contract.md": "references/_shared/two-report-contract.md"
+      }
+    },
+    {
+      "skillId": "skill_gongchuang_17",
+      "skillName": "industry-positioning",
+      "displayName": "主导产品产业定位",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/industry-positioning",
+      "descriptionZh": "用产品收入、客户应用和专利等资料，判断主导产品在产业链中的位置和申报写法。",
+      "descriptionEn": "Use sales, customer applications, and patents to identify where the main product sits in the industry chain and how to explain it in an application.",
+      "examplesZh": [
+        "报小巨人得写主导产品，我们三款产品都有收入，结合客户和专利帮我看看选哪款。",
+        "我们的伺服驱动器装在数控机床上，申报书里怎么讲清它在产业链里解决了什么问题？",
+        "以前客户都买进口接头，现在有两家换成我们的了，报项目要写国产替代的话，还得拿什么证明？"
+      ],
+      "examplesEn": [
+        "We need to name our main product for the Little Giant application. All three have sales. Which should we pick given the customers and patents?",
+        "Our servo drives go into CNC machine tools. How do we explain in the application what problem they solve in the industry chain?",
+        "Customers used to buy imported fittings, and two have switched to ours. What evidence do we need to make the import substitution claim in our application?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/_shared/v12-drafting-core.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_18",
+      "skillName": "investment-subsidy-projects",
+      "displayName": "技改补助投资核算",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/investment-subsidy-projects",
+      "descriptionZh": "把设备合同、发票、付款和入账资料对起来，算清技改补助能计入多少投资。",
+      "descriptionEn": "Match equipment contracts, invoices, payments, and asset records to calculate eligible investment for a technical upgrade subsidy.",
+      "examplesZh": [
+        "这条新产线买了三台设备，合同和发票都给你了，帮我算算能报多少技改投资。",
+        "这台设备是备案前买的、备案后才付款，申报补助的时候这笔钱能算进去吗？",
+        "有几张设备发票跟付款对不上，帮我逐台查一遍，看哪些设备还缺单据。"
+      ],
+      "examplesEn": [
+        "We bought three machines for this new line. I've sent the contracts and invoices. How much investment can we claim for the upgrade?",
+        "We bought this machine before filing the project and paid for it afterward. Can this cost count toward the subsidy?",
+        "Some equipment invoices don't match the payments. Check machine by machine and tell me which ones are missing paperwork."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_21",
+      "skillName": "manufacturing-tax-risk-analysis",
+      "displayName": "制造企业财税体检",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/manufacturing-tax-risk-analysis",
+      "descriptionZh": "从制造企业的财务、税务和交易资料中找出现金流卡点和账税需要核对的地方。",
+      "descriptionEn": "Use a manufacturer's financial, tax, and transaction records to identify cash flow problems and issues to reconcile.",
+      "examplesZh": [
+        "利润有几百万，账上现金反而越来越少，帮我看看钱主要压在哪里了。",
+        "我们有几笔发货、开票和到账跨了月，帮我按账和单据捋一下，哪些要跟会计对一对。",
+        "年底想做次财税体检，三张财务报表和纳税资料都给你，哪些地方最该先查？"
+      ],
+      "examplesEn": [
+        "We're making millions in profit, but cash keeps going down. Can you find where most of the money is tied up?",
+        "A few sales were shipped, invoiced, and paid in different months. Can you go through the records and flag what I need to check with accounting?",
+        "We want a year-end financial and tax check. I'll give you all three financial statements and the tax records. What should we look at first?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_22",
+      "skillName": "patent-router",
+      "displayName": "专利检索与申请规划",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/patent-router",
+      "descriptionZh": "查找与产品技术相关的专利，帮企业安排查新、申请优先级和上市前的专利排查。",
+      "descriptionEn": "Search for patents relevant to a product and help prioritize novelty searches, filings, and pre-launch patent checks.",
+      "examplesZh": [
+        "我们的送料机构做了个新结构，帮我查下别人有没有先申请过类似专利。",
+        "这款设备准备卖到德国，先帮我看看当地有哪些同行专利需要留意。",
+        "今年只能报两件发明，把这三份研发交底过一遍，帮我选先申请哪两件。"
+      ],
+      "examplesEn": [
+        "We've designed a new structure for our feeder. Can you check whether anyone has already filed for something similar?",
+        "We're getting ready to sell this equipment in Germany. Can you check which competitors' patents we should look at there?",
+        "We can only file two invention applications this year. Look through these three disclosures and help me decide which two to file first."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_26",
+      "skillName": "project-feasibility",
+      "displayName": "项目申报可行性评估",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/project-feasibility",
+      "descriptionZh": "围绕一个具体政府项目，判断现有条件能不能报、还缺什么，以及后面怎么准备。",
+      "descriptionEn": "Assess whether a company can apply for a specific government program, what it is missing, and how to prepare.",
+      "examplesZh": [
+        "我们在余杭，想报省级企业技术中心。按我发的人员和成果清单，看看今年值不值得准备。",
+        "想赶这批市级工业互联网项目，条件和系统运行资料都发你了，帮我看看过哪几条、还卡在哪儿。",
+        "这个区里的专项资金项目只剩两周了，按我们现有的合同、人员和交付计划，还来得及把申请做完吗？"
+      ],
+      "examplesEn": [
+        "We're in Yuhang and want to apply for provincial enterprise technology center recognition. Given our staff and results lists, is it worth preparing this year?",
+        "We want to apply in this round of the city industrial internet program. I've sent the requirements and system records. Which conditions do we meet, and where are we stuck?",
+        "There are only two weeks left for this district funding program. With our current contracts, staff, and delivery plan, can we still get the application ready in time?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_29",
       "skillName": "sme-development-projects",
       "displayName": "专精特新撰写与培育方案",
       "tier": "paid-mcp-engine",
       "sourceSkill": "skills/sme-development-projects",
       "descriptionZh": "收费版专精特新与小巨人撰写与培育引擎：含主导产品双字段升维与业态三分支、专利三级分流、六问六答、八段企业简介正文撰写与方向卡成品交付。",
-      "descriptionEn": "Paid Specialized SME & Little Giant drafting and cultivation engine with dual-field product anchoring, 3-tier patent triage, Q1-Q6 strategy, and full narrative drafting.",
+      "descriptionEn": "Draft or review specialized SME and Little Giant applications and find incorrect entries, unclear wording, or missing documents.",
       "examplesZh": [
-        "我们主营冷冻蛋挞皮，帮我做主导产品升维定名、专利三级分流，并输出专精特新六问六答和企业简介正文。",
-        "结合我们的塑料包装瓶专利和设备专利，帮我定准主导产品避免跑偏，并生成主导产品技术情况介绍。",
-        "帮我把已有的专精特新申请书按四项判断和 v1.2 口径做深度修订，输出修改正文与 Q2 发明专利补强清单。"
+        "专精特新申请书已经填完了，提交前帮我过一遍，看看哪些地方填错了。",
+        "评分表上财务和专利那几项我拿不准，按我填的申报表和附件帮我检查一下。",
+        "帮我把专精特新材料里主导产品那一栏补好，产品收入和对应的专利都在附件里。"
       ],
       "examplesEn": [
-        "Anchor and upgrade our leading product name, triage patents into 3 tiers, and draft the SME enterprise introduction.",
-        "Separate manufacturing equipment patents from our core product and draft the core technology narrative.",
-        "Revise our Specialized SME application under the four-judgment rubric and output Q2 patent mining topics."
+        "We've filled out the specialized SME application. Can you review it before we submit and check what we entered incorrectly?",
+        "I'm unsure about the finance and patent items on the scoring sheet. Check them against the application and attachments I filled in.",
+        "Help me finish the main product section of the specialized SME application. The product revenue and related patents are in the attachments."
       ],
       "excludeGlobs": [
         "references/portable-runtime-protocol.md",
@@ -255,35 +1395,123 @@
         },
         {
           "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
-          "to": "references/mcp-routing-and-tiering.md"
+          "to": "references/_shared/mcp-routing-and-tiering.md"
         },
         {
           "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
-          "to": "references/v12-drafting-core.md"
+          "to": "references/_shared/v12-drafting-core.md"
         },
         {
-          "from": "skills/_runtime/report-writing.md",
-          "to": "references/report-writing.md"
+          "from": "skills/project-feasibility/references/sme-action-workflow.md",
+          "to": "references/_shared/sme-action-workflow.md"
         },
         {
-          "from": "skills/_runtime/policy-application-path-contract.md",
-          "to": "references/policy-application-path-contract.md"
-        },
-        {
-          "from": "skills/sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
-          "to": "references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md"
+          "from": "skills/industry-positioning/references/market-boundary-and-substitution-gate.md",
+          "to": "references/_shared/market-boundary-and-substitution-gate.md"
         }
       ],
       "linkRewrites": {
-        "../_runtime/workbuddy-core/mcp-routing-and-tiering.md": "references/mcp-routing-and-tiering.md",
-        "../_runtime/workbuddy-core/v12-drafting-core.md": "references/v12-drafting-core.md",
-        "../_runtime/report-writing.md": "references/report-writing.md",
-        "../../_runtime/report-writing.md": "report-writing.md",
-        "../../_runtime/policy-application-path-contract.md": "policy-application-path-contract.md",
-        "../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md": "policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
-        "../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
-        "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf": "工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md",
-        "../../project-feasibility/references/sme-action-workflow.md#报告内容输入": "material-checkup-report-template.md"
+        "industry-positioning/references/market-boundary-and-substitution-gate.md": "references/_shared/market-boundary-and-substitution-gate.md"
+      }
+    },
+    {
+      "skillId": "skill_gongchuang_31",
+      "skillName": "standard-drafting",
+      "displayName": "技术标准起草与审查",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/standard-drafting",
+      "descriptionZh": "按适用标准规则起草或审查技术条款，把技术要求和检验方法对齐。",
+      "descriptionEn": "Draft or review technical provisions under the applicable standard rules and align the requirements with the test methods.",
+      "examplesZh": [
+        "这款气动阀要做企业标准，按我给的技术规格帮我起个草稿。",
+        "试验方法已经写好了，帮我看看和前面的技术要求能不能一项一项对上。",
+        "团体标准评审收了十几条意见，帮我看看每条意见落实到正文该改哪里。"
+      ],
+      "examplesEn": [
+        "We need a company standard for this pneumatic valve. Can you draft one from the specifications I sent?",
+        "We've written the test methods. Can you check each one against the technical requirements earlier in the document?",
+        "We got over ten comments in the association standard review. Can you show me where to edit the draft for each one?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/_shared/v12-drafting-core.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_32",
+      "skillName": "technology-innovation-projects",
+      "displayName": "研发机构与项目评估",
+      "tier": "paid-mcp-engine",
+      "sourceSkill": "skills/technology-innovation-projects",
+      "descriptionZh": "评估企业研发机构、科技项目和奖励的申报条件，梳理任务、预算和验收要求。",
+      "descriptionEn": "Assess eligibility for R&D center recognition, science and technology projects, and awards, and organize the tasks, budgets, and acceptance requirements.",
+      "examplesZh": [
+        "我们想认定省级企业研究院，现有研发人员和设备够不够？",
+        "市里的科技计划项目要申报了，帮我排一下这两年做什么、钱怎么花、什么时候验收。",
+        "我们想申科技奖励，样机用了两年，现有专利和客户证明够不够支撑这个成果？"
+      ],
+      "examplesEn": [
+        "We want provincial enterprise research institute recognition. Do we have enough R&D staff and equipment?",
+        "We're applying for a city science and technology project. Plan what we'll do over two years, how to spend the budget, and when to run the acceptance review.",
+        "We want to apply for a science and technology award. The prototype has been in use for two years. Are the patents and customer letters enough to support our results?"
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_runtime/workbuddy-core/facts_blackboard.py",
+          "to": "scripts/facts_blackboard.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/workbuddy_light_runtime.py",
+          "to": "scripts/workbuddy_light_runtime.py"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/mcp-routing-and-tiering.md",
+          "to": "references/_shared/mcp-routing-and-tiering.md"
+        },
+        {
+          "from": "skills/_runtime/workbuddy-core/v12-drafting-core.md",
+          "to": "references/_shared/v12-drafting-core.md"
+        },
+        {
+          "from": "skills/project-feasibility/references/two-report-contract.md",
+          "to": "references/_shared/two-report-contract.md"
+        }
+      ],
+      "linkRewrites": {
+        "project-feasibility/references/two-report-contract.md": "references/_shared/two-report-contract.md"
       }
     }
   ]

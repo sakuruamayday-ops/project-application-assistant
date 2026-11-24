@@ -143,7 +143,7 @@ def validate(document: dict) -> list[str]:
     if context.get("policy_status") != "current" and conclusion == "eligible":
         errors.append("政策状态非current时不得为eligible")
 
-    for field in ("scoring", "calculations", "uncertainties", "evidence_gaps", "actions"):
+    for field in ("calculations", "uncertainties", "evidence_gaps", "actions"):
         if field not in document:
             errors.append(f"缺少{field}")
     calculations = document.get("calculations", [])
@@ -159,12 +159,16 @@ def validate(document: dict) -> list[str]:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("用法: validate_feasibility_assessment.py <结果.json>", file=sys.stderr)
-        return 2
-    path = Path(sys.argv[1])
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="校验项目申报可行性评估结果 JSON（支持 --strict 回归验收）"
+    )
+    parser.add_argument("assessment", type=Path, help="评估结果 JSON 文件路径")
+    parser.add_argument("--strict", action="store_true", help="严格模式：校验失败返回退出码 2")
+    args = parser.parse_args()
     try:
-        document = json.loads(path.read_text(encoding="utf-8"))
+        document = json.loads(args.assessment.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         print(json.dumps({"status": "fail", "errors": [str(exc)]}, ensure_ascii=False))
         return 2

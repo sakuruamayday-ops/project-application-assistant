@@ -13,12 +13,12 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Any
 
-BRANDING_SCRIPTS = Path(__file__).resolve().parents[2] / "_runtime" / "gongchuang-branding" / "scripts"
-sys.path.insert(0, str(BRANDING_SCRIPTS))
-from html_branding import fixed_page_branding  # noqa: E402
+
+
+
 
 # Printed page margins are 13 mm above and 15 mm below the content box.
-BRAND_CENTER_OFFSET_MM = (15 - 13) / 2
+
 
 
 SECTION_KEYS = [
@@ -105,7 +105,7 @@ def prepare_report_input(metrics: dict[str, Any]) -> dict[str, Any]:
     overview_fields = [("营业收入", "facts", "revenue"), ("净利润", "facts", "net_profit"), ("资产总额", "facts", "assets"), ("负债总额", "facts", "liabilities"), ("其他应收款", "facts", "other_receivables"), ("经营活动现金流量净额", "facts", "operating_cash_flow"), ("资产负债率", "metrics", "debt_ratio"), ("现金税费支付率", "metrics", "cash_tax_payment_rate")]
     return {
         "company": company, "period": {"start": years[0] if years else "期间待补", "end": latest},
-        "report_date": date.today().isoformat(), "preparer": "共创知识产权",
+        "report_date": date.today().isoformat(), "preparer": "",
         "source_status": "分析草稿", "internal_only": True,
         "use_restriction": "分析尚未定稿，仅供内部核对。",
         "risk_level": "待判断", "one_line_conclusion": "待结合财务指标、附注及交易资料形成综合判断。",
@@ -320,10 +320,10 @@ def table(headers: list[Any], rows: list[list[Any]], classes: str = "") -> str:
 def page(number: str, label: str, title: str, content: str, extra: str = "") -> str:
     return (
         f'<section class="page {esc(extra)}">'
-        f'{fixed_page_branding(variant="gold", vertical_offset_mm=BRAND_CENTER_OFFSET_MM)}'
+
         f'<header class="page-header"><span class="page-no">{esc(number)}</span><b>{esc(label)}</b></header>'
         f'<h2>{esc(title)}</h2>{content}'
-        '<footer class="page-footer">金税四期财务分析｜共创知识产权</footer>'
+        '<footer class="page-footer">金税四期财务分析</footer>'
         '</section>'
     )
 
@@ -336,9 +336,9 @@ def render_cover(data: dict[str, Any]) -> str:
     warning = "内部自查" if internal else status
     return f"""
     <section class="page cover">
-      {fixed_page_branding(variant="gold", cover=True, vertical_offset_mm=BRAND_CENTER_OFFSET_MM)}
+
       <div class="cover-inner">
-        <p class="eyebrow">GOLDEN TAX RISK ADVISORY</p>
+        <p class="eyebrow">深度分析版</p>
         <h1>金税四期<br>财务分析报告</h1>
         <div class="rule"></div>
         <h2 class="company-name">{esc(data['company'])}</h2>
@@ -347,7 +347,7 @@ def render_cover(data: dict[str, Any]) -> str:
           <div><small>分析期间</small><strong>{esc(period['start'])}—{esc(period['end'])}</strong></div>
           <div><small>报告日期</small><strong>{esc(data['report_date'])}</strong></div>
           <div><small>资料状态</small><strong>{esc(status)}</strong></div>
-          <div><small>完成人</small><strong>{esc(data.get('preparer', '共创知识产权'))}</strong></div>
+          <div><small>完成人</small><strong>{esc(data.get('preparer', ''))}</strong></div>
         </div>
         {f'<p class="cover-note">{esc(restriction)}</p>' if restriction else ''}
       </div>
@@ -495,20 +495,20 @@ def render(data: dict[str, Any], metrics: dict[str, Any], css: str) -> str:
     title = f"{data['company']}｜金税四期财务分析报告{suffix}"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="author" content="{esc(data.get('preparer', '共创知识产权'))}">
+<meta name="author" content="{esc(data.get('preparer', ''))}">
 <title>{esc(title)}</title><style>{css}</style></head><body>{''.join(pages)}</body></html>"""
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="report-data JSON")
-    parser.add_argument("output", type=Path, nargs="?", help="generated HTML")
+    parser.add_argument("output", type=Path, nargs="?", help="generated HTML path, or - for stdout")
     parser.add_argument(
         "--metrics-json",
         type=Path,
         help="optional manufacturing-tax-risk-metrics/v1 JSON from the calculator",
     )
-    parser.add_argument("--css", type=Path, help="gold-advisor.css path")
+    parser.add_argument("--css", type=Path, help="gold-analysis.css path")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--prepare-input", action="store_true", help="create a new editable report input from calculator fields")
     args = parser.parse_args()
@@ -526,8 +526,8 @@ def main() -> None:
         print(json.dumps({"status": "draft-input", "input": str(args.input)}, ensure_ascii=False))
         return
     data = json.loads(args.input.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError("input root must be an object")
+    if not isinstance(data, dict) or not data:
+        parser.error("未提供财税报告内容，需提供非空 JSON 对象")
     data = resolve_financial_references(data, metrics)
     warnings = validate(data, metrics)
     if args.validate_only:
@@ -535,14 +535,18 @@ def main() -> None:
         return
     if not args.output:
         parser.error("output is required unless --validate-only is used")
-    css_path = args.css or Path(__file__).resolve().parent.parent / "assets" / "gold-advisor.css"
+    css_path = args.css or Path(__file__).resolve().parent.parent / "assets" / "gold-analysis.css"
     css = css_path.read_text(encoding="utf-8")
     result = render(data, metrics, css)
     body_html = result.split("</style>", 1)[-1]
     if "{{" in body_html or "}}" in body_html:
         warnings.append("正文含待填写模板标记，已保留当前内容")
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(result, encoding="utf-8")
+    streaming = args.output == Path("-")
+    if streaming:
+        sys.stdout.buffer.write(result.encode("utf-8"))
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(result, encoding="utf-8")
     print(
         json.dumps(
             {
@@ -553,7 +557,8 @@ def main() -> None:
                 "warnings": warnings,
             },
             ensure_ascii=False,
-        )
+        ),
+        file=sys.stderr if streaming else sys.stdout,
     )
 
 

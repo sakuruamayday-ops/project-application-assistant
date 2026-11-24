@@ -73,7 +73,7 @@ def main():
         args.limit,
     )
     output = {
-        "notice": "候选分数仅用于召回，精确匹配必须按 SKILL.md 的六要素人工核验。normalized_term_matches 是忽略标点、空白和英文大小写后的整词包含数，不是业务匹配数；排除不适用候选不得改写检索计数。",
+        "notice": "候选按文本检索顺序返回，精确匹配必须按 SKILL.md 的六要素人工核验。normalized_term_matches 是忽略标点、空白和英文大小写后的整词包含数，不是业务匹配数；排除不适用候选不得改写检索计数。",
         "search_summary": {
             "query": args.query,
             "industry_chain": chain_summary,

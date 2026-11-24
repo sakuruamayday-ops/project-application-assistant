@@ -16,6 +16,6 @@ description: 分析知识产权示范、管理体系、专利产业化、高价�
 
 ## 输出
 
-按 `references/ip-project-taxonomy.md` 给出项目方向、已核事实、判断、风险和待补材料。仅做准备方向时以条件和下一步为主，资料不足继续形成当前可用稿。
+按 `references/ip-project-taxonomy.md` 给出项目方向、已核事实、判断、风险和待补材料。仅做准备方向时以条件和下一步为主，按已取得的资料继续形成当前可用稿。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

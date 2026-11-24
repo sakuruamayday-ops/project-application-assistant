@@ -59,7 +59,7 @@ TRACKING_QUERY_KEYS = {
     "spm",
 }
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
-DELIVERY_CONFIG_PATH = SKILLS_ROOT / "report-skill-registry.json"
+DELIVERY_CONFIG_PATH = SKILLS_ROOT / "_runtime" / "report-skill-registry.json"
 VALIDATOR_ID = "grounded-delivery/v1"
 OOXML_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
@@ -71,7 +71,7 @@ DC_NS = "http://purl.org/dc/elements/1.1/"
 DCTERMS_NS = "http://purl.org/dc/terms/"
 
 
-def load_payload(path: Path) -> dict[str, Any]:
+def load_payload(path: Path, source_root: Path | None = None) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     if path.suffix == ".jsonl":
         return {"records": [json.loads(line) for line in text.splitlines() if line.strip()]}
@@ -80,6 +80,12 @@ def load_payload(path: Path) -> dict[str, Any]:
         return {"records": value}
     if not isinstance(value, dict):
         raise ValueError("台账顶层必须是JSON对象、数组或JSONL")
+    sources = value.get("sources")
+    for source in sources if isinstance(sources, list) else []:
+        internal = source.get("internal") if isinstance(source, dict) else None
+        local_path = internal.get("path") if isinstance(internal, dict) else None
+        if isinstance(local_path, str) and local_path.strip():
+            internal["path"] = str((source_root or path.resolve().parent) / Path(local_path).expanduser())
     return value
 
 
@@ -257,6 +263,8 @@ def _validate_records(payload: dict[str, Any], strict: bool) -> tuple[list[str],
     warnings: list[str] = []
     if not isinstance(raw_records, list):
         return ["records必须是数组"], warnings
+    if not raw_records:
+        return ["未提供证据台账记录"], warnings
     records = _record_map(payload)
     sources = _source_map(payload)
     seen: set[str] = set()
@@ -606,6 +614,10 @@ def validate_payload(
     record_errors, record_warnings = _validate_records(payload, strict_grounded)
     document_errors, document_warnings = _validate_document(payload, strict_grounded)
     errors.extend(source_errors + record_errors + document_errors)
+    if strict_grounded and not errors:
+        from policy_numbers import validate_policy_numbers
+        document = payload.get("document") or {}
+        errors.extend(validate_policy_numbers(_record_map(payload), _source_map(payload), document.get("blocks")))
     warnings.extend(source_warnings + record_warnings + document_warnings)
     market_share = None
     if require_market_share or "market_share" in payload:
@@ -711,8 +723,20 @@ def _document_source_order(payload: dict[str, Any]) -> tuple[list[str], list[dic
     return list(dict.fromkeys(order)), blocks
 
 
-def load_delivery_config(path: Path = DELIVERY_CONFIG_PATH) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+def load_delivery_config(path: Path | None = None) -> dict[str, Any]:
+    paths = (path,) if path is not None else (
+        DELIVERY_CONFIG_PATH,
+        SKILLS_ROOT / DELIVERY_CONFIG_PATH.name,
+    )
+    for candidate in paths:
+        try:
+            value = json.loads(candidate.read_text(encoding="utf-8"))
+            break
+        except FileNotFoundError:
+            if path is not None:
+                raise
+    else:
+        raise FileNotFoundError(f"找不到来源登记配置，已尝试 {'、'.join(map(str, paths))}")
     if value.get("schema_version") != 1 or not isinstance(value.get("profiles"), dict):
         raise ValueError("grounded-citations配置版本不受支持")
     return value
@@ -779,7 +803,7 @@ def render_profile_bundle(
     profile: str,
     artifact: str,
     source_position: str = "inline",
-    config_path: Path = DELIVERY_CONFIG_PATH,
+    config_path: Path | None = None,
 ) -> dict[str, Any]:
     """Render a host-neutral contract without imposing one page layout.
 
@@ -942,6 +966,41 @@ def _internal_path_findings(text: str) -> list[str]:
     return findings
 
 
+def docx_metadata_errors(core: ET.Element) -> list[str]:
+    """Check the Word core properties required for delivery."""
+    errors: list[str] = []
+    creator = (core.findtext(f"{{{DC_NS}}}creator") or "").strip()
+    last_modified_by = (core.findtext(f"{{{CORE_NS}}}lastModifiedBy") or "").strip()
+    created = (core.findtext(f"{{{DCTERMS_NS}}}created") or "").strip()
+    modified = (core.findtext(f"{{{DCTERMS_NS}}}modified") or "").strip()
+    metadata_text = "\n".join(
+        (core.findtext(tag) or "").strip()
+        for tag in (
+            f"{{{DC_NS}}}title",
+            f"{{{DC_NS}}}subject",
+            f"{{{DC_NS}}}description",
+            f"{{{CORE_NS}}}keywords",
+            f"{{{CORE_NS}}}category",
+        )
+    )
+    if not creator or creator.casefold() in {"python-docx", "python"}:
+        errors.append("DOCX作者元数据缺失或暴露生成库")
+    if not last_modified_by or last_modified_by.casefold() in {"python-docx", "python"}:
+        errors.append("DOCX最后修改者元数据缺失或暴露生成库")
+    if not created or created.startswith("2013-12-23"):
+        errors.append("DOCX创建时间缺失或仍为模板默认时间")
+    if not modified or modified.startswith("2013-12-23"):
+        errors.append("DOCX修改时间缺失或仍为模板默认时间")
+    elif _valid_date(created) and _valid_date(modified):
+        created_at = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        modified_at = datetime.fromisoformat(modified.replace("Z", "+00:00"))
+        if modified_at < created_at:
+            errors.append("DOCX修改时间早于创建时间")
+    if re.search(r"(?:generated\s+by|python-docx)", metadata_text, flags=re.IGNORECASE):
+        errors.append("DOCX核心元数据暴露文档生成器")
+    return errors
+
+
 def _validate_docx(path: Path, profile: str) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -1008,35 +1067,7 @@ def _validate_docx(path: Path, profile: str) -> dict[str, Any]:
             if header is None:
                 errors.append(f"DOCX表格{table_index}首行未声明重复表头")
 
-        creator = (core.findtext(f"{{{DC_NS}}}creator") or "").strip()
-        last_modified_by = (core.findtext(f"{{{CORE_NS}}}lastModifiedBy") or "").strip()
-        created = (core.findtext(f"{{{DCTERMS_NS}}}created") or "").strip()
-        modified = (core.findtext(f"{{{DCTERMS_NS}}}modified") or "").strip()
-        metadata_text = "\n".join(
-            (core.findtext(tag) or "").strip()
-            for tag in (
-                f"{{{DC_NS}}}title",
-                f"{{{DC_NS}}}subject",
-                f"{{{DC_NS}}}description",
-                f"{{{CORE_NS}}}keywords",
-                f"{{{CORE_NS}}}category",
-            )
-        )
-        if not creator or creator.casefold() in {"python-docx", "python"}:
-            errors.append("DOCX作者元数据缺失或暴露生成库")
-        if not last_modified_by or last_modified_by.casefold() in {"python-docx", "python"}:
-            errors.append("DOCX最后修改者元数据缺失或暴露生成库")
-        if not created or created.startswith("2013-12-23"):
-            errors.append("DOCX创建时间缺失或仍为模板默认时间")
-        if not modified or modified.startswith("2013-12-23"):
-            errors.append("DOCX修改时间缺失或仍为模板默认时间")
-        elif _valid_date(created) and _valid_date(modified):
-            created_at = datetime.fromisoformat(created.replace("Z", "+00:00"))
-            modified_at = datetime.fromisoformat(modified.replace("Z", "+00:00"))
-            if modified_at < created_at:
-                errors.append("DOCX修改时间早于创建时间")
-        if re.search(r"(?:generated\s+by|python-docx)", metadata_text, flags=re.IGNORECASE):
-            errors.append("DOCX核心元数据暴露文档生成器")
+        errors.extend(docx_metadata_errors(core))
         east_asia_fonts = [
             node.get(f"{{{WORD_NS}}}eastAsia", "").strip()
             for name in names
@@ -1283,11 +1314,12 @@ def write_delivery_receipt(
     *,
     profile: str,
     source_memo_path: Path | None = None,
+    source_root: Path | None = None,
     state_root: Path | None = None,
     receipt_export_dir: Path | None = None,
     visual_status: str = "pending-device-acceptance",
 ) -> dict[str, Any]:
-    payload = load_payload(ledger_path)
+    payload = load_payload(ledger_path, source_root)
     ledger_validation = validate_payload(
         payload,
         strict_grounded=True,
@@ -1423,6 +1455,8 @@ def main() -> int:
         default="pending-device-acceptance",
     )
 
+    for ledger_parser in (validate_parser, render_parser, profile_parser, delivery_parser):
+        ledger_parser.add_argument("--source-root", type=Path, help="政策原件相对路径的根目录")
     args = parser.parse_args()
     try:
         if args.command == "xlsx-dump":
@@ -1434,6 +1468,7 @@ def main() -> int:
                 Path(args.ledger),
                 Path(args.artifact),
                 profile=args.profile,
+                source_root=args.source_root,
                 source_memo_path=Path(args.source_memo) if args.source_memo else None,
                 state_root=Path(args.state_root) if args.state_root else None,
                 receipt_export_dir=Path(args.receipt_export_dir) if args.receipt_export_dir else None,
@@ -1441,7 +1476,7 @@ def main() -> int:
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0 if result["status"] == "pass" else 2
-        payload = load_payload(Path(args.ledger))
+        payload = load_payload(Path(args.ledger), getattr(args, "source_root", None))
         if args.command == "validate":
             result = validate_payload(
                 payload,

@@ -165,17 +165,20 @@ def add_markers(
     return precision
 
 
-def comments_xml(reviews: list[dict[str, object]]) -> bytes:
-    root = ET.Element(qname(W, "comments"))
+def comments_xml(
+    reviews: list[dict[str, object]], root: ET.Element | None = None, first_id: int = 0
+) -> bytes:
+    if root is None:
+        root = ET.Element(qname(W, "comments"))
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    for index, review in enumerate(reviews):
+    for comment_id, review in enumerate(reviews, first_id):
         comment = ET.SubElement(
             root,
             qname(W, "comment"),
             {
-                qname(W, "id"): str(index),
-                qname(W, "author"): "共创研究院专利核稿",
-                qname(W, "initials"): "共创研究院",
+                qname(W, "id"): str(comment_id),
+                qname(W, "author"): "专利核稿",
+                qname(W, "initials"): "核稿",
                 qname(W, "date"): now,
             },
         )
@@ -217,7 +220,20 @@ def ensure_content_type(root: ET.Element) -> None:
     )
 
 
+def read_reviews(path: Path) -> list[dict[str, object]]:
+    reviews = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(reviews, dict):
+        reviews = reviews.get("reviews")
+    if not isinstance(reviews, list) or any(not isinstance(review, dict) for review in reviews):
+        raise ValueError("批注意见须为对象数组，或包含 reviews 数组的对象")
+    return reviews
+
+
 def add_comments(source: Path, target: Path, reviews: list[dict[str, object]]) -> dict[str, object]:
+    occurrences = [review.get("occurrence", 1) for review in reviews]
+    if any(type(occurrence) is not int or occurrence < 1 for occurrence in occurrences):
+        raise ValueError("occurrence 必须是从 1 开始的正整数（1、2、3……）")
+
     with TemporaryDirectory(prefix="gongchuang-comment-") as directory:
         root_dir = Path(directory)
         with zipfile.ZipFile(source) as archive:
@@ -225,16 +241,23 @@ def add_comments(source: Path, target: Path, reviews: list[dict[str, object]]) -
         document_path = root_dir / "word/document.xml"
         document = ET.parse(document_path)
         paragraphs = document.getroot().findall(".//w:p", NS)
+        comments_path = root_dir / "word/comments.xml"
+        existing_comments = ET.parse(comments_path).getroot() if comments_path.exists() else None
+        first_id = 0
+        if existing_comments is not None:
+            first_id = 1 + max(
+                (int(comment.get(qname(W, "id"))) for comment in existing_comments.findall("w:comment", NS)),
+                default=-1,
+            )
         applied = []
         skipped = []
-        for review in reviews:
+        for review, occurrence in zip(reviews, occurrences):
             anchor = str(review.get("highlight_text") or review.get("context") or "").strip()
-            occurrence = int(review.get("occurrence") or 1)
             matches = [paragraph for paragraph in paragraphs if anchor and anchor in paragraph_text(paragraph)]
             if len(matches) < occurrence:
                 skipped.append({"anchor": anchor, "reason": "未定位到指定 occurrence"})
                 continue
-            comment_id = str(len(applied))
+            comment_id = str(first_id + len(applied))
             precision = add_markers(
                 matches[occurrence - 1],
                 comment_id,
@@ -247,8 +270,8 @@ def add_comments(source: Path, target: Path, reviews: list[dict[str, object]]) -
             applied.append({**review, "_anchor_precision": precision})
         document.write(document_path, encoding="utf-8", xml_declaration=True)
 
-        comments_path = root_dir / "word/comments.xml"
-        comments_path.write_bytes(comments_xml(applied))
+        if applied or existing_comments is None:
+            comments_path.write_bytes(comments_xml(applied, existing_comments, first_id))
         rels_path = root_dir / "word/_rels/document.xml.rels"
         rels = ET.parse(rels_path)
         ensure_relationship(rels.getroot())
@@ -264,6 +287,7 @@ def add_comments(source: Path, target: Path, reviews: list[dict[str, object]]) -
                 if path.is_file():
                     archive.write(path, path.relative_to(root_dir).as_posix())
     return {
+        "expected": len(reviews),
         "applied": len(applied),
         "exact_anchors": sum(
             item.get("_anchor_precision") == "exact" for item in applied
@@ -282,10 +306,14 @@ def main() -> None:
     parser.add_argument("output_docx", type=Path)
     parser.add_argument("--reviews-file", required=True, type=Path)
     args = parser.parse_args()
-    reviews = json.loads(args.reviews_file.read_text(encoding="utf-8"))
-    if isinstance(reviews, dict):
-        reviews = reviews.get("reviews", [])
-    print(json.dumps(add_comments(args.input_docx, args.output_docx, reviews), ensure_ascii=False))
+    try:
+        reviews = read_reviews(args.reviews_file)
+        result = add_comments(args.input_docx, args.output_docx, reviews)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
+    print(json.dumps(result, ensure_ascii=False))
+    if result["skipped"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,13 @@ description: 审阅技能体系和已核问题，分析重复、冲突与影响�
 python3 scripts/aggregate_corrections.py --input ~/.config/project-assistant/evolution/corrections.jsonl
 ```
 
-脚本按技能、稳定规则键和任务聚合已核脱敏记录，配置取 `config/common.yaml`，输出 `correction-summary.json`、`evolution-batch.json` 及 `ready` 状态。用户指定修复可直接形成对应候选，自动聚合参数用于整理已有信号。计划状态按本轮维护要求使用 `--mark-planned` 记录。
+脚本按技能、稳定规则键和任务聚合已核脱敏记录，输出 `correction-summary.json`、`evolution-batch.json` 及 `ready` 状态。用户指定修复可直接形成对应候选，自动聚合参数用于整理已有信号。计划状态按本轮维护要求使用 `--mark-planned` 记录。
+
+聚合阈值默认读取包内 [skills/_runtime/config/common.yaml](../_runtime/config/common.yaml)。可用 `--config` 指定用户配置，或在工作根目录放置 `config/common.yaml`。两者同时存在时选用 `--config`，用户配置缺少的字段取包内值。
+
+### 运行要求
+
+聚合脚本依赖 PyYAML，使用 `python3 -m pip install PyYAML` 安装到运行脚本的 Python 环境。
 
 ## 影响分析
 

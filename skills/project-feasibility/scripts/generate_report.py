@@ -10,16 +10,42 @@ from fill_report_template import ReportInputError, complete_report
 from select_report_template import _select_by_alias, load_registry, resolve_template
 
 
+def project_template_query(project_id: str) -> str:
+    if not project_id.startswith("project:"):
+        return project_id
+    try:
+        parts = json.loads(project_id.removeprefix("project:"))
+    except json.JSONDecodeError as error:
+        raise ReportInputError("索引项目 ID 格式无效", "report-project-id", ["project_id"]) from error
+    if (
+        not isinstance(parts, list)
+        or len(parts) != 3
+        or not all(isinstance(part, str) for part in parts)
+        or not parts[0].strip()
+    ):
+        raise ReportInputError("索引项目 ID 必须包含项目名称、地区和年度", "report-project-id", ["project_id"])
+    return parts[0]
+
+
 def generate_report(input_path: Path, output_path: Path, report_type: str) -> dict:
     fixture = json.loads(input_path.read_text(encoding="utf-8-sig"))
     if not isinstance(fixture, dict) or not isinstance(fixture.get("project_id"), str):
         raise ReportInputError("报告输入必须为包含 project_id 的对象", "report-required-fields", ["project_id"])
     output_path = output_path.expanduser().resolve()
-    project = _select_by_alias(str(fixture["project_id"]), load_registry()["projects"])
-    direct_html = project["id"] in {"high-tech-enterprise", "specialized-sme", "little-giant"}
-    if direct_html and output_path.suffix.lower() != ".html":
-        raise ReportInputError("高新、专精分析及体检报告只生成 HTML 供客户端直接导出 PDF；申请书使用独立 Word 回填操作", "report-output-format", ["output"])
-    selection = resolve_template(str(project["id"]), report_type, template_format="html" if direct_html else "docx")
+    project_id = fixture["project_id"]
+    query = project_template_query(project_id)
+    project = _select_by_alias(query, load_registry()["projects"])
+    template_format = "docx"
+    if project["id"] in {"high-tech-enterprise", "specialized-sme", "little-giant"}:
+        output_suffix = output_path.suffix.lower()
+        if output_suffix == ".html":
+            template_format = "html"
+        elif report_type != "feasibility" or output_suffix != ".docx":
+            raise ReportInputError(
+                "前期报告输出为 .html，可行性报告输出为 .html 或 .docx",
+                "report-output-format", ["output"],
+            )
+    selection = resolve_template(str(project["id"]), report_type, template_format=template_format)
     # The copied blank master is never an intermediate delivery artifact.
     skill_root = Path(__file__).resolve().parents[1]
     if output_path.is_relative_to(skill_root):
@@ -31,6 +57,7 @@ def generate_report(input_path: Path, output_path: Path, report_type: str) -> di
         report_type=selection["report_type"],
         release_tag=selection["release_tag"],
         public_root=skill_root.parent,
+        project_id=project_id if query != project_id else None,
     )
     return {**result, "schema_version": "gongchuang-project-report-operation/v1"}
 

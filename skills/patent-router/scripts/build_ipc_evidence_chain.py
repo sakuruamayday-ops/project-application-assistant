@@ -11,6 +11,8 @@ import tempfile
 from datetime import date
 from pathlib import Path
 
+from preexam_evidence import add_evidence_arguments, applicant_evidence
+
 from claim_structure import analyze_feature
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -435,7 +437,7 @@ def center_matches(candidates, center_data):
     return rows
 
 
-def recommend(location, candidates, matches):
+def recommend(location, candidates, matches, applicant):
     if not candidates:
         return {
             "result": "NO_IPC_CANDIDATE",
@@ -446,11 +448,11 @@ def recommend(location, candidates, matches):
     in_hangzhou = "杭州" in location
     in_zhejiang = in_hangzhou or "浙江" in location
     eligible = []
-    for center, region_ok in (
-        ("浙江省知识产权保护中心", in_zhejiang),
-        ("杭州市知识产权保护中心", in_hangzhou),
+    for center, region_ok, status in (
+        ("浙江省知识产权保护中心", in_zhejiang, applicant["zhejiang_record_status"]),
+        ("杭州市知识产权保护中心", in_hangzhou, applicant["hangzhou_record_status"]),
     ):
-        if region_ok and matches[center]["primary_candidate_hit"]:
+        if region_ok and matches[center]["primary_candidate_hit"] and status != "no":
             eligible.append(center)
     if len(eligible) == 1:
         center = eligible[0]
@@ -463,7 +465,7 @@ def recommend(location, candidates, matches):
         return {
             "result": "NO_ELIGIBLE_CENTER",
             "recommended_primary_target_center": None,
-            "reason": f"按当前注册地和主IPC候选{primary}，未形成可推荐中心。",
+            "reason": f"按当前注册地、主IPC候选{primary}及备案状态，未形成可推荐中心。",
         }
     theme = " ".join(x["theme"] for x in candidates[:3])
     if any(x in theme for x in ("人工智能", "软件", "通信", "机器人")):
@@ -490,7 +492,12 @@ def main():
     p.add_argument("--applicant-location", required=True)
     p.add_argument("--cutoff", default=date.today().isoformat())
     p.add_argument("--out")
+    add_evidence_arguments(p)
     a = p.parse_args()
+    try:
+        applicant = applicant_evidence(a)
+    except (OSError, ValueError) as error:
+        p.error(str(error))
     path = Path(a.file).expanduser().resolve()
     sections = extract_sections(path)
     title = infer_title(path, sections)
@@ -505,17 +512,17 @@ def main():
     for candidate in selected_candidates:
         if candidate["theme"] not in themes:
             themes.append(candidate["theme"])
+    recommendation = recommend(a.applicant_location, selected_candidates, matches, applicant)
+    recommended = recommendation["recommended_primary_target_center"]
+    if recommended:
+        center = "hangzhou" if "杭州" in recommended else "zhejiang"
+        record = applicant["record_evidence"][center]["status"]
+        recommendation["record_verification"] = record
+        recommendation["reason"] += f"备案状态：{record}。"
     payload = {
         "schema_version": "1.3",
         "cutoff_date": a.cutoff,
-        "applicant": {
-            "company": a.company or None,
-            "registered_location": a.applicant_location,
-            "location_source": "企业登记查询结果（调用方记录具体工具、查询时间和字段）",
-            "zhejiang_record_status": "yes",
-            "hangzhou_record_status": "yes",
-            "record_basis": "用户常设指令：两个中心默认均已备案",
-        },
+        "applicant": applicant,
         "source_document": {
             "path": str(path),
             "sha256": sha256(path),
@@ -543,7 +550,7 @@ def main():
             title, feature_tree, selected_candidates
         ),
         "center_match": matches,
-        "recommendation": recommend(a.applicant_location, selected_candidates, matches),
+        "recommendation": recommendation,
         "evidence_chain": [
             "申请文件原件及SHA-256",
             "文件结构自动路由结果",
@@ -554,7 +561,7 @@ def main():
             "以独立权利要求技术特征为最高权重的IPC候选规则及分值",
             "IPC与必要技术特征组合形成的查新检索蓝图",
             "浙江/杭州带发布日期的IPC对照库",
-            "申请人注册地和默认备案假设",
+            "申请人住所来源和逐中心备案证据",
             "唯一中心推荐或无法推荐原因",
         ],
         "limitations": [

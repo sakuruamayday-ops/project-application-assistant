@@ -112,7 +112,9 @@ def infer_regions(title, level="", authority=""):
 
 
 def build_record(path):
-    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = path.read_text(encoding="utf-8-sig", errors="ignore")
+    if not text.strip():
+        return None
     title = extract(text, r"^#\s+(.+?)\s*$") or path.stem
     level = extract(text, r"^level:[ \t]*(.*)$")
     authority = extract(text, r"^- 📐 归口:[ \t]*(.*)$")
@@ -133,7 +135,13 @@ def main():
     parser.add_argument("source", type=Path)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
-    records = [build_record(path) for path in sorted(args.source.glob("*.md"))]
+    records = []
+    for path in sorted(args.source.glob("*.md")):
+        record = build_record(path)
+        if record is not None:
+            records.append(record)
+    if not records:
+        parser.error("未提供可用于生成项目地图的政策正文")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
         for record in records:

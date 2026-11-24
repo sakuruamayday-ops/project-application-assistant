@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "product": "企业全生命周期助手",
+  "release": {
+    "tag": "V1.8.1",
+    "version": "1.8.1",
+    "summary": "直接输出、工具自动执行与报告正文精简",
+    "changes": [
+      "51项预设技能改为正向工作方法，直接输出当前可完成内容。",
+      "资料、内容、品牌及版式检查按需参考，真实文件生成后直接交付。",
+      "报告正文合并重复事实、套话与材料清单，保留原章节、数据、来源和模板。",
+      "本机工具自动执行由客户端0.8.2提供；账号、云端隔离、凭据、验签与回滚继续由宿主管理。"
+    ],
+    "installation": {
+      "generic": "支持 SKILL.md 的 Agent 使用签名通用 Skills 包；首次使用时按本轮实际能力执行最小配置。",
+      "first_party_client": "独立客户端内嵌同一验签技能投影，并由客户端连接管理处理外部服务。",
+      "manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
+      "verification": "确认套件技能目录、签名与逐文件完整性一致。技能按任务需要读取，当前资料直接形成报告，真实文件生成后直接交付。"
+    },
+    "compatibility": [
+      {
+        "target": "通用 Skills",
+        "status": "通用签名套件",
+        "note": "支持SKILL.md的宿主可读取同一技能内容。工具和本机权限由宿主配置。"
+      },
+      {
+        "target": "独立客户端",
+        "status": "客户端0.8.2及以上",
+        "note": "客户端内嵌同批验签技能，直接输出与工具自动执行随客户端0.8.2提供。"
+      }
+    ],
+    "distribution_protocol": {
+      "generic_skill_package": "signed-universal-zip",
+      "first_party_client": "bundled-signed-skill-suite",
+      "platform_specific_package": false,
+      "external_service_setup": "skills-center-install-and-connect",
+      "success_gate": [
+        "套件技能目录、签名与逐文件完整性一致",
+        "客户端使用已验签V1.8.1技能内容，技能按需读取",
+        "模型直接输出，当前真实文件生成后立即交付",
+        "外部连接按真实tools/list及健康调用显示状态",
+        "通用宿主使用相同签名技能包"
+      ]
+    },
+    "rollback": [
+      "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行安装完整性检查。",
+      "客户端升级失败时恢复上一签名客户端、上一签名技能包和原 MCP 配置；不覆盖用户企业资料或第三方连接。",
+      "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
+    ]
+  },
+  "engine": "evidence-ledger/scripts/grounded_evidence.py",
+  "profiles": {
+    "chat": {
+      "artifacts": [
+        "chat"
+      ],
+      "body_citations": "inline-or-before",
+      "source_placement": "selectable",
+      "sidecar": false
+    },
+    "analysis-report": {
+      "artifacts": [
+        "md",
+        "docx",
+        "pdf"
+      ],
+      "body_citations": "numeric-markers",
+      "source_placement": "end-section",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "spreadsheet-native": {
+      "artifacts": [
+        "xlsx"
+      ],
+      "body_citations": "numeric-markers",
+      "source_placement": "final-worksheet",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "presentation-native": {
+      "artifacts": [
+        "pptx"
+      ],
+      "body_citations": "numeric-markers",
+      "source_placement": "final-slide",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "application-native": {
+      "artifacts": [
+        "md",
+        "docx",
+        "pdf",
+        "xlsx"
+      ],
+      "body_citations": "native-fields-or-sidecar",
+      "source_placement": "template-aware",
+      "source_title": "来源说明",
+      "sidecar": true
+    },
+    "standard-native": {
+      "artifacts": [
+        "md",
+        "docx",
+        "pdf"
+      ],
+      "body_citations": "none",
+      "source_placement": "separate-source-memo",
+      "source_title": "标准数据来源说明",
+      "sidecar": true,
+      "forbidden_primary_headings": [
+        "数据来源",
+        "参考资料"
+      ],
+      "preserve_primary_headings": [
+        "规范性引用文件"
+      ]
+    }
+  },
+  "artifact_profile_overrides": {
+    "xlsx": "spreadsheet-native",
+    "pptx": "presentation-native"
+  },
+  "artifact_validation": {
+    "pdf": {
+      "required": [
+        "reopen",
+        "text-extraction",
+        "all-pages-render",
+        "nonblank-pages",
+        "missing-glyph-scan"
+      ],
+      "font_rule": "embed-cjk-font-or-use-host-native-export",
+      "fail_closed": true
+    },
+    "docx": {
+      "required": [
+        "reopen",
+        "structure-check",
+        "host-render-when-available",
+        "missing-glyph-scan"
+      ],
+      "renderer_missing_cjk_is": "pending-device-acceptance",
+      "formal_release_requires_host_render": true
+    },
+    "xlsx": {
+      "required": [
+        "reopen",
+        "sheet-order",
+        "formula-check",
+        "all-sheets-render"
+      ],
+      "renderer": "spreadsheet-native",
+      "fail_closed": true
+    },
+    "pptx": {
+      "required": [
+        "reopen",
+        "slide-order",
+        "all-slides-render",
+        "overflow-check"
+      ],
+      "fail_closed": true
+    }
+  },
+  "host_adapters": {
+    "codex": "_runtime/grounded-citations/codex_adapter.py",
+    "first_party_client": "_runtime/grounded-citations/first_party_client_adapter.py"
+  },
+  "skills": [
+    {
+      "skill": "agriculture-and-rural-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "application-version-diff",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "application-writing",
+      "profile": "application-native",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "checking-patdocx-cn-single-agent",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "consistency-check",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "deep-clarification",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "digitalization-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "enterprise-panorama-analysis",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "enterprise-profile",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "evidence-ledger",
+      "profile": "chat",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "evolution-governance",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "experience-recorder",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "financial-verification",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "first-run-configuration",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "gongchuang-humanizer-zh",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "graphify",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "green-development-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "high-tech-enterprise-application-drafting",
+      "profile": "application-native",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "high-tech-enterprise-preassessment",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "industrialization-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "industry-chain-foundation-matcher",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "industry-positioning",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "intellectual-property-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "investment-subsidy-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "ip-assessment",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "legal-regulations",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "local-knowledge-retrieval",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "manufacturing-tax-risk-analysis",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "patent-router",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "peer-benchmarking",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "policy-retrieval",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "project-application-assistant",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "project-deliverable-archive",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "project-feasibility",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "project-matching",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "project-memory",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "project-rule-manager",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "project-task-router",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "quality-brand-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "regional-special-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "skill-authoring",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "skill-curator",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "skill-evolution",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "sme-development-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "sme-score-preassessment",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "standard-drafting",
+      "profile": "standard-native",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "talent-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "technology-innovation-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "third-party-data-indexing",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    },
+    {
+      "skill": "trade-and-open-economy-projects",
+      "profile": "analysis-report",
+      "uses_grounded_engine": true
+    },
+    {
+      "skill": "web-task-operator",
+      "profile": "chat",
+      "uses_grounded_engine": false
+    }
+  ]
+}

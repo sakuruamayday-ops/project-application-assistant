@@ -5,9 +5,9 @@ import re
 
 from lxml import etree, html
 
-from fill_report_template import (PLACEHOLDER, ReportInputError, _condition_match, _fallback_for_placeholder,
-                                 _replace_training_text, normalize_text, report_table_entries, table_header_key)
-from fill_report_template import primary_source_name
+from fill_report_template import (CONDITION_COLUMNS, PLACEHOLDER, ReportInputError, _condition_values,
+                                 _fallback_for_placeholder, _pending_items_summary, _replace_training_text,
+                                 POLICY_ROW_KINDS, normalize_text, policy_kinds, retained_condition_rows, table_header_key)
 from report_html import html_table
 
 
@@ -59,32 +59,22 @@ def _replace_rows(table, values):
         parent.append(row)
 
 
-def _policy_kind(policy):
-    kinds = {str(policy.get("kind") or "").strip().casefold()}
-    title = str(policy["title"])
-    if re.search(r"管理办法|评价办法|实施办法|工作指引|若干措施|实施细则", title):
-        kinds.add("management")
-    if re.search(r"组织申报|申报通知|年度.*通知", title):
-        kinds.update({"annual-notice", "deadline"})
-    if re.search(r"申报指南|评分附件|评分细则|榜单|指南", title):
-        kinds.add("guidance")
-    return kinds
-
-
 def _fill_policy(table, fixture):
-    expected = {"管理办法或评价办法": "management", "申报年度通知": "annual-notice",
-                "申报指南与评分附件": "guidance", "截止日期": "deadline"}
     header = _cells(_rows(table)[0])
     _set_cell(header[2 if len(header) == 4 else 3], "官方来源")
     for row in _rows(table)[1:]:
         cells = _cells(row)
-        policy = next((p for p in fixture["policies"] if expected.get(_text(cells[0])) in _policy_kind(p)), None)
+        expected = POLICY_ROW_KINDS.get(_text(cells[0]))
+        policy = next((p for p in fixture["policies"] if expected in policy_kinds(p)), None)
+        if policy is None and expected != "management":
+            row.getparent().remove(row)
+            continue
         values = (["当前未取得独立文件", "—", "待核验"] if len(cells) == 4 else
                   ["当前未取得独立文件", "—", "—", "待核验"])
         if policy is not None:
             values = ([str(policy["title"]), str(policy["locator"]), str(policy.get("status") or "已锁定基线")]
                       if len(cells) == 4 else
-                      [str(policy["title"]), str(policy.get("scope") or "以通知和附件适用范围为准"),
+                      [str(policy["title"]), str(policy.get("scope") or "按管理办法适用范围"),
                        str(policy["locator"]), str(policy.get("status") or "已锁定基线")])
         for cell, value in zip(cells[1:], values, strict=True):
             _set_cell(cell, value)
@@ -98,18 +88,19 @@ def _fill_summary(table, fixture):
     values = {
         "当前可行性": (fixture["conclusion"], fixture["conclusion_basis"]),
         "申报结论": (fixture["conclusion"], fixture["conclusion_basis"]),
-        "建议申报年度": (fixture["suggested_year"], fixture.get("year_basis") or "结合当期窗口、证据完整度和补强周期"),
+        "评估年度": (fixture["suggested_year"], fixture.get("year_basis") or "客户选择评估年度"),
         "首要短板": (fixture["primary_gap"], fixture["next_action"]),
-        "预计满足硬门槛": (fixture.get("gate_summary") or "待企业补齐数据后复算", "按当期通知原文逐条确认"),
-        "预计评分": (fixture.get("score") or "不估分", fixture.get("score_basis") or "当期完整评分表或企业数据未闭合"),
-        "关键前置任务": (fixture["next_action"], fixture.get("target_period") or f"{str(fixture['suggested_year']).removesuffix('年')}年申报前"),
+        "预计满足硬门槛": (fixture.get("gate_summary") or "待企业补齐数据后复算", "按管理办法条款核对"),
+        "关键前置任务": (fixture["next_action"], fixture.get("target_period") or "客户填写"),
     }
     for row in _rows(table)[1:]:
         cells = _cells(row)
         label = _text(cells[0])
         pair = next((value for key, value in values.items() if key in label), None)
-        if "申报层级" in label or "档次" in label:
-            pair = (fixture.get("level") or "待企业确认适用层级", fixture.get("level_basis") or "以项目属地和当期申报表为准")
+        if label == "待补事项数":
+            pair = _pending_items_summary(fixture)
+        elif "申报层级" in label or "档次" in label:
+            pair = (fixture.get("level") or "待企业确认适用层级", fixture.get("level_basis") or "按项目属地和管理办法")
         if pair is not None:
             _set_cell(cells[1], pair[0])
             _set_cell(cells[2], pair[1])
@@ -118,16 +109,8 @@ def _fill_summary(table, fixture):
 def _fill_conditions(table, fixture):
     for row in _rows(table)[1:]:
         cells = _cells(row)
-        item = _condition_match(fixture, _text(cells[0])) or {}
-        value = str(item.get("value") or "当前资料未提供可复算数据")
-        state = str(item.get("state") or "待企业确认")
-        source = str(item.get("source") or primary_source_name(fixture))
-        if state == "企业提供待核" and re.search(r"(?:企查查|天眼查|\bQCC\b|\bTYC\b)", source, re.IGNORECASE):
-            state = "第三方平台查询，待企业确认"
-        gap = str(item.get("gap") or "数据和证据尚未闭合")
-        values = ([value, state, gap, str(item.get("action") or fixture["next_action"])] if len(cells) == 5 else
-                  [value, source, state, str(item.get("fixed_score") or "不计分"),
-                   str(item.get("conditional_score") or "不计分"), gap])
+        value, source, state, gap, action, priority = _condition_values(fixture, _text(cells[0]))
+        values = (value, state, gap, action) if len(cells) == 5 else (value, source, state, gap, action, priority)
         for cell, text in zip(cells[1:], values, strict=True):
             _set_cell(cell, text)
 
@@ -136,8 +119,7 @@ def _fill_tasks(table, fixture):
     configured = [item for item in fixture.get("strengthening_tasks", [])
                   if isinstance(item, dict) and str(item.get("task") or "").strip()]
     tasks = configured or [{"task": _text(_cells(row)[1])} for row in _rows(table)[1:]]
-    year = str(fixture["suggested_year"])
-    period = f"{year}申报前" if year.endswith("年") else f"{year}年申报前"
+    period = fixture.get("target_period") or "客户填写"
     default_deliverables = {
         "国内产品技术水平评价咨询报告": "国内产品技术水平评价咨询报告",
         "国际产品技术水平评价咨询报告": "国际产品技术水平评价咨询报告",
@@ -153,26 +135,28 @@ def _fill_tasks(table, fixture):
 def _fill_tables(body, fixture):
     for table in body.xpath("./table"):
         rows = _rows(table)
-        header = " | ".join(_text(cell) for cell in _cells(rows[0]))
+        columns = tuple(_text(cell) for cell in _cells(rows[0]))
+        header = " | ".join(columns)
         if "政策层级" in header and ("现行文件" in header or "文件名称与文号" in header):
             _fill_policy(table, fixture)
         elif ("判断项" in header and "一句话依据" in header) or ("事项" in header and "依据及限制" in header):
             _fill_summary(table, fixture)
-        elif "现行条件 | 企业值" in header or "现行条件或评分项" in header:
+        elif "现行条件 | 企业值" in header or columns == CONDITION_COLUMNS:
             _fill_conditions(table, fixture)
-        elif "项目 | 申报年度 | 申报截止日期" in header:
+        elif table_header_key(columns)[:3] == ("项目", "评估年度", "准备节点"):
+            for cell, label in zip(_cells(rows[0])[1:3], ("评估年度", "准备节点"), strict=True):
+                _set_cell(cell, label)
             for row in rows[1:]:
-                for cell, value in zip(_cells(row)[1:], [fixture["suggested_year"], fixture["deadline"],
-                                      fixture.get("window_status") or "按报告基准日核验", fixture["next_action"]], strict=True):
+                for cell, value in zip(_cells(row)[1:], [fixture["suggested_year"], fixture.get("target_period") or "客户填写",
+                                      fixture["conclusion"], fixture["next_action"]], strict=True):
                     _set_cell(cell, value)
         elif "补强任务" in header and "成果证据" in header:
             _fill_tasks(table, fixture)
 
 
 def _fill_custom_tables(body, fixture):
-    entries = report_table_entries(fixture)
     used = set()
-    for entry in entries:
+    for entry in fixture["table_content"]:
         columns, rows = entry.get("columns"), entry.get("rows")
         key = table_header_key(columns)
         if key in used:
@@ -188,7 +172,10 @@ def _fill_custom_tables(body, fixture):
         if len(matches) != 1:
             raise ReportInputError("表头必须唯一匹配母版:" + " | ".join(key), "report-table-target", ["table_content.columns"])
         if rows:
-            _replace_rows(matches[0], rows)
+            table = matches[0]
+            rows = retained_condition_rows(fixture, key, [[_text(cell) for cell in _cells(row)]
+                                                         for row in _rows(table)[1:]], rows)
+            _replace_rows(table, rows)
 
 
 def _fill_associations(body, fixture):
@@ -211,7 +198,7 @@ def _remove_guidance(body):
     removing = False
     for node in list(body):
         if node.tag in {"h1", "h2", "h3"}:
-            removing = _text(node) in {"2.1 政策原文摘录规则", "4.2 得分解释", "6.2 任务排序"}
+            removing = _text(node) in {"2.1 政策原文摘录规则", "4.2 补强顺序", "6.2 任务排序"}
         if removing:
             body.remove(node)
             continue

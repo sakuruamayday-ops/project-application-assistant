@@ -20,6 +20,12 @@
 
 同步比较基线、本机和云端，单侧变化继承；同字段冲突保留本机并生成 `preference-merge-conflicts.json`，核对后同步该字段。
 
+`push`、有本地修改的 `sync` 和 `set --sync` 在授权范围内合并偏好。提交前记录合并后的结构化 `preferences`，将 `expected_revision` 定为当前云端版本加一，并以当前云端版本提交 `base_revision`。
+
+写入后独立 `GET /v1/preferences`，比对预期版本和回读版本，逐字段比对预期偏好和回读偏好。全部一致时，从回读结果更新本机偏好及同步基线。
+
+合并冲突、写入失败、回读失败或核对不一致返回退出码 `3`，保留原本机偏好及基线。`preference-merge-conflicts.json` 记录失败阶段、基线和已取得的版本。回读差异记录 `path`（JSON Pointer）、`expected`、`actual` 和 `kind`（`missing` 缺失、`unexpected` 多出、`mismatch` 不同）。请求失败时记录原因。本轮已应用的偏好和跨端保存状态分别说明。
+
 ## 识别直接修改SKILL.md
 
 每次安装记录官方 `SKILL.md` 的SHA-256。升级时比较旧官方哈希、当前安装文件哈希和新官方哈希：

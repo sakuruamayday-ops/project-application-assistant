@@ -16,7 +16,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
   --metrics-json manufacturing-tax-risk-metrics.v1.json
 ```
 
-生成器将 `gold-advisor.css` 内嵌到 HTML，输出文件可独立移动。所有文本均自动 HTML 转义。
+生成器将 `gold-analysis.css` 内嵌到 HTML，输出文件可独立移动。所有文本均自动 HTML 转义。
 
 ## 顶层字段
 
@@ -25,7 +25,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | company | string | 企业全称 |
 | period | object | start、end |
 | report_date | string | 报告日期 |
-| preparer | string | 默认共创知识产权 |
+| preparer | string | 默认 |
 | source_status | string | 正式、初稿、未签章等 |
 | internal_only | boolean | 初稿或缺签章时设为 true |
 | use_restriction | string | 对外使用限制 |
@@ -82,7 +82,7 @@ KPI、结论和专题优先引用原始年度数据或确定性指标展示值�
 
 可选 `--metrics-json` 指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
-共创客户端复用 `manufacturing-tax-risk-analysis.calculate-metrics` 已验签回执绑定展示值，元与万元按计算器对应值填写。政策表据本轮已核验官方原文填名称、机关、日期和直达链接；暂缺政策依据时 `policies` 填空数组并继续生成，封面与来源页保留草稿状态。
+客户端复用 `manufacturing-tax-risk-analysis.calculate-metrics` 已验签回执绑定展示值，元与万元按计算器对应值填写。政策表据本轮已核验官方原文填名称、机关、日期和直达链接；暂缺政策依据时 `policies` 填空数组并继续生成，封面与来源页保留草稿状态。
 
 `calculations` 默认写 `[]`。确定性指标文件的 `report_rows` 会自动进入“计算过程与来源”页；只有确有新增、已绑定的计算且未被确定性文件覆盖时才添加补充行。所有指标与补充计算完整保留，来源表每10行增加续页，不截断内容。报告保留17个基础页面，实际页数以生成器返回的 `pages` 为准，PDF验收使用该页数。
 

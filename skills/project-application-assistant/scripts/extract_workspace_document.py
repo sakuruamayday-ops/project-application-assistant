@@ -956,6 +956,11 @@ def main() -> int:
             print(serialize_result(non_extractable_outcome(path, detection)))
             return 0
         result = handler(path)
+        if result["status"] == "extracted" and not str(result.get("text", "")).strip():
+            print(serialize_result(outcome(
+                path, detection, "rejected", "文件没有可提取的正文", "provide_nonempty_document",
+            )))
+            return 2
         result.update({
             "schema_version": "gongchuang-document-extraction/v1",
             "name": path.name,

@@ -47,7 +47,12 @@ class WorkBuddyPilotSplitTests(unittest.TestCase):
 
     def test_build_passes_strict_isolation_and_zero_leaks(self) -> None:
         self.assertEqual(self.build_summary["status"], "pass")
-        self.assertEqual(self.build_summary["built_count"], 4)
+        self.assertEqual(self.build_summary["built_count"], 32)
+        self.assertEqual(self.build_summary["tier_counts"], {
+            "free-checkup": 14,
+            "free-data-mcp": 2,
+            "paid-mcp-engine": 16,
+        })
         self.assertEqual(self.build_summary["errors"], [])
 
     def test_blackboard_prevents_multi_company_cross_contamination_and_reconciles(self) -> None:

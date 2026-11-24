@@ -37,6 +37,15 @@ FIELD_ALIASES = {
     "content": ["content", "body", "text", "正文", "内容"],
 }
 
+INGEST_COUNTS = ("inserted", "updated", "unchanged", "failed", "missing_official")
+REPORT_NAMES = {"batch_history": "批次履历", "delivery_checklist": "交付检查表"}
+CHECKLIST_ITEMS = ("字段完整性", "分页覆盖", "去重", "来源链接", "授权范围")
+CHECKLIST_STATES = ("已取得", "部分取得", "未取得", "不适用")
+
+
+class DeliveryReportError(ValueError):
+    pass
+
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
@@ -376,22 +385,145 @@ def upsert_record(connection, record, collected_at):
     return "updated", not bool(record["official_url"])
 
 
-def ingest(connection, input_path, source, collection_date, authorization_scope, scope):
+def coverage_state(obtained, total):
+    if total == 0:
+        return "不适用"
+    if obtained == total:
+        return "已取得"
+    return "部分取得" if obtained else "未取得"
+
+
+def delivery_checklist(batch, index_path, history_path, records_with_page):
+    indexed = batch["inserted"] + batch["updated"] + batch["unchanged"]
+    checked = indexed + batch["failed"]
+    valid_fields_state = coverage_state(indexed, checked)
+    known_links = indexed - batch["missing_official"]
+    scope_recorded = bool(batch["authorization_scope"].strip())
+    index_evidence = str(index_path if index_path.is_file() else history_path)
+    return {
+        "run_id": batch["run_id"],
+        "items": {
+            "字段完整性": {
+                "status": valid_fields_state,
+                "evidence": batch["input_path"],
+                "detail": f"{indexed}/{checked} 条通过入箱字段检查，{batch['failed']} 条失败。" if checked else "无入箱记录。",
+            },
+            "分页覆盖": {
+                "status": "部分取得" if records_with_page else "未取得",
+                "evidence": batch["input_path"],
+                "detail": f"{records_with_page} 条索引记录带页码。缺整批分页覆盖证据。",
+            },
+            "去重": {
+                "status": valid_fields_state,
+                "evidence": index_evidence,
+                "detail": (
+                    f"新增 {batch['inserted']} 条，变更 {batch['updated']} 条，重复 {batch['unchanged']} 条。"
+                    if checked else "无入箱记录。"
+                ),
+            },
+            "来源链接": {
+                "status": coverage_state(known_links, indexed),
+                "evidence": index_evidence,
+                "detail": f"{known_links}/{indexed} 条索引记录含官方链接。" if indexed else "无可检查的索引记录。",
+            },
+            "授权范围": {
+                "status": "部分取得" if scope_recorded else "未取得",
+                "evidence": str(history_path),
+                "detail": "已记录授权范围。缺授权凭证。" if scope_recorded else "缺授权范围与授权凭证。",
+            },
+        },
+    }
+
+
+def write_delivery_reports(paths, batch, checklist):
+    directory = paths["batch_history"].parent
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise DeliveryReportError(f"无法创建批次履历和交付检查表目录 {directory}。{error}") from error
+    for key, report in (("batch_history", batch), ("delivery_checklist", checklist)):
+        try:
+            paths[key].write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        except OSError as error:
+            raise DeliveryReportError(f"无法写入{REPORT_NAMES[key]} {paths[key]}。{error}") from error
+
+
+def validate_delivery_reports(paths, batch):
+    reports = {}
+    errors = []
+    for key, path in paths.items():
+        label = REPORT_NAMES[key]
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            errors.append(f"缺少{label} {path}")
+            continue
+        except (OSError, ValueError) as error:
+            errors.append(f"无法读取{label} {path}。{error}")
+            continue
+        if isinstance(report, dict):
+            reports[key] = report
+        else:
+            errors.append(f"{label} {path} 必须是 JSON 对象")
+
+    if "batch_history" in reports:
+        history = reports["batch_history"]
+        for field in ("run_id", "collection_date", "source", *INGEST_COUNTS, "input_path", "authorization_scope"):
+            actual = history.get(field)
+            expected = batch[field]
+            if field not in history or (
+                field != "authorization_scope" and isinstance(actual, str) and not actual.strip()
+            ):
+                errors.append(f"批次履历缺少字段 {field}")
+            elif type(actual) is not type(expected) or actual != expected:
+                errors.append(f"批次履历字段 {field} 与本批写入结果不符")
+
+    if "delivery_checklist" in reports:
+        checklist = reports["delivery_checklist"]
+        if checklist.get("run_id") != batch["run_id"]:
+            errors.append("交付检查表缺少本批批次号 run_id")
+        items = checklist.get("items")
+        if not isinstance(items, dict):
+            errors.append("交付检查表缺少逐项检查 items")
+        else:
+            for name in CHECKLIST_ITEMS:
+                item = items.get(name)
+                if not isinstance(item, dict):
+                    errors.append(f"交付检查表缺少检查项 {name}")
+                    continue
+                if item.get("status") not in CHECKLIST_STATES:
+                    errors.append(f"交付检查表 {name} 缺少有效四态 status")
+                for field in ("evidence", "detail"):
+                    value = item.get(field)
+                    if not isinstance(value, str) or not value.strip():
+                        errors.append(f"交付检查表 {name} 缺少字段 {field}")
+                    elif field == "evidence" and not Path(value).is_file():
+                        errors.append(f"交付检查表 {name} 的证据路径缺少文件 {value}")
+    if errors:
+        raise DeliveryReportError("；".join(errors))
+
+
+def ingest(connection, input_path, source, collection_date, authorization_scope, scope, index_path):
     run_id = str(uuid.uuid4())
     started = now_iso()
     connection.execute(
         "INSERT INTO collection_runs(run_id, source, collection_date, scope_json, status, started_at, input_path) VALUES (?, ?, ?, ?, 'running', ?, ?)",
         (run_id, source, collection_date, json.dumps(scope, ensure_ascii=False), started, str(input_path)),
     )
-    counts = {"inserted": 0, "updated": 0, "unchanged": 0, "failed": 0, "missing_official": 0}
+    counts = dict.fromkeys(INGEST_COUNTS, 0)
+    records_with_page = 0
+    delivery_error = None
     try:
         items = load_input(input_path)
+        if not items:
+            raise DeliveryReportError("未提供可入库的记录")
         for item_number, raw in enumerate(items, 1):
             try:
                 record = canonicalize(raw, source, authorization_scope)
                 status, missing_official = upsert_record(connection, record, started)
                 counts[status] += 1
                 counts["missing_official"] += int(missing_official)
+                records_with_page += int(record["page_number"] > 0)
             except Exception as error:
                 counts["failed"] += 1
                 connection.execute(
@@ -399,11 +531,29 @@ def ingest(connection, input_path, source, collection_date, authorization_scope,
                     (run_id, item_number, str(error), now_iso()),
                 )
         status = "success" if counts["failed"] == 0 else "partial"
+        batch = {
+            "run_id": run_id,
+            "collection_date": collection_date,
+            "source": source,
+            **counts,
+            "input_path": str(input_path.absolute()),
+            "authorization_scope": authorization_scope,
+        }
+        index_path = index_path.absolute()
+        paths = {key: index_path.parent / "reports" / f"{run_id}_{key}.json" for key in REPORT_NAMES}
+        try:
+            checklist = delivery_checklist(batch, index_path, paths["batch_history"], records_with_page)
+            write_delivery_reports(paths, batch, checklist)
+            validate_delivery_reports(paths, batch)
+        except DeliveryReportError as error:
+            status = "failed"
+            delivery_error = error
         finished = now_iso()
         connection.execute(
             """UPDATE collection_runs SET status=?, finished_at=?, inserted_count=?, updated_count=?,
-            unchanged_count=?, failed_count=?, missing_official_count=? WHERE run_id=?""",
-            (status, finished, counts["inserted"], counts["updated"], counts["unchanged"], counts["failed"], counts["missing_official"], run_id),
+            unchanged_count=?, failed_count=?, missing_official_count=?, error_summary=? WHERE run_id=?""",
+            (status, finished, counts["inserted"], counts["updated"], counts["unchanged"],
+             counts["failed"], counts["missing_official"], str(delivery_error or ""), run_id),
         )
         connection.execute(
             """INSERT INTO collection_days(source, collection_date, status, last_run_id, updated_at)
@@ -419,7 +569,6 @@ def ingest(connection, input_path, source, collection_date, authorization_scope,
                 (source, json.dumps(scope, ensure_ascii=False, sort_keys=True), collection_date, finished),
             )
         connection.commit()
-        return {"run_id": run_id, "status": status, **counts, "collection_date": collection_date}
     except Exception as error:
         finished = now_iso()
         connection.execute(
@@ -434,6 +583,12 @@ def ingest(connection, input_path, source, collection_date, authorization_scope,
         )
         connection.commit()
         raise
+    if delivery_error is not None:
+        raise delivery_error
+    return {
+        "run_id": run_id, "status": status, **counts, "collection_date": collection_date,
+        "reports": {key: str(path) for key, path in paths.items()},
+    }
 
 
 def query_records(connection, regions, keywords, limit, include_inactive, years=()):
@@ -548,7 +703,10 @@ def main():
         if args.command == "init":
             result = {"status": "initialized", "db": str(args.db)}
         elif args.command == "ingest":
-            result = ingest(connection, args.input, args.source, args.collection_date, args.authorization_scope, {"regions": args.region})
+            result = ingest(
+                connection, args.input, args.source, args.collection_date, args.authorization_scope,
+                {"regions": args.region}, args.db,
+            )
         elif args.command == "query":
             print_rows(query_records(connection, args.region, args.keyword, args.limit, args.include_inactive, args.year))
             return
@@ -564,13 +722,16 @@ def main():
             output = args.output or (default_root() / ("records.jsonl" if args.format == "jsonl" else "markdown"))
             result = {"status": "exported", "format": args.format, "output": str(output), "records": export_records(connection, output, args.format)}
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    except DeliveryReportError as error:
+        print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        return 1
     finally:
         connection.close()
 
 
 if __name__ == "__main__":
     try:
-        main()
+        sys.exit(main())
     except Exception as error:
         print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False), file=sys.stderr)
         raise

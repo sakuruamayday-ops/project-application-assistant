@@ -9,7 +9,7 @@ description: 检索核验政府项目、企业合规、知识产权、研发财�
 
 ## 检索方法
 
-1. 按当前能力用 `local-knowledge-retrieval` 检索“共创研究院工作相关法律法规底库索引”及关键词，关键命中取全文；脚本入口为 `python scripts/search_legal_base.py "关键词" --limit 8`，凭据由安全接口读取。
+1. 按当前能力用 `local-knowledge-retrieval` 检索“法律法规底库索引”及关键词，关键命中取全文；脚本入口为 `python scripts/search_legal_base.py "关键词" --limit 8`，凭据由安全接口读取。
 2. 结合用户材料、已配置本地目录及政府公开来源继续。检索说明见 [local-retrieval.md](references/local-retrieval.md)。
 3. 按 [industry-routing.md](references/industry-routing.md) 从登记行业、产品、工艺、场景和客户检索准入许可、产品监管、安全环保质量标签、强制性标准、科技 IP 财政规则，以及管理办法、细则、通知及附件。
 4. 区分法律、行政法规、地方性法规、规章、规范性文件、当期通知、指南和标准。官方来源依次采用国家法律法规数据库及人大、行政法规库，国务院部委、税务及知识产权机关，浙江、杭州和区县官方来源，规则见 [source-and-validity.md](references/source-and-validity.md)。

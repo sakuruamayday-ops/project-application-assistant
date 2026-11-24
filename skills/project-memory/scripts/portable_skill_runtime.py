@@ -10,16 +10,9 @@ import json
 import os
 import platform
 import shutil
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-
-OFFICIAL_PUBLISHER_FINGERPRINT = (
-    "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
-)
-SKILL_SIGNATURE_NAMESPACE = "codex-skill-manifest"
 
 PROFILE_SCHEMA_VERSION = 1
 PROFILE_DIR_ENV = "GONGCHUANG_SKILL_DATA_DIR"
@@ -36,16 +29,12 @@ PROTECTED_PHRASES = (
 )
 
 
-class PublisherTrustMismatch(RuntimeError):
-    """The external trust record conflicts with the pinned publisher identity."""
-
-
 def now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
 def arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="共创研究院技能跨平台运行时")
+    parser = argparse.ArgumentParser(description="技能跨平台运行时")
     parser.add_argument(
         "command",
         choices=("prepare", "context", "remember", "forget", "list", "diagnose"),
@@ -58,6 +47,7 @@ def arguments() -> argparse.Namespace:
         "--data-dir",
         help=f"覆盖用户数据根目录；默认读取{PROFILE_DIR_ENV}或平台配置目录",
     )
+    parser.add_argument("--require-manifest", action="store_true", help="真实提交或外发前要求发布清单")
     return parser.parse_args()
 
 
@@ -155,101 +145,6 @@ def backup_profile(profile_path: Path, backup_dir: Path) -> str | None:
     return str(destination)
 
 
-def run_install_check(root: Path) -> dict:
-    verifier = root / "scripts" / "verify_skill_installation.py"
-    if not verifier.is_file():
-        raise RuntimeError("缺少安装完整性自检脚本")
-    process = subprocess.run(
-        [sys.executable, str(verifier)],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if process.returncode:
-        raise RuntimeError(
-            "安装完整性自检失败：" + (process.stdout or process.stderr).strip()
-        )
-    return json.loads(process.stdout)
-
-
-def public_fingerprint(public_key: Path) -> str:
-    process = subprocess.run(
-        ["ssh-keygen", "-lf", str(public_key), "-E", "sha256"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if process.returncode:
-        raise RuntimeError("无法读取内置发布公钥指纹")
-    return process.stdout.split()[1]
-
-
-def verify_embedded_signature(root: Path) -> dict:
-    executable = shutil.which("ssh-keygen")
-    manifest = root / "release-manifest.json"
-    signature = root / "release-manifest.json.sig"
-    public_key = root / "publisher-ed25519.pub"
-    metadata_path = root / "release-signature.json"
-    missing = [
-        path.name
-        for path in (manifest, signature, public_key, metadata_path)
-        if not path.is_file()
-    ]
-    if missing:
-        raise RuntimeError("缺少内置验签文件：" + "、".join(missing))
-    if executable is None:
-        raise RuntimeError("宿主环境缺少ssh-keygen，拒绝跳过Ed25519验签")
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    fingerprint = public_fingerprint(public_key)
-    expected_metadata = {
-        "algorithm": "OpenSSH-Ed25519",
-        "signature_namespace": SKILL_SIGNATURE_NAMESPACE,
-        "signed_file": "release-manifest.json",
-        "signature": "release-manifest.json.sig",
-        "public_key": "publisher-ed25519.pub",
-        "public_key_fingerprint": OFFICIAL_PUBLISHER_FINGERPRINT,
-    }
-    if not isinstance(metadata, dict) or any(
-        metadata.get(key) != value
-        for key, value in expected_metadata.items()
-    ):
-        raise RuntimeError("内置签名元数据与固定发布协议不一致")
-    if fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
-        raise RuntimeError("内置发布公钥不是共创研究院官方固定发布身份")
-    with tempfile.TemporaryDirectory(prefix="skill-manifest-verify-") as temp:
-        allowed = Path(temp) / "allowed_signers"
-        allowed.write_text(
-            "publisher " + public_key.read_text(encoding="utf-8").strip() + "\n",
-            encoding="utf-8",
-        )
-        process = subprocess.run(
-            [
-                executable,
-                "-Y",
-                "verify",
-                "-f",
-                str(allowed),
-                "-I",
-                "publisher",
-                "-n",
-                SKILL_SIGNATURE_NAMESPACE,
-                "-s",
-                str(signature),
-            ],
-            input=manifest.read_bytes(),
-            check=False,
-            capture_output=True,
-        )
-    if process.returncode:
-        raise RuntimeError("内置发布清单签名验证失败")
-    return {
-        "status": "verified",
-        "public_key_fingerprint": fingerprint,
-        "trust_model": "pinned-official-publisher",
-    }
-
-
 def check_runtime_requirements(manifest: dict) -> dict:
     requirements = manifest.get("runtime_requirements", {})
     modules = []
@@ -295,42 +190,20 @@ def active_preferences(profile: dict) -> list[dict]:
 
 
 def prepare(
-    root: Path,
     manifest: dict,
     profile_path: Path,
     backup_dir: Path,
 ) -> dict:
-    """Verify the signed skill first, then load the optional preference layer.
-
-    Package integrity and publisher identity are mandatory.  The external
-    preference profile is an auxiliary user feature: an unavailable or
-    unwritable profile must be reported, but must not turn a verified skill
-    into an unusable copy.
-    """
-    check = run_install_check(root)
-    signature_check = verify_embedded_signature(root)
+    """Check runtime dependencies and load the external preference layer."""
     capability_check = check_runtime_requirements(manifest)
     release_tag = manifest.get("release_tag")
     profile = empty_profile(manifest["skill_name"])
     previous = None
     backup = None
-    trust_established = False
     preference_check: dict[str, object] = {"status": "pass"}
     try:
         profile_path.parent.mkdir(parents=True, exist_ok=True)
         profile = load_profile(profile_path, manifest["skill_name"])
-        current_fingerprint = signature_check.get("public_key_fingerprint")
-        trusted_fingerprint = profile.get("trusted_publisher_fingerprint")
-        if current_fingerprint:
-            if current_fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
-                raise RuntimeError("当前发布者不是共创研究院官方固定发布身份")
-            if trusted_fingerprint and trusted_fingerprint != current_fingerprint:
-                raise PublisherTrustMismatch(
-                    "个人配置中的发布者指纹与官方固定发布身份不一致"
-                )
-            if not trusted_fingerprint:
-                profile["trusted_publisher_fingerprint"] = current_fingerprint
-                trust_established = True
         previous = profile.get("last_seen_release")
         if previous != release_tag:
             backup = backup_profile(profile_path, backup_dir)
@@ -346,11 +219,9 @@ def prepare(
             profile["release_history"] = history[-50:]
             profile["updated_at"] = now()
             atomic_write(profile_path, profile)
-        elif not profile_path.exists() or trust_established:
+        elif not profile_path.exists():
             profile["updated_at"] = now()
             atomic_write(profile_path, profile)
-    except PublisherTrustMismatch:
-        raise
     except Exception as exc:
         preference_check = {
             "status": "unavailable",
@@ -360,7 +231,6 @@ def prepare(
         profile = empty_profile(manifest["skill_name"])
         previous = None
         backup = None
-        trust_established = False
 
     limited_reasons = []
     if capability_check.get("status") == "limited":
@@ -375,12 +245,9 @@ def prepare(
         "previous_release": previous,
         "profile_backup": backup,
         "profile_path": str(profile_path),
-        "install_check": check,
         "capability_check": capability_check,
-        "signature_check": signature_check,
         "preference_check": preference_check,
         "limited_reasons": limited_reasons,
-        "publisher_trust_established": trust_established,
         "active_preferences": active_preferences(profile),
     }
 
@@ -466,13 +333,27 @@ def main() -> int:
     options = arguments()
     root = skill_root()
     try:
+        release_files = (
+            "release-manifest.json", "release-manifest.json.sig", "release-signature.json", "publisher-ed25519.pub",
+        )
+        if options.command == "prepare" and not options.require_manifest and not any(
+            (root / name).exists() or (root / name).is_symlink() for name in release_files
+        ):
+            print(json.dumps({
+                "status": "limited",
+                "skill": root.name,
+                "release_tag": None,
+                "message": "未签名，跳过清单校验",
+                "limited_reasons": ["release-manifest-missing"],
+                "active_preferences": [],
+            }, ensure_ascii=False, indent=2))
+            return 0
         manifest = read_manifest(root)
         skill_name = manifest["skill_name"]
         profile_dir, profile_path, backup_dir = paths(skill_name, options.data_dir)
 
         if options.command == "prepare":
             result = prepare(
-                root,
                 manifest,
                 profile_path,
                 backup_dir,

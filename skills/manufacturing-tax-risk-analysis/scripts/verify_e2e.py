@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate and verify the portable 17-page branded tax-risk sample."""
+"""Generate and verify the portable 17-page tax-risk sample."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
+
 import json
 import os
 import subprocess
@@ -25,20 +25,20 @@ def run_checked(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
     tax_root = skills_root / "manufacturing-tax-risk-analysis"
-    runtime_root = skills_root / "_runtime" / "gongchuang-branding"
+
     required = [
         tax_root / "scripts" / "generate_report_html.py",
         tax_root / "scripts" / "render_pdf_stdout.js",
-        tax_root / "scripts" / "brand_gold_pdf.py",
+
         tax_root / "scripts" / "calculate_metrics.py",
         tax_root / "references" / "report-data.example.json",
         tax_root / "references" / "metrics-input.example.json",
-        tax_root / "assets" / "gold-advisor.css",
-        runtime_root / "scripts" / "delivery_gate.py",
-        runtime_root / "scripts" / "pdf_two_pass.py",
-        runtime_root / "references" / "brand_config.json",
+        tax_root / "assets" / "gold-analysis.css",
+
+
+
     ]
-    required.extend(sorted((runtime_root / "assets").glob("brand-*.png")))
+
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise RuntimeError(f"portable report resources missing: {missing}")
@@ -46,8 +46,8 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
     output_directory.mkdir(parents=True, exist_ok=True)
     html_path = output_directory / "tax-risk-sample.html"
     pdf_path = output_directory / "tax-risk-sample.pdf"
-    brand_audit_path = output_directory / "brand-audit.json"
-    delivery_audit_path = output_directory / "delivery-audit.json"
+
+
     facts_path = output_directory / "enterprise-financial-facts.v1.json"
     metrics_path = output_directory / "manufacturing-tax-risk-metrics.v1.json"
 
@@ -76,77 +76,22 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
     if html_text.count('<section class="page') != 17:
         raise RuntimeError("generated HTML does not contain exactly 17 page sections")
 
-    env = os.environ.copy()
-    render = subprocess.Popen(
-        [
-            env.get("NODE_BINARY", "node"),
-            str(tax_root / "scripts" / "render_pdf_stdout.js"),
-            str(html_path),
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-    )
-    assert render.stdout is not None
-    brand = subprocess.run(
-        [
-            sys.executable,
-            str(tax_root / "scripts" / "brand_gold_pdf.py"),
-            str(pdf_path),
-            "--audit-json",
-            str(brand_audit_path),
-            "--title",
-            "示例制造有限公司｜金税四期财务分析报告",
-        ],
-        stdin=render.stdout,
-        capture_output=True,
-        text=False,
-        env=env,
-    )
-    render.stdout.close()
-    render_stderr = render.stderr.read().decode("utf-8", errors="replace")
-    render_returncode = render.wait()
-    if render_returncode:
-        raise RuntimeError(f"PDF renderer failed ({render_returncode}): {render_stderr}")
-    if brand.returncode:
-        raise RuntimeError(
-            f"branding failed ({brand.returncode}): "
-            f"{brand.stderr.decode('utf-8', errors='replace')}"
-        )
+    import pymupdf as fitz
 
-    delivery = run_checked(
-        [
-            sys.executable,
-            str(runtime_root / "scripts" / "delivery_gate.py"),
-            str(pdf_path),
-            "--expected-pages",
-            "17",
-            "--expected-author",
-            "共创知识产权",
-            "--expected-title-contains",
-            "金税四期",
-            "--audit-json",
-            str(delivery_audit_path),
-        ]
+    renderer = subprocess.run(
+        [os.environ.get("NODE_BINARY", "node"), str(tax_root / "scripts" / "render_pdf_stdout.js"), str(html_path)],
+        capture_output=True, check=True,
     )
-    audit = json.loads(delivery_audit_path.read_text(encoding="utf-8"))
-    if audit.get("watermarks") != 17:
-        raise RuntimeError("delivery audit did not confirm 17 watermarks")
-
+    with fitz.open(stream=renderer.stdout, filetype="pdf") as document:
+        if len(document) != 17:
+            raise RuntimeError(f"expected 17 pages, got {len(document)}")
+        if not all(page.get_text("text").strip() for page in document):
+            raise RuntimeError("PDF contains a blank page")
+        pdf_path.write_bytes(renderer.stdout)
     return {
-        "status": "passed",
-        "skills_root": str(skills_root),
-        "html": str(html_path),
-        "pdf": str(pdf_path),
-        "financial_facts": str(facts_path),
-        "metrics": str(metrics_path),
-        "pdf_sha256": hashlib.sha256(pdf_path.read_bytes()).hexdigest(),
-        "pages": audit["pages"],
-        "watermarks": audit["watermarks"],
-        "watermark_size": audit["watermark_size"],
-        "metadata": audit["metadata"],
+        "status": "passed", "html": str(html_path), "pdf": str(pdf_path), "pages": 17,
+        "financial_facts": str(facts_path), "metrics": str(metrics_path),
         "generator": json.loads(generate.stdout),
-        "delivery_gate": json.loads(delivery.stdout),
     }
 
 
@@ -164,7 +109,7 @@ def main() -> int:
     if args.output_dir:
         result = verify(args.skills_root.resolve(), args.output_dir.resolve())
     else:
-        with tempfile.TemporaryDirectory(prefix="gongchuang-tax-e2e-") as directory:
+        with tempfile.TemporaryDirectory(prefix="tax-risk-e2e-") as directory:
             result = verify(args.skills_root.resolve(), Path(directory))
             result.pop("html", None)
             result.pop("pdf", None)

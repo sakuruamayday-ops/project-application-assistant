@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -8,6 +9,7 @@ from zipfile import ZipFile
 
 import pytest
 from docx import Document
+from docx.opc.coreprops import CoreProperties
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
@@ -42,6 +44,12 @@ def test_creates_a_native_docx_with_one_structured_stdout_record(tmp_path: Path)
     assert result["characters"] == len(content)
     assert result["tables"] == 1
     generated = Document(artifact)
+    properties = generated.core_properties
+    assert properties.author == properties.last_modified_by
+    assert properties.author
+    assert properties.created == properties.modified
+    assert properties.created.year >= 2026
+    assert properties.comments == ""
     assert generated.paragraphs[0].text == "制造精品前期评估"
     assert generated.paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.CENTER
     assert generated.sections[0].top_margin.cm == pytest.approx(2.0, abs=0.001)
@@ -54,6 +62,21 @@ def test_creates_a_native_docx_with_one_structured_stdout_record(tmp_path: Path)
     table_run = generated.tables[0].cell(1, 0).paragraphs[0].runs[0]
     assert table_run.font.size.pt == pytest.approx(9.5)
     assert generated.tables[0].cell(1, 0).paragraphs[0].paragraph_format.space_after.pt == 0
+
+
+def test_rejects_invalid_metadata_before_publishing_docx(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    generate = runpy.run_path(str(SCRIPT))["build_document"]
+    field = CoreProperties.last_modified_by
+
+    def clear_last_editor(properties, value):
+        field.fset(properties, "")
+
+    monkeypatch.setattr(CoreProperties, "last_modified_by", property(field.fget, clear_last_editor))
+    output = tmp_path / "rejected.docx"
+    with pytest.raises(ValueError, match="DOCX 元数据自检失败.*最后修改者"):
+        generate("# 示例正文", output)
+    assert not output.exists()
 
 
 def test_refuses_to_overwrite_an_existing_docx(tmp_path: Path) -> None:
@@ -145,9 +168,9 @@ def test_html_file_keeps_literal_body_and_native_table_cells(tmp_path: Path) -> 
 def test_html_headers_footers_and_chapter_titles_keep_their_word_roles(tmp_path: Path) -> None:
     source = tmp_path / "report-with-page-furniture.html"
     source.write_text(
-        '<html><body><div class="gongchuang-document-header">共创研究院</div>'
+        '<html><body><div class="gongchuang-document-header">示例品牌</div>'
         '<div class="gongchuang-cover-signature">封面署名</div><h1>分析草稿</h1>'
-        '<section><div class="gongchuang-document-header">共创研究院</div>'
+        '<section><div class="gongchuang-document-header">示例品牌</div>'
         '<header class="page-header"><span>01</span><b>现金流</b></header>'
         '<h2>经营收现需要核验</h2><p>2025 年度金额 1,234.56 万元，资料尚未取得。</p>'
         '<footer class="page-footer">财务分析｜报告署名</footer></section>'
@@ -160,10 +183,10 @@ def test_html_headers_footers_and_chapter_titles_keep_their_word_roles(tmp_path:
     body = [p.text for p in document.paragraphs]
     assert body == ["分析草稿", "01 现金流", "经营收现需要核验", "2025 年度金额 1,234.56 万元，资料尚未取得。"]
     section = document.sections[0]
-    assert [p.text for p in section.header.paragraphs if p.text] == ["共创研究院"]
+    assert not [p.text for p in section.header.paragraphs if p.text]
     assert [p.text for p in section.footer.paragraphs if p.text] == ["财务分析｜报告署名"]
-    assert [p.text for p in section.first_page_footer.paragraphs if p.text] == ["封面署名"]
-    assert section.different_first_page_header_footer
+    assert not [p.text for p in section.first_page_footer.paragraphs if p.text]
+    assert not section.different_first_page_header_footer
     for paragraph in document.paragraphs[:3]:
         assert paragraph.paragraph_format.keep_with_next
         assert paragraph.paragraph_format.keep_together
@@ -173,13 +196,14 @@ def test_existing_template_chapter_headers_and_report_end_remain_in_body(tmp_pat
     from lxml import html
 
     skills = SCRIPT.parents[2]
-    tax = html.document_fromstring((skills / "manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html").read_bytes())
-    sales = html.document_fromstring((skills / "enterprise-panorama-analysis/assets/sales-master-template.html").read_bytes())
+    tax = html.document_fromstring((skills / "manufacturing-tax-risk-analysis/assets/deep-gold-analysis-template.html").read_bytes())
+    sales = html.document_fromstring((skills / "enterprise-panorama-analysis/assets/standard-master-template.html").read_bytes())
     chapter_headers = tax.xpath("//header[not(@class)]")[:2]
     report_end = sales.xpath('//footer[@class="report-end"]')[0]
-    end_text = [p.text_content().replace("{{REPORT_DATE}}", "2026-10-17") for p in report_end.xpath("./p")]
+    report_date = "2026-10-17"
+    end_text = [p.text_content().replace("{{REPORT_DATE}}", report_date) for p in report_end.xpath("./p")]
     fragments = [html.tostring(node, encoding="unicode", with_tail=False) for node in chapter_headers]
-    fragments.append(html.tostring(report_end, encoding="unicode", with_tail=False).replace("{{REPORT_DATE}}", "2026-10-17"))
+    fragments.append(html.tostring(report_end, encoding="unicode", with_tail=False).replace("{{REPORT_DATE}}", report_date))
     source = tmp_path / "template-body-semantics.html"
     source.write_text("<html><body>" + "".join(fragments) + "</body></html>", encoding="utf-8")
     output = tmp_path / "template-body-semantics.docx"
@@ -187,9 +211,7 @@ def test_existing_template_chapter_headers_and_report_end_remain_in_body(tmp_pat
                    check=True, capture_output=True, text=True)
     document = Document(output)
     body = [p.text for p in document.paragraphs]
-    assert body[:2] == [node.text_content() for node in chapter_headers]
-    assert body[-3:] == end_text
-    assert "未核验事项保留待核" in body[-2]
-    assert body[-1] == "报告日期：2026-10-17"
+    assert body == [node.text_content() for node in chapter_headers] + end_text
+    assert report_date in body[-1]
     assert not any(p.text for p in document.sections[0].header.paragraphs)
     assert not any(p.text for p in document.sections[0].footer.paragraphs)

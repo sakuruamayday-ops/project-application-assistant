@@ -160,6 +160,8 @@ def validate_master(data: dict[str, Any]) -> list[str]:
 
     if issues and any("必须为数组" in issue for issue in issues):
         return issues
+    if not technologies and not products:
+        issues.append("母矩阵未提供技术或产品记录")
 
     technology_ids: set[str] = set()
     for index, technology in enumerate(technologies):

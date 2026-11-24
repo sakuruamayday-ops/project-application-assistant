@@ -51,7 +51,7 @@ def graphify_version() -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Initialize a project-scoped Gongchuang Research Institute Graphify profile.")
+    parser = argparse.ArgumentParser(description="Initialize a project-scoped Graphify profile.")
     parser.add_argument("project_root", type=Path)
     parser.add_argument("--profile", required=True, choices=sorted(PROFILES))
     parser.add_argument("--project-name", required=True)

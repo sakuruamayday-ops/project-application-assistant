@@ -12,10 +12,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ledger")
     parser.add_argument("--strict-grounded", action="store_true")
+    parser.add_argument("--source-root", type=Path, help="政策原件相对路径的根目录，缺省取台账所在目录")
     parser.add_argument("--market-share", action="store_true")
     args = parser.parse_args()
     result = validate_payload(
-        load_payload(Path(args.ledger)),
+        load_payload(Path(args.ledger), args.source_root),
         strict_grounded=args.strict_grounded,
         require_market_share=args.market_share,
     )

@@ -9,7 +9,10 @@ from pathlib import Path
 
 
 NUMBER_RE = re.compile(
-    r"(?<![A-Za-z0-9])(?:\d+(?:\.\d+)?(?:×10[⁻−-]?[⁰¹²³⁴⁵⁶⁷⁸⁹0-9]+)?)(?:%|％|毫秒|秒|分钟|小时|天|年|万元|亿元|元|项|个|组|家|人|次|GWh|Wh|K|mm|cm|m)?"
+    r"(?<![A-Za-z0-9])\d+(?:\.\d+)?(?:×10[⁻−-]?[⁰¹²³⁴⁵⁶⁷⁸⁹0-9]+)?"
+    r"(?:[^\S\r\n]*(?:%|％|毫秒|秒|分钟|小时|天|年|万元|亿元|元|项|个|组|家|人|次|"
+    r"平方千米|平方米|平方厘米|平方毫米|公顷|亩|㎡|毫米|厘米|微米|纳米|千米|米|"
+    r"GWh|Wh|K|(?:mm|cm|nm|μm|µm|km|m)(?:[²³]|[23])?(?![A-Za-z0-9])))?"
 )
 # 中文属于 Unicode 单词字符；使用 ASCII 边界才能识别紧贴中文的 X1、MES。
 ACRONYM_RE = re.compile(r"\b[A-Z][A-Z0-9-]{1,}\b", re.ASCII)
@@ -52,8 +55,8 @@ def main() -> int:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         return 2
 
-    source_numbers = items(NUMBER_RE, source)
-    rewrite_numbers = items(NUMBER_RE, rewrite)
+    source_numbers = {re.sub(r"\s+", "", token) for token in NUMBER_RE.findall(source)}
+    rewrite_numbers = {re.sub(r"\s+", "", token) for token in NUMBER_RE.findall(rewrite)}
     source_acronyms = items(ACRONYM_RE, source)
     rewrite_acronyms = items(ACRONYM_RE, rewrite)
     source_strong = [] if args.trust_required_narrative else items(STRONG_RE, source)
@@ -70,8 +73,8 @@ def main() -> int:
             "max_chars": args.max_chars,
         },
         "numbers": {
-            "missing_from_rewrite": sorted(set(source_numbers) - set(rewrite_numbers)),
-            "added_in_rewrite": sorted(set(rewrite_numbers) - set(source_numbers)),
+            "missing_from_rewrite": sorted(source_numbers - rewrite_numbers),
+            "added_in_rewrite": sorted(rewrite_numbers - source_numbers),
         },
         "acronyms": {
             "missing_from_rewrite": sorted(set(source_acronyms) - set(rewrite_acronyms)),

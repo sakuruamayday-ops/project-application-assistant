@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the branded Version B advisory PDF without an unbranded disk intermediate."""
+"""Render the Version B deep analysis HTML as a PDF."""
 
 import argparse
 import sys
@@ -16,8 +16,8 @@ if __name__ == "__main__":
     sys.modules.setdefault("pymupdf4llm", None)
 
 HERE = Path(__file__).resolve().parent
-SKILLS_ROOT = Path(__file__).resolve().parents[2]
-BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
+
+
 
 
 def npm_root() -> str:
@@ -27,7 +27,7 @@ def npm_root() -> str:
     return result.stdout.strip()
 
 
-def render_pdf_bytes(html_path: Path) -> bytes:
+def render_pdf_bytes(html_path: Path | None, *, contents: bytes | None = None) -> bytes:
     node = shutil.which("node")
     if not node:
         raise RuntimeError("node executable not found")
@@ -35,34 +35,35 @@ def render_pdf_bytes(html_path: Path) -> bytes:
     global_modules = npm_root()
     existing = env.get("NODE_PATH", "")
     env["NODE_PATH"] = global_modules if not existing else global_modules + os.pathsep + existing
+    source = "-" if html_path is None or html_path == Path("-") else str(html_path.resolve())
     result = subprocess.run(
-        [node, str(HERE / "render_pdf_bytes.js"), str(html_path.resolve())],
-        check=True,
+        [node, str(HERE / "render_pdf_bytes.js"), source],
+        input=contents,
         capture_output=True,
         env=env,
     )
+    if result.returncode:
+        raise RuntimeError(result.stderr.decode("utf-8", errors="replace").strip())
     return base64.b64decode(result.stdout, validate=True)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--html", required=True, type=Path)
+    parser.add_argument("--html", required=True, type=Path, help="已有 HTML 文件，或用 - 读取自包含的 HTML 流")
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
-    if not args.html.is_file():
+    if args.html != Path("-") and not args.html.is_file():
         raise FileNotFoundError(args.html)
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
+    import pymupdf as fitz
+    from outline_pdf_text import validate_page_content
+
     raw_pdf = render_pdf_bytes(args.html)
-    if not BRANDING_SCRIPTS.is_dir():
-        raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
-    import sys
-
-    sys.path.insert(0, str(BRANDING_SCRIPTS))
-    from pdf_two_pass import brand_pdf_bytes
-
-    audit = brand_pdf_bytes(raw_pdf, args.out)
-    print(f"WROTE {args.out.resolve()} pages={len(audit)} bytes={args.out.stat().st_size}")
+    with fitz.open(stream=raw_pdf, filetype="pdf") as document:
+        pages = validate_page_content(document)
+    args.out.write_bytes(raw_pdf)
+    print(f"WROTE {args.out.resolve()} pages={pages} bytes={args.out.stat().st_size}")
 
 
 if __name__ == "__main__":

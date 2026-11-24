@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import re
 from pathlib import Path
@@ -56,8 +57,8 @@ def build_cases() -> list[dict[str, object]]:
                         "kind": "cross-project",
                         "alias": alias,
                         "query": f"{alias}申报条件",
-                        "allowed_title": f"{allowed}申报通知",
-                        "excluded_title": f"{excluded}申报通知",
+                        "allowed_title": f"{allowed}管理办法",
+                        "excluded_title": f"{excluded}管理办法",
                     },
                     {
                         "id": f"{rule['id']}:{alias}:stale",
@@ -73,12 +74,15 @@ def build_cases() -> list[dict[str, object]]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="生成高频项目检索回归样本")
+    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    args = parser.parse_args()
     cases = build_cases()
-    OUTPUT_PATH.write_text(
+    args.output.write_text(
         "".join(json.dumps(case, ensure_ascii=False, sort_keys=True) + "\n" for case in cases),
         encoding="utf-8",
     )
-    print(f"aliases={len(cases) // 3} cases={len(cases)} output={OUTPUT_PATH}")
+    print(f"aliases={len(cases) // 3} cases={len(cases)} output={args.output}")
 
 
 if __name__ == "__main__":

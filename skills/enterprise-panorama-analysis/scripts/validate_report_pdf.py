@@ -13,32 +13,23 @@ if __name__ == "__main__":
     sys.modules.setdefault("pymupdf.layout", None)
     sys.modules.setdefault("pymupdf4llm", None)
 
-SKILLS_ROOT = Path(__file__).resolve().parents[2]
-BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
-if not BRANDING_SCRIPTS.is_dir():
-    raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
-sys.path.insert(0, str(BRANDING_SCRIPTS))
-from delivery_gate import GateFailure, validate_pdf as validate_branded_pdf  # noqa: E402
+import pymupdf as fitz
 
+from outline_pdf_text import ValidationError, validate_page_content
 
-class ValidationError(GateFailure):
-    pass
-
-
-def validate_pdf(path: str | Path, *, require_watermark: bool = False) -> dict[str, Any]:
-    if not require_watermark:
-        raise ValidationError(
-            "B版验证必须显式使用--require-watermark；A版由销售版生成器单独校验"
-        )
-    return validate_branded_pdf(path)
+def validate_pdf(path: str | Path) -> dict[str, Any]:
+    with fitz.open(path) as document:
+        return {"format": "pdf", "count": validate_page_content(document)}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("pdf", type=Path)
-    parser.add_argument("--require-watermark", action="store_true")
     args = parser.parse_args()
-    print(validate_pdf(args.pdf, require_watermark=args.require_watermark))
+    try:
+        print(validate_pdf(args.pdf))
+    except ValidationError as error:
+        parser.exit(2, f"{error}\n")
 
 
 if __name__ == "__main__":

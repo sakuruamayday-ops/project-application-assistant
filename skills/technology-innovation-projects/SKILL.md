@@ -5,6 +5,16 @@ description: 分析研发机构、企业研究院、科技计划、创新平台�
 
 # 科技创新项目
 
+## 商业定位、MCP 双态与黑板接力
+
+本技能属于 **WorkBuddy 收费撰写与专业方案能力（研发机构与项目评估 · 收费 MCP 服务端 / 付费交付端）**，遵循 [WorkBuddy 商业分层与 MCP 规范](../_runtime/workbuddy-core/mcp-routing-and-tiering.md) 与 [申报正文撰写共用底座（v1.2）](../_runtime/workbuddy-core/v12-drafting-core.md)：
+
+- **业务范围**：承接省级企业研究院/研发机构建设方案撰写、科技计划任务与预算论证及条件评估；商业母版与整稿生成资产留在收费服务端，免费初筛/盘点由对应免费体检技能承接。
+- **v1.2 撰写与体检分离**：撰写正文/建设方案时直接生成干净、专业、可直接使用的成品（不在正文插括号或免责兜底）；缺实测数据时允许按行业成熟工程常识表述为“设计控制目标为……”，并将估算项外置至《交付核对与补强清单》及黑板（`origin: ai_design_target`）；涉及主导产品与专利时严格执行双字段锚定、业态三分支与专利三级分流。做门槛核验/体检时严认原件不估算。
+- **主体隔离黑板与 MCP 故障显式报错**：启动前按企业主体读取 `.facts/<企业标识>.facts.json` 复用上游免费体检事实；已配置付费 MCP 若出现鉴权过期/配额用尽/超时，必须显式报错排查，绝不静默降级。
+
+地方条件按[省级管理办法检索指引](references/policy-lookup.md)核对适用办法。申报时间、截止日期与当年申报范围由客户按当期通知确认。
+
 ## 方法
 
 1. 按目标、支出和成果识别项目、机关、周期及验收方式；产品认定和示范参考 `industrialization-projects`，产线与固定资产参考 `investment-subsidy-projects`。
@@ -12,12 +22,12 @@ description: 分析研发机构、企业研究院、科技计划、创新平台�
 3. 关联技术问题、研究任务、里程碑、预算和验收，产学研核对协议、分工、投入、权属及实施。
 4. 缺项标具体资料、责任主体和验证方式，按已有信息形成当前方案或情景，业务状态与证据完整度分别记录。
 
-分类见 `references/technology-project-taxonomy.md`。杭州研发中心等旧简称按 `references/current-rd-platform-baseline-2026.md` 对应杭州市企业研究院，年度通知、长期办法、征求意见及历史材料分别标状态，后续年度按当期规则更新。
+分类见 `references/technology-project-taxonomy.md`。省级研发平台按 `references/current-rd-platform-baseline-2026.md` 的现行管理办法判断，市级平台在已明确属地时核对适用实施细则。
 
 案例按地区层级与 `project_id` 选骨架及章节附件，借鉴结构和证据组织；条件比较保留并列、任选和“原则上”等原限定。科技人员、专职研发、预测收入、规上状态、自筹经费和政策多条资格路径分别核对。
 
 ## 输出
 
-前期与可行性参考 `project-feasibility/references/two-report-contract.md`。研发机构按现行条件或已发布评分表展开，评分表待发布时分析条件及竞争力；科技计划保留任务、团队、预算、节点和验收逻辑。内容与文件按现有资料生成即交付，缺项集中列短清单。
+前期与可行性参考 `project-feasibility/references/two-report-contract.md`。研发机构按管理办法条件及随文评价表展开，缺项目专用表单时仍可分析条件和竞争力；科技计划保留任务、团队、预算、节点和验收逻辑。内容与文件按现有资料生成即交付，缺项集中列短清单。 [省企业研究院样例](references/provincial-institute-case.md)演示按管理办法复算费用并形成条件对照和四列缺陷表。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

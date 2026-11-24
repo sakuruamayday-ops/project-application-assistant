@@ -15,6 +15,9 @@ from typing import Any
 import yaml
 
 
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "_runtime" / "config" / "common.yaml"
+
+
 def parse_time(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -63,15 +66,21 @@ def load_jsonl(paths: list[Path]) -> list[dict[str, Any]]:
     return records
 
 
-def load_policy(config_path: Path) -> dict[str, Any]:
-    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    policy = data.get("evolution", {}).get("correction_batch", {})
+def read_correction_batch(path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return data.get("evolution", {}).get("correction_batch", {})
+
+
+def load_policy(config_path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
+    policy = read_correction_batch(DEFAULT_CONFIG_PATH)
+    if config_path != DEFAULT_CONFIG_PATH:
+        policy.update(read_correction_batch(config_path))
     return {
-        "min_signal_count": int(policy.get("min_signal_count", 3)),
-        "min_distinct_tasks": int(policy.get("min_distinct_tasks", 2)),
-        "max_batch_skills": int(policy.get("max_batch_skills", 2)),
-        "cooldown_days": int(policy.get("cooldown_days", 7)),
-        "require_verified": bool(policy.get("require_verified", True)),
+        "min_signal_count": int(policy["min_signal_count"]),
+        "min_distinct_tasks": int(policy["min_distinct_tasks"]),
+        "max_batch_skills": int(policy["max_batch_skills"]),
+        "cooldown_days": int(policy["cooldown_days"]),
+        "require_verified": bool(policy["require_verified"]),
     }
 
 
@@ -176,7 +185,7 @@ def main() -> None:
     default_root = Path(__file__).resolve().parents[3]
     parser.add_argument("--root", type=Path, default=default_root)
     parser.add_argument("--input", action="append", type=Path, required=True)
-    parser.add_argument("--config", type=Path)
+    parser.add_argument("--config", type=Path, help="用户配置文件，优先于工作根目录配置和包内默认配置")
     parser.add_argument("--state", type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--now", help="测试或回放使用的ISO时间")
@@ -184,7 +193,8 @@ def main() -> None:
     args = parser.parse_args()
 
     root = args.root.resolve()
-    config_path = args.config or root / "config" / "common.yaml"
+    root_config = root / "config" / "common.yaml"
+    config_path = args.config or (root_config if root_config.is_file() else DEFAULT_CONFIG_PATH)
     output_dir = args.output_dir or root / ".project-assistant" / "evolution"
     state_path = args.state or output_dir / "evolution-state.json"
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
