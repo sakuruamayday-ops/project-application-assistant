@@ -35,7 +35,7 @@
     "scripts/report_html.py": "e193275f30f07cc93860761b0db219fd634a41e0e315ceb4926f701f4bfd2fe4",
     "scripts/select_report_template.py": "1ddb5fb2a5c534468c4c802eddd7b3a16980ebb775d0793bcb98ccb3fe6e00db",
     "scripts/sme_action_report.py": "1f53102023ee0df359b7131b74f4e31564d8b74ff2f29e1946b55733056ef38c",
-    "scripts/validate_grant_deliverable.py": "522dbc07d071ec5c4ceee0995246ba46c5fecdd08bbbfff5fd5cd51b88680be2"
+    "scripts/validate_grant_deliverable.py": "f58c097c8dad5fa8e6bb758f0ccb7ee071bd141d2eef6b39f6aaf42401b17ea2"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

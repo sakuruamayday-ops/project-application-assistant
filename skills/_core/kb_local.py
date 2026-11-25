@@ -371,7 +371,7 @@ def _is_restricted_rag_item(item: dict[str, Any]) -> bool:
     for bool_key in ("restricted", "is_restricted", "confidential", "is_private", "private"):
         if item.get(bool_key) is True:
             return True
-    for key in ("access_level", "visibility", "permission", "security_level", "access", "scope", "data_classification", "权限", "访问级别", "密级"):
+    for key in ("sensitivity", "access_level", "visibility", "permission", "security_level", "access", "scope", "data_classification", "权限", "访问级别", "密级"):
         val = str(item.get(key) or "").strip().lower()
         if val and (val in RESTRICTED_ACCESS_VALUES or any(tok in val for tok in ("restricted", "private", "confidential", "受限", "机密", "仅内部"))):
             return True

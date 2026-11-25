@@ -18,7 +18,7 @@
     "references/portable-runtime-protocol.md": "d4004ca3fa57e1e2df725d125302b2d3fb532daef72dbbd527ccdb381cefb355",
     "references/standard-type-structures.md": "8b3716ce22905bd043a360102a39fab3e874212734db8993660cc54b5e5b9704",
     "scripts/audit_enterprise_standard_docx.py": "1205c7535a090c89ab84116740f1522f3892212967b301ac76f0c145c680e713",
-    "scripts/audit_standard_draft.py": "9b4d5329c1eacd5a837caf042ae3448b54ca3ba6e2bea1ed7c99066b9b4599d9",
+    "scripts/audit_standard_draft.py": "080b38e39d7d67b8995b4c5767379c6c09e39d4eeefb85fb4964efa5d9f5ddd8",
     "scripts/initialize_enterprise_standard.py": "bfe58ac83fb6199bd03eee45f6bd6d0bea1853df1629410fcdcb37fcd701af86",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

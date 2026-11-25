@@ -28,7 +28,7 @@
     "scripts/brand_gold_pdf.py": "ece7b8a5a7588ecfe700a261f96279563cfba62ef1b074f613b38b3356802781",
     "scripts/calculate_metrics.py": "5bb174563170a73853e84e76ce261780e02e616e55a25cecf3c9c65d7ea7ffae",
     "scripts/create_docx_from_text.py": "57dda81450dac7f5e5190960e6e4ab6c677f43c8c522be063776c2a720405d7a",
-    "scripts/generate_report_html.py": "26d2f9092638b3b37509f89f8f6cf0d10b834eb8e15df5422fd871486998e07c",
+    "scripts/generate_report_html.py": "7456c7e9fc52d804309b69bcf99d50b6bad33eabd1296994ec0c621e0d1a2cb1",
     "scripts/grounded_evidence.py": "ec3b0bab660018b65fdbd445a0d82103c2e160c40572b0384e0be96613f27e91",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
     "scripts/render_pdf_stdout.js": "cf5d50f6ad79301a9385475f4a48d66253c2f6463749abc822eebc5943c6b1f2",

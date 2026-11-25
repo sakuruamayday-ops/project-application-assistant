@@ -87,14 +87,17 @@ def audit(text: str) -> dict[str, object]:
         while sections and sections[-1][0] >= depth:
             sections.pop()
         context = sections[-1][1] if sections else "body"
-        if name == "范围":
-            context = "scope"
-        elif name in INFORMATIVE_HEADINGS or (name.startswith("附录") and "资料性" in name):
-            context = "informative"
-        sections.append((depth, context))
-
         end = heading_matches[index + 1].start() if index + 1 < len(heading_matches) else len(text)
         section_body = text[match.end():end]
+        first_nonempty = next((ln.strip() for ln in section_body.splitlines() if ln.strip()), "")
+        is_informative_appendix = name.startswith("附录") and (
+            "资料性" in name or re.match(r"^[（(]\s*资料性(?:附录)?\s*[）)]", first_nonempty) is not None
+        )
+        if name == "范围":
+            context = "scope"
+        elif name in INFORMATIVE_HEADINGS or is_informative_appendix:
+            context = "informative"
+        sections.append((depth, context))
 
         if name == "规范性引用文件":
             ref_section_text = section_body

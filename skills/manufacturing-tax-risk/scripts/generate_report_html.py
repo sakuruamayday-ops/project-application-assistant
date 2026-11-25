@@ -550,9 +550,13 @@ def check_reconciliation_gates(
             yr for yr in (_extract_year_int(y) for y in (resolved_data.get("financial_overview", {}).get("years") or []))
             if yr is not None
         }
-        out_of_range = sorted(y for y in (ref_years | overview_years) if y < p_start or y > p_end)
+        report_row_years = {
+            yr for yr in (_extract_year_int(row.get("indicator")) for row in (metrics.get("report_rows") or []) if isinstance(row, dict))
+            if yr is not None
+        }
+        out_of_range = sorted(y for y in (ref_years | overview_years | report_row_years) if y < p_start or y > p_end)
         if out_of_range:
-            blocking.append(f"期间错配：报告期间为 {p_start}—{p_end}，但引用或列示了超期年份指标 {out_of_range}")
+            blocking.append(f"期间错配：报告期间为 {p_start}—{p_end}，但引用或附表渲染了超期年份指标 {out_of_range}")
 
     # Consolidation scope check when both sides declare explicit non-unknown scope
     d_scope = str((resolved_data.get("basis") or {}).get("consolidation_scope") or "").strip().lower() if isinstance(resolved_data.get("basis"), dict) else ""
@@ -634,16 +638,27 @@ def main() -> None:
     body_html = result.split("</style>", 1)[-1]
     if "{{" in body_html or "}}" in body_html:
         warnings.append("正文含待填写模板标记，已保留当前内容")
+    written_path = args.output
     if streaming:
         sys.stdout.buffer.write(result.encode("utf-8"))
     else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        tmp_html = args.output.with_name(f".{args.output.name}.tmp")
+        import os
+        import tempfile
+
+        # When formal delivery is blocked, NEVER clobber an existing formal HTML report — write diagnostic draft to sibling .draft.html!
+        if blocking_issues and not args.allow_draft and args.output.exists():
+            written_path = args.output.with_suffix(".draft.html")
+        written_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_html: Path | None = None
         try:
-            tmp_html.write_text(result, encoding="utf-8")
-            tmp_html.replace(args.output)
+            with tempfile.NamedTemporaryFile("w", dir=written_path.parent, prefix=".html_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
+                tmp_html = Path(fh.name)
+                fh.write(result)
+                fh.flush()
+                os.fsync(fh.fileno())
+            tmp_html.replace(written_path)
         except Exception:
-            if tmp_html.exists():
+            if tmp_html is not None and tmp_html.exists():
                 tmp_html.unlink(missing_ok=True)
             raise
     receipt_status = "ok" if not blocking_issues else ("draft_unreconciled" if args.allow_draft else "blocked_unreconciled")
@@ -652,7 +667,8 @@ def main() -> None:
             {
                 "status": receipt_status,
                 "pages": result.count('<section class="page'),
-                "output": str(args.output),
+                "output": str(written_path),
+                "requested_output": str(args.output),
                 "metrics": str(args.metrics_json) if args.metrics_json else None,
                 "warnings": warnings,
                 "blocking_issues": blocking_issues,

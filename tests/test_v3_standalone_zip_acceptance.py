@@ -133,11 +133,22 @@ def test_all_10_standalone_zips_a_grade(tmp_path: Path):
         assert proc.returncode == 0, f"constitution fact_ledger read failed in {sdir.name}: {proc.stderr}"
         assert json.loads(proc.stdout)["found"] is False
 
-    # Check all 12 high-frequency-project-rules.jsonl management_rule paths resolve to real files in source repo
-    rules_file = REPO_ROOT / "skills" / "gov-project-checkup" / "references" / "high-frequency-project-rules.jsonl"
-    for line in rules_file.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        rec = json.loads(line)
-        target = (rules_file.parent / rec["management_rule"]).resolve()
-        assert target.is_file(), f"broken management_rule path in high-frequency-project-rules.jsonl: {rec['management_rule']}"
+    # Check all 12 high-frequency-project-rules.jsonl management_rule paths resolve INSIDE BOTH source AND extracted free ZIP!
+    for rules_file in (
+        REPO_ROOT / "skills" / "gov-project-checkup" / "references" / "high-frequency-project-rules.jsonl",
+        s1 / "references" / "high-frequency-project-rules.jsonl",
+    ):
+        for line in rules_file.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            target = (rules_file.parent / rec["management_rule"]).resolve()
+            assert target.is_file(), f"broken management_rule path in {rules_file}: {rec['management_rule']}"
+            if rules_file.is_relative_to(s1):
+                target.relative_to(s1.resolve())
+
+    # Assert ZERO __pycache__ / .pyc files leaked into ANY of the 10 standalone ZIPs
+    for zp in sorted(ZIPS_DIR.glob("*.zip")):
+        with zipfile.ZipFile(zp) as zf:
+            pyc_files = [n for n in zf.namelist() if n.endswith((".pyc", ".pyo")) or "__pycache__" in n]
+            assert not pyc_files, f".pyc leaked into {zp.name}: {pyc_files[:5]}"

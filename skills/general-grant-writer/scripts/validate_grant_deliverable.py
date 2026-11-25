@@ -89,16 +89,24 @@ def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[
             if tier == "provincial_key_institute":
                 # 浙经信高新〔2025〕169号 第（九）1条：
                 # 营收>=2亿元（农业>=5000万元）；研发占比>=4% 或 研发费>=5000万元（农业>=800万元）
+                # 山区海岛县可适当放宽，但须附当期主管部门放宽口径且绝不得0研发或全免
                 rev_floor = 5000.0 if is_agri else 20000.0
                 rd_amt_floor = 800.0 if is_agri else 5000.0
-                if not is_mountain and rd_rev < rev_floor:
-                    errs.append(
-                        f"[provincial_key_institute] 上一年度营业收入 {rd_rev} 万元低于169号文省重点企业研究院门槛 {rev_floor:.0f} 万元"
-                    )
-                if not is_mountain and not (raw_ratio >= 4.0 or rd_exp >= rd_amt_floor):
-                    errs.append(
-                        f"[provincial_key_institute] 研发强度({raw_ratio:.4f}%)低于4%且研发费用({rd_exp}万元)低于{rd_amt_floor:.0f}万元（不符合169号文）"
-                    )
+                if is_mountain:
+                    relax_basis = str(data.get("mountain_island_relaxation_basis") or "").strip()
+                    if not relax_basis:
+                        errs.append("[provincial_key_institute] 启用山区海岛县适当放宽条款须填写当期主管部门明确放宽口径 mountain_island_relaxation_basis，不得无依据全免")
+                    elif rd_exp <= 0:
+                        errs.append("[provincial_key_institute] 山区海岛县放宽口径下研发费用仍须大于0，不得零研发通过")
+                else:
+                    if rd_rev < rev_floor:
+                        errs.append(
+                            f"[provincial_key_institute] 上一年度营业收入 {rd_rev} 万元低于169号文省重点企业研究院门槛 {rev_floor:.0f} 万元"
+                        )
+                    if not (raw_ratio >= 4.0 or rd_exp >= rd_amt_floor):
+                        errs.append(
+                            f"[provincial_key_institute] 研发强度({raw_ratio:.4f}%)低于4%且研发费用({rd_exp}万元)低于{rd_amt_floor:.0f}万元（不符合169号文）"
+                        )
             elif tier == "provincial_institute":
                 # 浙经信高新〔2025〕169号 第（九）2条：
                 # ① <5000万: 占比>=5% 且 >=100万
@@ -254,12 +262,12 @@ def validate_subsidy(data: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
         invoice_caps[inv_key] = min(invoice_caps.get(inv_key, invoice_total_cap), invoice_total_cap)
         eligible_total += row_amt
 
-    # Enforce invoice-level cap across all asset cards so splitting 1 invoice onto 2 cards NEVER doubles eligible total!
+    # Enforce strict invoice-level cap across all asset cards (currency rounding tolerance 0.005 only)
     for inv_key, sum_alloc in invoice_alloc_totals.items():
         cap = invoice_caps[inv_key]
-        if sum_alloc > cap * 1.005:
+        if sum_alloc > cap + 0.005:
             errs.append(
-                f"同一发票({inv_key})跨资产卡累计申报金额({sum_alloc:.2f})超过发票总金额({cap:.2f})，禁止重复/翻倍计入"
+                f"同一发票({inv_key})跨资产卡累计申报金额({sum_alloc:.2f})超过发票总金额({cap:.2f})，禁止重复/超额计入"
             )
     return errs, {"eligible_investment_total": round(eligible_total, 2), "item_count": len(items)}
 

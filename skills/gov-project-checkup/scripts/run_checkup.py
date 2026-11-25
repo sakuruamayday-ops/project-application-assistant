@@ -170,43 +170,51 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: b
             "issues": patent_issues,
         }
 
-    emp = _finite_float(data.get("total_employees"))
-    tech = _finite_float(data.get("tech_employees"))
-    if emp is not None and emp > 0 and tech is not None:
-        if tech < 0 or tech > emp:
-            gates["tech_personnel_ratio"] = {"pass": False, "detail": f"科技人员数({tech})大于职工总数({emp})或为负数"}
-            errors.append(f"科技人员数({tech})不得大于职工总数({emp})或为负数")
+    raw_emp, raw_tech = data.get("total_employees"), data.get("tech_employees")
+    emp = _finite_float(raw_emp)
+    tech = _finite_float(raw_tech)
+    if raw_emp in (None, "") or raw_tech in (None, ""):
+        if (raw_emp not in (None, "") and (emp is None or emp <= 0)) or (raw_tech not in (None, "") and (tech is None or tech < 0)):
+            gates["tech_personnel_ratio"] = {"pass": False, "detail": "已提供的职工或科技人员数无效"}
+            errors.append("total_employees / tech_employees 存在无效、负数或非有限数值")
         else:
-            ratio_raw = tech / emp * 100.0
-            ok_tp = ratio_raw >= 10.0
-            gates["tech_personnel_ratio"] = {"pass": ok_tp, "ratio_pct": round(ratio_raw, 2), "threshold_pct": 10.0}
-            if not ok_tp:
-                errors.append(f"科技人员占比 {ratio_raw:.4f}% 低于10%红线")
-    elif data.get("total_employees") is not None or data.get("tech_employees") is not None:
+            gates["tech_personnel_ratio"] = {"pass": None, "detail": "暂缺职工总数或科技人员数"}
+            missing_inputs.append("total_employees / tech_employees（科技人员占比≥10%）")
+    elif emp is None or emp <= 0 or tech is None:
         gates["tech_personnel_ratio"] = {"pass": False, "detail": "职工总数或科技人员数非有效正数"}
         errors.append("total_employees / tech_employees 存在无效、负数或非有限数值")
+    elif tech < 0 or tech > emp:
+        gates["tech_personnel_ratio"] = {"pass": False, "detail": f"科技人员数({tech})大于职工总数({emp})或为负数"}
+        errors.append(f"科技人员数({tech})不得大于职工总数({emp})或为负数")
     else:
-        gates["tech_personnel_ratio"] = {"pass": None, "detail": "暂缺职工/科技人员数"}
-        missing_inputs.append("total_employees / tech_employees（科技人员占比≥10%）")
+        ratio_raw = tech / emp * 100.0
+        ok_tp = ratio_raw >= 10.0
+        gates["tech_personnel_ratio"] = {"pass": ok_tp, "ratio_pct": round(ratio_raw, 2), "threshold_pct": 10.0}
+        if not ok_tp:
+            errors.append(f"科技人员占比 {ratio_raw:.4f}% 低于10%红线")
 
-    rev_latest = _finite_float(data.get("latest_revenue"))
-    ht_rev = _finite_float(data.get("hightech_product_revenue"))
-    if rev_latest is not None and rev_latest > 0 and ht_rev is not None:
-        if ht_rev < 0 or ht_rev > rev_latest:
-            gates["hightech_revenue_ratio"] = {"pass": False, "detail": f"高新收入({ht_rev})大于同期总收入({rev_latest})或为负数"}
-            errors.append(f"高新技术产品（服务）收入({ht_rev})不得大于同期总收入({rev_latest})或为负数")
+    raw_rev, raw_ht = data.get("latest_revenue"), data.get("hightech_product_revenue")
+    rev_latest = _finite_float(raw_rev)
+    ht_rev = _finite_float(raw_ht)
+    if raw_rev in (None, "") or raw_ht in (None, ""):
+        if (raw_rev not in (None, "") and (rev_latest is None or rev_latest <= 0)) or (raw_ht not in (None, "") and (ht_rev is None or ht_rev < 0)):
+            gates["hightech_revenue_ratio"] = {"pass": False, "detail": "已提供的总收入或高新收入无效"}
+            errors.append("latest_revenue / hightech_product_revenue 存在无效或非有限数值")
         else:
-            ht_raw = ht_rev / rev_latest * 100.0
-            ok_ht = ht_raw >= 60.0
-            gates["hightech_revenue_ratio"] = {"pass": ok_ht, "ratio_pct": round(ht_raw, 2), "threshold_pct": 60.0}
-            if not ok_ht:
-                errors.append(f"近一年高新技术产品（服务）收入占比 {ht_raw:.4f}% 低于60%红线")
-    elif data.get("latest_revenue") is not None or data.get("hightech_product_revenue") is not None:
+            gates["hightech_revenue_ratio"] = {"pass": None, "detail": "暂缺高新收入或总收入"}
+            missing_inputs.append("latest_revenue / hightech_product_revenue（高新收入占比≥60%）")
+    elif rev_latest is None or rev_latest <= 0 or ht_rev is None:
         gates["hightech_revenue_ratio"] = {"pass": False, "detail": "总收入或高新收入非有效数值"}
         errors.append("latest_revenue / hightech_product_revenue 存在无效或非有限数值")
+    elif ht_rev < 0 or ht_rev > rev_latest:
+        gates["hightech_revenue_ratio"] = {"pass": False, "detail": f"高新收入({ht_rev})大于同期总收入({rev_latest})或为负数"}
+        errors.append(f"高新技术产品（服务）收入({ht_rev})不得大于同期总收入({rev_latest})或为负数")
     else:
-        gates["hightech_revenue_ratio"] = {"pass": None, "detail": "暂缺高新收入或总收入"}
-        missing_inputs.append("latest_revenue / hightech_product_revenue（高新收入占比≥60%）")
+        ht_raw = ht_rev / rev_latest * 100.0
+        ok_ht = ht_raw >= 60.0
+        gates["hightech_revenue_ratio"] = {"pass": ok_ht, "ratio_pct": round(ht_raw, 2), "threshold_pct": 60.0}
+        if not ok_ht:
+            errors.append(f"近一年高新技术产品（服务）收入占比 {ht_raw:.4f}% 低于60%红线")
 
     rev_3y = _finite_float(data.get("revenue_3y"))
     rd_3y = _finite_float(data.get("rd_expense_3y"))
@@ -442,10 +450,22 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
         errors.extend(p_errs)
         if pending_certs:
             missing_inputs.append(f"patents（{len(pending_certs)}项待补正式ZL授权证书核验）")
-        i_class_valid = sum(
-            1 for p in valid_pats
-            if "发明" in str(p.get("type") or "") or str(p.get("ip_class") or "").upper() == "I"
-        )
+        def _is_true_i_class(p: dict[str, Any]) -> bool:
+            ptype = str(p.get("type") or "")
+            # Utility models / design patents are strictly II-class even if caller labels ip_class="I"!
+            if any(k in ptype for k in ("实用", "外观", "软著", "软件著作权")):
+                return False
+            pno = re.sub(r"\s+", "", str(p.get("patent_no") or p.get("no") or "")).upper()
+            m_no = re.search(r"(?:ZL|CN)?((?:19|20)\d{2})(\d)\d{7}", pno)
+            if m_no and m_no.group(2) in {"2", "3", "9"}:
+                return False
+            if "发明" in ptype or (m_no and m_no.group(2) in {"1", "8"}):
+                return True
+            if any(k in ptype for k in ("集成电路布图", "植物新品种", "国家级农作物", "国家新药", "国家一级中药")):
+                return True
+            return str(p.get("ip_class") or "").upper() == "I" and not ptype
+
+        i_class_valid = sum(1 for p in valid_pats if _is_true_i_class(p))
         ok_ip_sme: bool | None = (i_class_valid >= effective_min_ip and not p_errs) if not pending_certs else (False if strict else None)
         gates["i_class_ip"] = {
             "pass": ok_ip_sme,

@@ -240,8 +240,9 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
             )
             env = os.environ.copy()
             env["WB_CHECK_SCRIPTS_DIR"] = str(scripts_dir)
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
             proc = subprocess.run(
-                [sys.executable, "-c", check_code],
+                [sys.executable, "-B", "-c", check_code],
                 cwd=str(skill_dir),
                 env=env,
                 capture_output=True,
@@ -255,13 +256,24 @@ def _verify_built_skill(skill_dir: Path, bundle: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _is_pack_ignored(rel: Path) -> bool:
+    return (
+        any(part == "__pycache__" or part.startswith("._") for part in rel.parts)
+        or rel.name == ".DS_Store"
+        or rel.suffix in {".pyc", ".pyo"}
+    )
+
+
 def _pack_zip(skill_dir: Path, zip_path: Path) -> None:
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(zip_path, "w") as archive:
         for path in sorted(skill_dir.rglob("*")):
             if path.is_dir():
                 continue
-            rel = path.relative_to(skill_dir).as_posix()
+            rel_path = path.relative_to(skill_dir)
+            if _is_pack_ignored(rel_path):
+                continue
+            rel = rel_path.as_posix()
             data = path.read_bytes()
             info = ZipInfo(rel, (2026, 11, 24, 0, 0, 0))
             info.create_system = 3
@@ -274,90 +286,120 @@ def _pack_zip(skill_dir: Path, zip_path: Path) -> None:
 def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     version = str(manifest.get("version", "2.0.0"))
-    if output_dir.exists():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging_dir = output_dir.parent / f".{output_dir.name}.staging-{os.getpid()}-{int(time.time() * 1000)}"
+    staging_dir.mkdir(parents=True, exist_ok=False)
 
     results = []
     all_errors: list[str] = []
-    for bundle in manifest["bundles"]:
-        src_dir = REPO_ROOT / bundle["sourceSkill"]
-        if not src_dir.is_dir():
-            raise FileNotFoundError(f"源技能目录不存在：{src_dir}")
+    try:
+        for bundle in manifest["bundles"]:
+            src_dir = REPO_ROOT / bundle["sourceSkill"]
+            if not src_dir.is_dir():
+                raise FileNotFoundError(f"源技能目录不存在：{src_dir}")
 
-        tier_dir = output_dir / bundle["tier"] / bundle["displayName"]
-        tier_dir.mkdir(parents=True, exist_ok=True)
-        excludes = list(bundle.get("excludeGlobs", [])) + [".DS_Store", "**/__pycache__/**", "**/*.pyc"]
-        rewrites = dict(bundle.get("linkRewrites", {}))
+            tier_dir = staging_dir / bundle["tier"] / bundle["displayName"]
+            tier_dir.mkdir(parents=True, exist_ok=True)
+            excludes = list(bundle.get("excludeGlobs", [])) + [".DS_Store", "**/__pycache__/**", "**/*.pyc", "**/*.pyo"]
+            rewrites = dict(bundle.get("linkRewrites", {}))
 
-        copied_mds: list[tuple[Path, Path]] = []
-        for item in sorted(src_dir.rglob("*")):
-            if item.is_dir():
-                continue
-            rel = item.relative_to(src_dir).as_posix()
-            if _matches_any(rel, excludes):
-                continue
-            dest = tier_dir / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(item, dest)
-            if item.suffix.lower() == ".md":
-                copied_mds.append((dest, item))
+            copied_mds: list[tuple[Path, Path]] = []
+            for item in sorted(src_dir.rglob("*")):
+                if item.is_dir():
+                    continue
+                rel_path = item.relative_to(src_dir)
+                if _is_pack_ignored(rel_path):
+                    continue
+                rel = rel_path.as_posix()
+                if _matches_any(rel, excludes):
+                    continue
+                dest = tier_dir / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, dest)
+                if item.suffix.lower() == ".md":
+                    copied_mds.append((dest, item))
 
-        # Vendor explicit shared files from single-source tree.
-        for vendor in bundle.get("vendorFiles", []):
-            src_file = REPO_ROOT / vendor["from"]
-            if not src_file.is_file():
-                raise FileNotFoundError(f"内联共享文件不存在：{src_file}")
-            dest_file = tier_dir / vendor["to"]
-            dest_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_file, dest_file)
-            if src_file.suffix.lower() == ".md":
-                copied_mds.append((dest_file, src_file))
+            # Vendor explicit shared files from single-source tree.
+            for vendor in bundle.get("vendorFiles", []):
+                src_file = REPO_ROOT / vendor["from"]
+                if not src_file.is_file():
+                    raise FileNotFoundError(f"内联共享文件不存在：{src_file}")
+                dest_file = tier_dir / vendor["to"]
+                dest_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_file, dest_file)
+                if src_file.suffix.lower() == ".md":
+                    copied_mds.append((dest_file, src_file))
 
-        # Rewrite and auto-vendor any remaining relative markdown links cleanly.
-        for md_dest, md_src in copied_mds:
-            _auto_vendor_and_rewrite(md_dest, md_src, tier_dir, src_dir, rewrites, bundle["tier"])
+            # Rewrite and auto-vendor any remaining relative markdown links cleanly.
+            for md_dest, md_src in copied_mds:
+                _auto_vendor_and_rewrite(md_dest, md_src, tier_dir, src_dir, rewrites, bundle["tier"])
 
-        # Write WorkBuddy _skillhub_meta.json.
-        meta = _build_skillhub_meta(bundle, version)
-        (tier_dir / "_skillhub_meta.json").write_text(
-            json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
+            # Write WorkBuddy _skillhub_meta.json.
+            meta = _build_skillhub_meta(bundle, version)
+            (tier_dir / "_skillhub_meta.json").write_text(
+                json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
 
-        # Verify built skill isolation and integrity.
-        errors = _verify_built_skill(tier_dir, bundle)
-        zip_path = output_dir / "zips" / f"{bundle['tier']}_{bundle['displayName']}.zip"
-        _pack_zip(tier_dir, zip_path)
-        size_kb = round(zip_path.stat().st_size / 1024, 1)
-        file_count = sum(1 for p in tier_dir.rglob("*") if p.is_file())
-        results.append(
-            {
-                "displayName": bundle["displayName"],
-                "skillName": bundle["skillName"],
-                "tier": bundle["tier"],
-                "dir": str(tier_dir),
-                "zip": str(zip_path),
-                "file_count": file_count,
-                "zip_size_kb": size_kb,
-                "errors": errors,
-            }
-        )
-        all_errors.extend(f"[{bundle['displayName']}] {err}" for err in errors)
+            # Verify built skill isolation and integrity BEFORE packing ZIP.
+            errors = _verify_built_skill(tier_dir, bundle)
+            for pycache in list(tier_dir.rglob("__pycache__")):
+                if pycache.is_dir():
+                    shutil.rmtree(pycache)
+            zip_path = staging_dir / "zips" / f"{bundle['tier']}_{bundle['displayName']}.zip"
+            if not errors or not strict:
+                _pack_zip(tier_dir, zip_path)
+            size_kb = round(zip_path.stat().st_size / 1024, 1) if zip_path.is_file() else 0.0
+            file_count = sum(1 for p in tier_dir.rglob("*") if p.is_file() and not _is_pack_ignored(p.relative_to(tier_dir)))
+            final_tier_dir = output_dir / bundle["tier"] / bundle["displayName"]
+            final_zip_path = output_dir / "zips" / f"{bundle['tier']}_{bundle['displayName']}.zip"
+            results.append(
+                {
+                    "displayName": bundle["displayName"],
+                    "skillName": bundle["skillName"],
+                    "tier": bundle["tier"],
+                    "dir": str(final_tier_dir),
+                    "zip": str(final_zip_path),
+                    "file_count": file_count,
+                    "zip_size_kb": size_kb,
+                    "errors": errors,
+                }
+            )
+            all_errors.extend(f"[{bundle['displayName']}] {err}" for err in errors)
 
-    tier_counts: dict[str, int] = {}
-    for r in results:
-        tier_counts[r["tier"]] = tier_counts.get(r["tier"], 0) + 1
-    summary = {
-        "status": "pass" if not all_errors else "fail",
-        "version": version,
-        "built_count": len(results),
-        "tier_counts": tier_counts,
-        "bundles": results,
-        "errors": all_errors,
-    }
-    if strict and all_errors:
-        print(json.dumps(summary, ensure_ascii=False, indent=2), file=sys.stderr)
-        raise SystemExit(2)
+        tier_counts: dict[str, int] = {}
+        for r in results:
+            tier_counts[r["tier"]] = tier_counts.get(r["tier"], 0) + 1
+        summary = {
+            "status": "pass" if not all_errors else "fail",
+            "version": version,
+            "built_count": len(results),
+            "tier_counts": tier_counts,
+            "bundles": results,
+            "errors": all_errors,
+        }
+        if strict and all_errors:
+            print(json.dumps(summary, ensure_ascii=False, indent=2), file=sys.stderr)
+            raise SystemExit(2)
+
+        # Atomic-style staged swap: preserve previous output_dir until all 10 bundles pass verification
+        backup_dir = output_dir.parent / f".{output_dir.name}.prev-{os.getpid()}"
+        if backup_dir.exists():
+            shutil.rmtree(backup_dir)
+        had_prev = output_dir.exists()
+        if had_prev:
+            output_dir.rename(backup_dir)
+        try:
+            staging_dir.rename(output_dir)
+        except Exception:
+            if had_prev and backup_dir.exists() and not output_dir.exists():
+                backup_dir.rename(output_dir)
+            raise
+        else:
+            if backup_dir.exists():
+                shutil.rmtree(backup_dir)
+    finally:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
     return summary
 
 

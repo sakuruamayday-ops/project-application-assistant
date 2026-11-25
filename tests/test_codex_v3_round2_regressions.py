@@ -553,3 +553,74 @@ def test_manufacturing_tax_reconciliation_and_path_guards(tmp_path: Path):
 
     # Overwriting input JSON with HTML output MUST fail
     assert _run([sys.executable, html_script, str(rep_in), str(rep_in), "--metrics-json", str(metrics_out)]).returncode != 0
+
+    # Existing formal HTML report MUST NOT be overwritten when blocked (diagnostic goes to .draft.html)
+    formal_html = tmp_path / "formal_existing.html"
+    formal_html.write_text("ORIGINAL_FORMAL_HTML", encoding="utf-8")
+    p_keep = _run([sys.executable, html_script, str(rep_in), str(formal_html), "--metrics-json", str(metrics_out)])
+    assert p_keep.returncode == 2
+    assert formal_html.read_text(encoding="utf-8") == "ORIGINAL_FORMAL_HTML"
+    assert formal_html.with_suffix(".draft.html").is_file()
+
+
+def test_round3_six_surgical_fixes(tmp_path: Path, monkeypatch):
+    # 1. Local RAG real field name sensitivity=restricted
+    fake_rag = tmp_path / "rag_sens.sh"
+    fake_rag.write_text(
+        '#!/bin/sh\necho \'{"results":[{"title":"小巨人内部底稿","sensitivity":"restricted","excerpt":"小巨人公开测试词"},{"title":"小巨人办法","sensitivity":"public","excerpt":"小巨人公开测试词"}]}\'\n',
+        encoding="utf-8",
+    )
+    fake_rag.chmod(0o755)
+    monkeypatch.setattr(kb_local, "RAG_QUERY_SH", fake_rag)
+    r_rag = kb_local.search_local_rag("小巨人", limit=5)
+    assert r_rag["count"] == 1 and r_rag["dropped"]["restricted"] == 1
+
+    # 2. High-tech single-sided missing tech_employees -> partial_pass (not fail!)
+    sys.path.insert(0, str(REPO_ROOT / "skills/gov-project-checkup/scripts"))
+    import run_checkup  # noqa: E402
+    ht_one_side = {
+        "founded_date": "2020-01-01",
+        "balance_sheet": {"total_assets": 1000, "total_liabilities": 400, "total_equity": 600},
+        "patents": [{"type": "发明", "patent_no": "ZL202110123456.7"}],
+        "total_employees": 100,
+        "latest_revenue": 6000, "hightech_product_revenue": 4500,
+        "revenue_3y": 15000, "rd_expense_3y": 900, "domestic_rd_expense_3y": 900,
+    }
+    res_os = run_checkup.check_hightech(ht_one_side, strict=False)
+    assert res_os["status"] == "partial_pass" and res_os["errors"] == []
+
+    # 3. Little Giant rejects utility models even if forged with ip_class="I"
+    fake_i_utils = [{"type": "实用新型", "ip_class": "I", "patent_no": f"ZL20222012345{i}.7"} for i in range(4)]
+    res_util = run_checkup.check_sme({
+        "target_tier": "little_giant",
+        "balance_sheet": {"total_assets": 10000, "total_liabilities": 7000, "total_equity": 3000},
+        "latest_revenue": 9000, "annual_revenues": [7000, 8000, 9000], "rd_expenses_2y": [600, 600],
+        "patents": fake_i_utils,
+    }, strict=True)
+    assert res_util["status"] == "fail" and res_util["gates"]["i_class_ip"]["valid_i_class_count"] == 0
+
+    # 4. Standard drafting excludes two-line informative appendix ("# 附录 A\n（资料性）")
+    sys.path.insert(0, str(REPO_ROOT / "skills/standard-drafting/scripts"))
+    import audit_standard_draft  # noqa: E402
+    two_line_app = "# 1 范围\n本文件规定指标。\n# 2 规范性引用文件\n无。\n# 3 要求\n产品应符合要求。\n# 附录 A\n（资料性）\n## A.1 试验方法\n按标准工况测定三组样品并记录完整数据结果。\n"
+    assert any(f["code"] == "missing-verification" for f in audit_standard_draft.audit(two_line_app)["findings"])
+
+    # 5. 169 mountain/island cannot pass with 0 R&D or missing basis; subsidy 50.2+50.2 > 100 blocked
+    grant_script = str(REPO_ROOT / "skills/general-grant-writer/scripts/validate_grant_deliverable.py")
+    f_mt = tmp_path / "mt.json"
+    f_mt.write_text(json.dumps({
+        "tier": "provincial_key_institute", "is_mountain_island_county": True,
+        "latest_revenue": 100, "latest_rd_expense": 0,
+        "rd_staff_count": 60, "rd_equipment_original_value": 1200, "rd_venue_area_m2": 1200,
+    }))
+    assert _run([sys.executable, grant_script, "--track", "institute", "--input", str(f_mt)]).returncode == 2
+
+    f_sub2 = tmp_path / "sub2.json"
+    f_sub2.write_text(json.dumps({
+        "construction_start": "2025-01-01", "construction_end": "2025-12-31",
+        "investments": [
+            {"asset_name": "卡1", "invoice_no": "INV-9", "asset_card_no": "C1", "invoice_date": "2025-05-01", "contract_amount": 100, "invoice_amount": 100, "allocated_amount": 50.2, "paid_amount": 100},
+            {"asset_name": "卡2", "invoice_no": "INV-9", "asset_card_no": "C2", "invoice_date": "2025-05-01", "contract_amount": 100, "invoice_amount": 100, "allocated_amount": 50.2, "paid_amount": 100},
+        ],
+    }))
+    assert _run([sys.executable, grant_script, "--track", "subsidy", "--input", str(f_sub2)]).returncode == 2
