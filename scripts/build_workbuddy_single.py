@@ -344,14 +344,14 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
         )
         all_errors.extend(f"[{bundle['displayName']}] {err}" for err in errors)
 
+    tier_counts: dict[str, int] = {}
+    for r in results:
+        tier_counts[r["tier"]] = tier_counts.get(r["tier"], 0) + 1
     summary = {
         "status": "pass" if not all_errors else "fail",
         "version": version,
         "built_count": len(results),
-        "tier_counts": {
-            tier: sum(1 for r in results if r["tier"] == tier)
-            for tier in ("free-checkup", "free-data-mcp", "paid-mcp-engine")
-        },
+        "tier_counts": tier_counts,
         "bundles": results,
         "errors": all_errors,
     }

@@ -15,7 +15,7 @@ def draft(scope, extra=""):
     ("本文件适用于本系统的应用场景。", []),
     ("本文件规定响应时间。", []),
     ("本文件界定人员适应期。", []),
-    ("验收示例使用【合成】编号。", []),
+    ("验收示例使用【合成】编号。", ["placeholder"]),
     ("企业名称为 XXX。", ["placeholder"]),
 ])
 def test_words_and_placeholders(scope, expected):
@@ -37,6 +37,13 @@ def test_requirements_in_scope_and_core_clauses_keep_being_checked():
     report = audit(draft("本文件规定日志范围。", body))
     assert report["requirement_clause_count"] == 2
     assert [item["code"] for item in report["findings"]] == ["missing-verification"]
-    complete = audit(draft("本文件规定日志范围。", "## 验证方法\n核对日志。\n" + body))
+    too_short = audit(draft("本文件规定日志范围。", "## 验证方法\n核对日志。\n" + body))
+    assert [item["code"] for item in too_short["findings"]] == ["empty-verification-section"]
+    complete = audit(
+        draft(
+            "本文件规定日志范围。",
+            "## 验证方法\n在标准测试工况下连续运行72小时，逐条触发报警事件并导出审计日志表，核对记录完整性与防删改约束。\n" + body,
+        )
+    )
     assert complete["requirement_clause_count"] == 2
     assert complete["findings"] == []

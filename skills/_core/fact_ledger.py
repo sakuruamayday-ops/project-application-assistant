@@ -1,0 +1,370 @@
+#!/usr/bin/env python3
+"""
+Unified Subject-Isolated Fact Blackboard & Deterministic Financial/IP Verifier.
+Backward-compatible with workbuddy-facts-blackboard/v1 while adding:
+  - Pre-write sensitive secret/PII detection (tokens, API keys, phone numbers, ID cards)
+  - GB 32100 18-digit Unified Social Credit Code checksum verification
+  - Accounting balance sheet equation enforcement (assets == liabilities + equity)
+  - Deterministic R&D ratio & 2-year CAGR / high-tech growth calculation
+  - Patent 5th-digit type check, statutory expiry check (10y utility / 20y invention), and 1-year transfer check
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+from datetime import date, datetime, timezone
+from decimal import Decimal, InvalidOperation
+from pathlib import Path
+from typing import Any
+
+SCHEMA_VERSION = "workbuddy-facts-blackboard/v1"
+VALID_ORIGINS = {"enterprise_source", "ai_design_target", "public_registry", "mcp_verified", "local_kb_verified"}
+VALID_BUSINESS_TYPES = {"equipment_or_mold_maker", "product_or_material_maker", "pure_software", "ambiguous"}
+
+USCC_CHARSET = "0123456789ABCDEFGHJKLMNPQRTUWXY"
+USCC_WEIGHTS = (1, 3, 9, 27, 19, 26, 16, 17, 20, 29, 25, 13, 8, 24, 10, 30, 28)
+
+SENSITIVE_PATTERNS = [
+    ("api_key_or_token", re.compile(r"(?:sk-[A-Za-z0-9]{16,}|Bearer\s+[A-Za-z0-9._\-]{16,}|(?:token|api[_-]?key|password|secret)\s*[:=]\s*[^\s,\"'}]{6,})", re.I)),
+    ("china_mobile", re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)")),
+    ("china_id_card", re.compile(r"(?<!\d)[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx](?!\d)")),
+]
+
+
+def detect_sensitive_text(text: str) -> list[dict[str, str]]:
+    hits = []
+    for label, pattern in SENSITIVE_PATTERNS:
+        for m in pattern.finditer(text or ""):
+            val = m.group(0)
+            masked = val[:4] + "***" + val[-2:] if len(val) > 6 else "***"
+            hits.append({"type": label, "masked_sample": masked})
+    return hits
+
+
+def validate_uscc(code: str) -> tuple[bool, str]:
+    """Validate GB 32100 18-character Unified Social Credit Code (format + mod-31 check digit)."""
+    s = (code or "").strip().upper()
+    if len(s) != 18:
+        return False, f"长度须为18位，实际为{len(s)}位"
+    if any(ch not in USCC_CHARSET for ch in s):
+        return False, "包含GB 32100禁止字符（如I/O/Z/S/V或非字母数字）"
+    total = sum(USCC_CHARSET.index(s[i]) * USCC_WEIGHTS[i] for i in range(17))
+    rem = 31 - (total % 31)
+    expected = USCC_CHARSET[0] if rem == 31 else USCC_CHARSET[rem]
+    if s[17] != expected:
+        return False, f"第18位校验码错误：期望{expected}，实际{s[17]}"
+    return True, "ok"
+
+
+def _dec(val: Any) -> Decimal | None:
+    if val is None or val == "":
+        return None
+    try:
+        return Decimal(str(val).replace(",", "").strip())
+    except InvalidOperation:
+        return None
+
+
+def validate_balance_sheet(
+    total_assets: Any,
+    total_liabilities: Any,
+    total_equity: Any,
+    *,
+    tolerance: Decimal = Decimal("0.05"),
+) -> tuple[bool, str]:
+    """Verify accounting identity: Assets == Liabilities + Equity within rounding tolerance."""
+    a, l, e = _dec(total_assets), _dec(total_liabilities), _dec(total_equity)
+    if a is None or l is None or e is None:
+        return False, "资产总额、负债总额或所有者权益存在空值或非数字"
+    diff = abs(a - (l + e))
+    if diff > tolerance:
+        return False, f"资产负债表不平：资产({a}) != 负债({l}) + 权益({e})，差额 {diff}"
+    return True, "ok"
+
+
+def calc_rd_ratio(rd_expense: Any, revenue: Any) -> dict[str, Any]:
+    r, rev = _dec(rd_expense), _dec(revenue)
+    if r is None or rev is None or rev <= 0:
+        return {"ok": False, "error": "研发费用或营业收入无效"}
+    ratio = (r / rev) * Decimal("100")
+    warnings = []
+    if ratio > Decimal("100"):
+        warnings.append(f"研发费用率 {ratio:.2f}% 超过 100%（可能处于研发初创/样机期或单位有误，请核对审计口径）")
+    return {
+        "ok": True,
+        "rd_expense": float(r),
+        "revenue": float(rev),
+        "ratio_pct": round(float(ratio), 2),
+        "warnings": warnings,
+    }
+
+
+def calc_growth_metrics(y1_val: Any, y2_val: Any, y3_val: Any) -> dict[str, Any]:
+    """Compute both 2-year CAGR (MIIT Little Giant) and High-Tech 2-year average growth rate."""
+    v1, v2, v3 = _dec(y1_val), _dec(y2_val), _dec(y3_val)
+    if v1 is None or v2 is None or v3 is None or v1 <= 0 or v2 <= 0:
+        return {"ok": False, "error": "需提供连续三个正数年度值"}
+    hightech_avg = ((v2 / v1 + v3 / v2) / Decimal("2") - Decimal("1")) * Decimal("100")
+    cagr = ((float(v3) / float(v1)) ** 0.5 - 1.0) * 100.0
+    yoy_latest = ((v3 - v2) / v2) * Decimal("100")
+    return {
+        "ok": True,
+        "hightech_avg_growth_pct": round(float(hightech_avg), 2),
+        "cagr_2y_pct": round(cagr, 2),
+        "yoy_latest_pct": round(float(yoy_latest), 2),
+    }
+
+
+def validate_patent_item(item: dict[str, Any], as_of: date | None = None) -> list[str]:
+    """Verify patent number 5th-digit type consistency, statutory expiry, and transfer holding period."""
+    issues: list[str] = []
+    ref_date = as_of or date.today()
+    pno = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
+    declared_type = str(item.get("type") or "")
+    # Chinese application/ZL number format: (ZL|CN)? YYYY T NNNNNNN(.X) where T is 5th digit of 12/13-digit app no
+    m = re.search(r"(?:ZL|CN)?((?:19|20)\d{2})(\d)\d{7}(?:\.[\dX])?", pno)
+    if m:
+        filing_year = int(m.group(1))
+        type_digit = m.group(2)
+        digit_map = {"1": "发明", "2": "实用新型", "3": "外观设计", "8": "PCT发明", "9": "PCT实用新型"}
+        expected_type = digit_map.get(type_digit)
+        if expected_type and declared_type:
+            if ("发明" in expected_type and "实用" in declared_type) or ("实用" in expected_type and "发明" in declared_type):
+                issues.append(f"专利号第5位类型倒挂：{pno} 第5位为{type_digit}({expected_type})，但填报类型为「{declared_type}」")
+        # Statutory term check (20y invention, 10y utility/pre-2021 design)
+        filing_date_str = str(item.get("filing_date") or "")
+        try:
+            fdate = date.fromisoformat(filing_date_str[:10]) if filing_date_str else date(filing_year, 12, 31)
+        except ValueError:
+            fdate = date(filing_year, 12, 31)
+        term_years = 20 if type_digit in {"1", "8"} else 10
+        expiry = date(fdate.year + term_years, fdate.month, min(fdate.day, 28))
+        if expiry < ref_date:
+            issues.append(f"专利法定保护期已届满：{pno} 申请日约 {fdate.isoformat()}（{term_years}年期满于 {expiry.isoformat()}），不得计入有效知识产权")
+    # Transfer holding period (>= 12 months required for SME Little Giant / High-Tech)
+    acq = str(item.get("acquisition") or "")
+    if any(k in acq for k in ("受让", "转让", "并购")):
+        tdate_str = str(item.get("transfer_date") or "")
+        if not tdate_str:
+            issues.append(f"受让专利 {pno} 缺少转让登记生效日（transfer_date），无法核验是否满1年")
+        else:
+            try:
+                td = date.fromisoformat(tdate_str[:10])
+                if (ref_date - td).days < 365:
+                    issues.append(f"受让专利 {pno} 转让日 {td.isoformat()} 距今不足1年，不满足满1年门槛")
+            except ValueError:
+                issues.append(f"受让专利 {pno} transfer_date 日期格式无效：{tdate_str}")
+    return issues
+
+
+def normalize_company_name(name: str) -> str:
+    return re.sub(r"[\s\u3000（）()·\-_]+", "", (name or "").strip())
+
+
+def subject_filename(company_name: str, credit_code: str = "") -> str:
+    clean_name = re.sub(r"[^\w\u4e00-\u9fff]+", "", (company_name or "").strip())[:16] or "enterprise"
+    code = re.sub(r"[^A-Za-z0-9]", "", (credit_code or "").strip()).upper()
+    suffix = code[-6:] if len(code) >= 6 else hashlib.sha256(normalize_company_name(company_name).encode("utf-8")).hexdigest()[:6]
+    return f"{clean_name}_{suffix}.facts.json"
+
+
+def blackboard_path(workspace: Path, company_name: str, credit_code: str = "") -> Path:
+    return workspace / ".facts" / subject_filename(company_name, credit_code)
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def empty_blackboard(company_name: str, credit_code: str = "") -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "company_name": company_name.strip(),
+        "credit_code": credit_code.strip().upper(),
+        "updated_at": _now_iso(),
+        "lockedProduct": {
+            "rawAnchor": "",
+            "formalDeclarationName": "",
+            "businessType": "ambiguous",
+            "sixBasesAlignment": "",
+            "unpatentedProcessTags": [],
+            "revision": 0,
+        },
+        "patentTierReport": {
+            "direct_support": [],
+            "production_support": [],
+            "weak_or_unrelated": [],
+        },
+        "estimatedMetrics": [],
+        "financialFacts": {},
+        "checkupSnapshots": {},
+    }
+
+
+def _subject_matches(payload: dict[str, Any], company_name: str, credit_code: str = "") -> bool:
+    stored_code = re.sub(r"[^A-Za-z0-9]", "", str(payload.get("credit_code", ""))).upper()
+    target_code = re.sub(r"[^A-Za-z0-9]", "", (credit_code or "")).upper()
+    if stored_code and target_code:
+        return stored_code == target_code
+    return bool(
+        normalize_company_name(str(payload.get("company_name", "")))
+        and normalize_company_name(str(payload.get("company_name", ""))) == normalize_company_name(company_name)
+    )
+
+
+def validate_blackboard(payload: dict[str, Any], *, check_uscc: bool = False) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(payload, dict):
+        return ["黑板根节点必须为 JSON 对象"]
+    required = ("schema_version", "company_name", "credit_code", "updated_at", "lockedProduct", "patentTierReport", "estimatedMetrics", "financialFacts", "checkupSnapshots")
+    for k in required:
+        if k not in payload:
+            errors.append(f"缺少必需顶层字段：{k}")
+    if payload.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version 必须为 {SCHEMA_VERSION}")
+    if not str(payload.get("company_name", "")).strip():
+        errors.append("company_name 不能为空")
+    if check_uscc and payload.get("credit_code"):
+        ok, msg = validate_uscc(str(payload["credit_code"]))
+        if not ok:
+            errors.append(f"credit_code 无效：{msg}")
+    # Sensitive leak guard
+    sens = detect_sensitive_text(json.dumps(payload, ensure_ascii=False))
+    if sens:
+        errors.append(f"检测到敏感凭据或个人隐私信息，禁止写入黑板：{sens[:3]}")
+    return errors
+
+
+def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *, strict: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
+    warnings: list[str] = []
+    target = blackboard_path(workspace, company_name, credit_code)
+    candidates = [target] if target.is_file() else (sorted((workspace / ".facts").glob("*.facts.json")) if (workspace / ".facts").is_dir() else [])
+    for c in candidates:
+        try:
+            payload = json.loads(c.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            warnings.append(f"跳过无效黑板 {c.name}: {exc}")
+            continue
+        if isinstance(payload, dict) and _subject_matches(payload, company_name, credit_code):
+            return payload, warnings
+        if c == target:
+            msg = f"主体不匹配防串户：期望「{company_name}」，文件为「{payload.get('company_name', '')}」"
+            if strict:
+                raise ValueError(msg)
+            warnings.append(msg)
+    return None, warnings
+
+
+def save_blackboard(workspace: Path, payload: dict[str, Any], *, strict: bool = True, allow_sensitive: bool = False) -> Path:
+    company_name = str(payload.get("company_name", "")).strip()
+    if not company_name:
+        raise ValueError("company_name 不能为空")
+    credit_code = str(payload.get("credit_code", "")).strip().upper()
+    if not allow_sensitive:
+        sens = detect_sensitive_text(json.dumps(payload, ensure_ascii=False))
+        if sens:
+            raise ValueError(f"拒绝写入敏感凭据或个人隐私信息：{sens[:3]}")
+    payload["schema_version"] = SCHEMA_VERSION
+    payload["company_name"] = company_name
+    payload["credit_code"] = credit_code
+    payload["updated_at"] = _now_iso()
+    target = blackboard_path(workspace, company_name, credit_code)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.name + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(target)
+    return target
+
+
+def reconcile_text_against_estimates(blackboard: dict[str, Any], latest_text: str) -> dict[str, Any]:
+    compact = re.sub(r"\s+", "", latest_text or "")
+    pending, resolved = [], []
+    for item in blackboard.get("estimatedMetrics", []):
+        if not isinstance(item, dict) or item.get("origin", "ai_design_target") != "ai_design_target":
+            continue
+        snip = re.sub(r"\s+", "", str(item.get("snippet", "")))
+        val = re.sub(r"\s+", "", str(item.get("suggestedValue", "")))
+        present = bool((snip and snip in compact) or (val and val in compact))
+        entry = dict(item)
+        entry["status"] = "pending" if present else "resolved"
+        if present:
+            entry["checkup_note"] = "源自初稿行业设计目标，尚未见企业实测原件，提交前请核对检测报告或工艺单。"
+            pending.append(entry)
+        else:
+            resolved.append(entry)
+    return {"pending_count": len(pending), "resolved_count": len(resolved), "pending_estimates": pending, "resolved_estimates": resolved}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="统一主体隔离事实黑板与财务/知产核验 CLI")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_u = sub.add_parser("upsert", help="合并写入标准黑板（自动拦截凭据与手机号）")
+    p_u.add_argument("--workspace", type=Path, default=Path("."))
+    p_u.add_argument("--company", required=True)
+    p_u.add_argument("--credit-code", default="")
+    p_u.add_argument("--financials-json", default="")
+    p_u.add_argument("--product-json", default="")
+    p_u.add_argument("--patents-json", default="")
+    p_u.add_argument("--estimated-metrics-json", default="")
+    p_u.add_argument("--snapshot-key", default="")
+    p_u.add_argument("--snapshot-json", default="")
+
+    p_r = sub.add_parser("read", help="安全读取主体黑板")
+    p_r.add_argument("--workspace", type=Path, default=Path("."))
+    p_r.add_argument("--company", required=True)
+    p_r.add_argument("--credit-code", default="")
+    p_r.add_argument("--strict", action="store_true")
+
+    p_v = sub.add_parser("validate", help="校验黑板 Schema、信用代码与敏感信息")
+    p_v.add_argument("file", type=Path)
+    p_v.add_argument("--check-uscc", action="store_true")
+
+    p_rec = sub.add_parser("reconcile", help="回查正文并自动销项设计控制目标")
+    p_rec.add_argument("--workspace", type=Path, default=Path("."))
+    p_rec.add_argument("--company", required=True)
+    p_rec.add_argument("--credit-code", default="")
+    p_rec.add_argument("--text-file", type=Path, required=True)
+
+    args = parser.parse_args()
+    if args.cmd == "upsert":
+        existing, _ = load_blackboard(args.workspace, args.company, args.credit_code, strict=True)
+        bb = existing if existing is not None else empty_blackboard(args.company, args.credit_code)
+        if args.financials_json:
+            bb.setdefault("financialFacts", {}).update(json.loads(args.financials_json))
+        if args.product_json:
+            bb.setdefault("lockedProduct", {}).update(json.loads(args.product_json))
+        if args.patents_json:
+            bb.setdefault("patentTierReport", {}).update(json.loads(args.patents_json))
+        if args.estimated_metrics_json:
+            bb.setdefault("estimatedMetrics", []).extend(json.loads(args.estimated_metrics_json))
+        if args.snapshot_key and args.snapshot_json:
+            bb.setdefault("checkupSnapshots", {})[args.snapshot_key] = json.loads(args.snapshot_json)
+        path = save_blackboard(args.workspace, bb, strict=True)
+        print(json.dumps({"status": "ok", "path": str(path), "schema_version": SCHEMA_VERSION}, ensure_ascii=False))
+        return 0
+    if args.cmd == "read":
+        bb, warnings = load_blackboard(args.workspace, args.company, args.credit_code, strict=args.strict)
+        print(json.dumps({"found": bb is not None, "warnings": warnings, "blackboard": bb}, ensure_ascii=False, indent=2))
+        return 0
+    if args.cmd == "validate":
+        payload = json.loads(args.file.read_text(encoding="utf-8"))
+        errs = validate_blackboard(payload, check_uscc=args.check_uscc)
+        print(json.dumps({"valid": not errs, "errors": errs}, ensure_ascii=False))
+        return 0 if not errs else 2
+    if args.cmd == "reconcile":
+        bb, warnings = load_blackboard(args.workspace, args.company, args.credit_code)
+        if bb is None:
+            print(json.dumps({"found": False, "warnings": warnings, "pending_count": 0, "resolved_count": 0}, ensure_ascii=False))
+            return 0
+        res = reconcile_text_against_estimates(bb, args.text_file.read_text(encoding="utf-8"))
+        print(json.dumps({"found": True, "warnings": warnings, **res}, ensure_ascii=False, indent=2))
+        return 0
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

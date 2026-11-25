@@ -1,0 +1,29 @@
+---
+name: application-reviewer
+description: 申报材料全维度质检、原生 DOCX 版本对比、证据台账算术复算与中文自然化去 AI 味润色审计工具。合并旧版 consistency-check、application-version-diff、evidence-ledger 与 gongchuang-humanizer-zh，所有门禁均为真严格退出码（违规返回 2）。
+---
+
+# 申报材料质检、版本对比与润色审计（application-reviewer）
+
+本技能是 V3 架构的免费高频质检工具，负责提交前的四道硬核质检关：
+
+1. **一致性与反敷衍体检（`check-consistency`）**：支持直接读取 `.docx` / `.md` / `.txt`，硬拦截占位符、防御性兜底语、跨企业串户、疑似编辑批注括号、字数不达标或超限，同时智能豁免合法科学单位与文号括号（如 `cm³/(m²·24h)`、`（修订）`）；可选传入 `.facts/<主体>.facts.json` 自动销项设计控制目标。
+2. **原生 DOCX 版本对比（`diff-versions`）**：直接解析两版 Word OOXML，通过 `SequenceMatcher` 精准识别章节重编号移动、表格行重排及关键数字变化，不再把移动的章节误判为“全删+全增”。
+3. **证据台账算术与平衡复算（`verify-ledger`）**：对每条 `computed` 主张执行确定性公式复算（阻断 `99.99%` 等错算），同步核验来源完整性、18 位信用代码与资产负债平衡。
+4. **中文去 AI 味润色保真审计（`audit-rewrite`）**：对照原文与润色稿，全量校验工程与财务数值单位（`ppm/ppb/Pa/MPa/℃/mm/kW/ms/dB(A)/万元/%`），**丢失数字、凭空编造数字或新增无依据夸大宣称（「国际领先」「世界第一」等）一律返回退出码 `2`**。
+
+## 标准命令行用法
+
+```bash
+# 1. 材料一致性与反串户检查（违规退出码 2）
+python3 scripts/review_application.py check-consistency <申请书.docx> --company "<企业全称>" --min-chars 200
+
+# 2. 两版 DOCX 原生对比（识别章节/表格行移动与数值变更）
+python3 scripts/review_application.py diff-versions <旧版.docx> <新版.docx>
+
+# 3. 证据台账算术复算与来源核验（错算退出码 2）
+python3 scripts/review_application.py verify-ledger <evidence_ledger.json>
+
+# 4. 润色保真硬门禁（丢数/篡改/夸大退出码 2）
+python3 scripts/review_application.py audit-rewrite <原文.txt> <润色稿.txt> --max-chars 400
+```
