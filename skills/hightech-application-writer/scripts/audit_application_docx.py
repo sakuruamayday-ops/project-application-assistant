@@ -777,7 +777,12 @@ def main():
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="严格回归模式：存在任何硬性问题时返回退出码 2",
+        help="严格回归模式：审查已填写模块存在任何硬性问题或0表空壳时返回退出码 2（支持分段写稿）",
+    )
+    parser.add_argument(
+        "--require-complete-form",
+        action="store_true",
+        help="整本终审模式：额外强制要求文档同时具备 RD 表、PS 表与企业创新能力四栏",
     )
     args = parser.parse_args()
 
@@ -872,16 +877,16 @@ def main():
                 "issue": f"黑板主体与申请书注册企业不一致（黑板：「{bb_res.get('company_name')}」，申请书：「{reg_co}」）",
             })
 
-    # In --strict mode, require complete application structure (prevent 0-table empty shell from passing!)
-    if args.strict:
-        if len(document.tables) == 0:
-            required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
+    # In --strict mode, always block 0-table empty shells; allow staged drafting unless --require-complete-form is passed!
+    if args.strict and len(document.tables) == 0:
+        required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
+    if args.require_complete_form:
         if not rd_core_innovation:
-            required_issues.append({"section": "研究开发活动", "issue": "未识别到任何已编号的 RD 研发活动表"})
+            required_issues.append({"section": "研究开发活动", "issue": "整本终审未识别到任何已编号的 RD 研发活动表"})
         if not ps_quality:
-            required_issues.append({"section": "高新技术产品", "issue": "未识别到任何已编号的 PS 高新技术产品表"})
+            required_issues.append({"section": "高新技术产品", "issue": "整本终审未识别到任何已编号的 PS 高新技术产品表"})
         if not innovation_detail:
-            required_issues.append({"section": "企业创新能力", "issue": "未识别到企业创新能力四栏"})
+            required_issues.append({"section": "企业创新能力", "issue": "整本终审未识别到企业创新能力四栏"})
 
     for name, issues in (
         ("required_field", required_issues), ("format", format_issues), ("rd_expense", expense_issues),

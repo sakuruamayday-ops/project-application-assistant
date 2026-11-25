@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Unified Free-Tier Government Project Checkup, Policy Verification, Matching & Local KB CLI.
-Zero MCP dependency (reads local jiaotang.db & rag-query.sh directly when available).
-Zero fake-strict gates:
-  - Missing mandatory inputs fail under --strict (never exit 0 on empty {})
-  - Patents require valid Chinese patent numbers & deduplication
-  - 2026 MIIT Order [2026] #2 & [2026] #117 exact Little Giant thresholds (debt <=75%, 2y R&D >=1200w & >=3%/y, I-class IP >=4)
-  - profile --write-blackboard merges cleanly without wiping existing lockedProduct/patentTierReport/estimatedMetrics
-  - RAG backend errors propagate to ok=False & exit 2 under --strict
+Balanced anti-blocking design:
+  - Separates hard `errors` (provided data clearly fails thresholds / invalid math / expired patent)
+    from `missing_inputs` (partial checkup / early consultation where client hasn't sent every doc yet).
+  - Default mode: computes every available gate & outputs status="pass"|"partial_pass"|"fail" (exits 0 unless hard DB/IO error),
+    allowing partial checkups and early patent drafts (marking uncertified patents as pending_certificates).
+  - --strict mode (final submission gate): blocks on ANY error, ANY missing_input, or ANY unverified patent number (exit 2).
+  - profile ambiguous short-name hit: prevents cross-company leak without crashing CLI (returns exit 0 + status="ambiguous" + candidates).
 """
 from __future__ import annotations
 
@@ -29,31 +29,43 @@ import kb_local  # noqa: E402
 import search_catalogs  # noqa: E402
 
 
-def _dedup_valid_patents(patents: list[dict[str, Any]], ref_date: date) -> tuple[list[dict[str, Any]], list[str]]:
+def _eval_patents(patents: list[dict[str, Any]], ref_date: date, *, strict: bool) -> tuple[list[dict[str, Any]], list[str], list[str]]:
     errors: list[str] = []
+    pending_certs: list[str] = []
     seen_keys: set[str] = set()
     valid: list[dict[str, Any]] = []
     for idx, p in enumerate(patents):
         if not isinstance(p, dict):
             errors.append(f"patents[{idx}] 必须为对象")
             continue
+        raw_no = str(p.get("patent_no") or p.get("no") or "").strip()
         p_errs = fact_ledger.validate_patent_item(p, as_of=ref_date, require_valid_no=True)
+        # Distinguish "missing ZL number in early consultation" vs "actual 5th-digit/expiry/transfer violation"
+        only_missing_no = (
+            len(p_errs) == 1
+            and "专利号缺失或不符合中国专利号规范" in p_errs[0]
+        )
+        if only_missing_no and not strict:
+            pending_certs.append(f"patents[{idx}]({raw_no or '未提供ZL号'}) 缺正式ZL授权号，初筛暂按声明类型计入，终审前须补证书核验")
+            valid.append(p)
+            continue
         if p_errs:
             errors.extend(p_errs)
             continue
         key = fact_ledger.normalize_patent_key(p)
         if key in seen_keys:
-            errors.append(f"重复专利号不得重复计数：{p.get('patent_no') or p.get('no')}")
+            errors.append(f"重复专利号不得重复计数：{raw_no}")
             continue
         seen_keys.add(key)
         valid.append(p)
-    return valid, errors
+    return valid, errors, pending_certs
 
 
-def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]:
+def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: bool = False) -> dict[str, Any]:
     """Deterministic 9-condition High-Tech Enterprise preassessment (国科发火〔2016〕32号 & 195号)."""
     ref_date = as_of or date.today()
     errors: list[str] = []
+    missing_inputs: list[str] = []
     warnings: list[str] = []
     gates: dict[str, Any] = {}
 
@@ -61,13 +73,14 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         return {
             "program": "high_tech_enterprise",
             "policy_basis": "国科发火〔2016〕32号 + 国科发火〔2016〕195号",
+            "status": "fail",
             "ok": False,
             "gates": {},
-            "errors": ["输入数据为空，缺少高企体检必需字段（成立日期、财务三表、人员、高新收入、研发费用、专利清单）"],
+            "errors": ["输入数据为空，缺少高企体检必需字段"],
+            "missing_inputs": ["founded_date", "balance_sheet", "patents", "total_employees", "latest_revenue", "revenue_3y", "rd_expense_3y"],
             "warnings": [],
         }
 
-    # 0. USCC & Balance Sheet Reconciliation
     uscc = str(data.get("credit_code") or "").strip()
     if uscc:
         ok_u, msg_u = fact_ledger.validate_uscc(uscc)
@@ -84,10 +97,9 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         if not ok_bs:
             errors.append(msg_bs)
     else:
-        gates["balance_sheet"] = {"pass": False, "detail": "缺少资产负债表平衡数据"}
-        errors.append("缺少 balance_sheet（资产总额/负债总额/所有者权益），无法核验三表平衡")
+        gates["balance_sheet"] = {"pass": None, "detail": "暂缺资产负债表数据（待补）"}
+        missing_inputs.append("balance_sheet（资产负债表平衡核验）")
 
-    # 1. Establishment >= 365 days
     founded = str(data.get("founded_date") or "").strip()
     if founded:
         try:
@@ -101,23 +113,27 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
             gates["established_365d"] = {"pass": False, "detail": f"日期无效：{founded}"}
             errors.append(f"founded_date 日期格式无效：{founded}")
     else:
-        gates["established_365d"] = {"pass": False, "detail": "缺少 founded_date"}
-        errors.append("缺少成立日期 founded_date，无法核验注册满365天门槛")
+        gates["established_365d"] = {"pass": None, "detail": "暂缺 founded_date"}
+        missing_inputs.append("founded_date（成立满365天核验）")
 
-    # 2. Patents (valid patent_no + dedup + 5th digit + expiry + transfer >=1y + count > 0)
     patents = data.get("patents")
     if not isinstance(patents, list) or not patents:
-        gates["ip_validity"] = {"pass": False, "valid_count": 0, "issues": ["缺少有效核心知识产权清单"]}
-        errors.append("缺少有效核心知识产权清单（patents 不能为空）")
+        gates["ip_validity"] = {"pass": None if not strict else False, "valid_count": 0}
+        missing_inputs.append("patents（有效核心知识产权清单）")
     else:
-        valid_pats, patent_issues = _dedup_valid_patents(patents, ref_date)
+        valid_pats, patent_issues, pending_certs = _eval_patents(patents, ref_date, strict=strict)
+        warnings.extend(pending_certs)
         ok_ip = len(valid_pats) > 0 and not patent_issues
-        gates["ip_validity"] = {"pass": ok_ip, "valid_count": len(valid_pats), "issues": patent_issues}
+        gates["ip_validity"] = {
+            "pass": ok_ip,
+            "valid_count": len(valid_pats),
+            "pending_certificate_count": len(pending_certs),
+            "issues": patent_issues,
+        }
         errors.extend(patent_issues)
         if len(valid_pats) == 0:
             errors.append("无有效未过期且权属合规的核心知识产权")
 
-    # 3. Tech personnel ratio >= 10%
     emp = data.get("total_employees")
     tech = data.get("tech_employees")
     if emp and float(emp) > 0 and tech is not None:
@@ -127,10 +143,9 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         if not ok_tp:
             errors.append(f"科技人员占比 {ratio}% 低于10%红线")
     else:
-        gates["tech_personnel_ratio"] = {"pass": False, "detail": "缺少职工/科技人员数"}
-        errors.append("缺少 total_employees 或 tech_employees，无法核验科技人员占比≥10%红线")
+        gates["tech_personnel_ratio"] = {"pass": None, "detail": "暂缺职工/科技人员数"}
+        missing_inputs.append("total_employees / tech_employees（科技人员占比≥10%）")
 
-    # 4. High-tech product/service revenue ratio >= 60%
     rev_latest = data.get("latest_revenue")
     ht_rev = data.get("hightech_product_revenue")
     if rev_latest and float(rev_latest) > 0 and ht_rev is not None:
@@ -140,10 +155,9 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         if not ok_ht:
             errors.append(f"近一年高新技术产品（服务）收入占比 {ht_ratio}% 低于60%红线")
     else:
-        gates["hightech_revenue_ratio"] = {"pass": False, "detail": "缺少高新收入或总收入"}
-        errors.append("缺少 latest_revenue 或 hightech_product_revenue，无法核验高新收入占比≥60%红线")
+        gates["hightech_revenue_ratio"] = {"pass": None, "detail": "暂缺高新收入或总收入"}
+        missing_inputs.append("latest_revenue / hightech_product_revenue（高新收入占比≥60%）")
 
-    # 5. 3-year R&D ratio tier (5% / 4% / 3%) + domestic R&D >= 60%
     rev_3y = data.get("revenue_3y")
     rd_3y = data.get("rd_expense_3y")
     if rev_3y and float(rev_3y) > 0 and rd_3y is not None and rev_latest is not None:
@@ -156,8 +170,8 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         if not ok_rd:
             errors.append(f"近三年研发费用占比 {rd_calc.get('ratio_pct')}% 低于对应档位红线 {threshold}%")
     else:
-        gates["rd_ratio_3y"] = {"pass": False, "detail": "缺少近三年研发或营收"}
-        errors.append("缺少 revenue_3y 或 rd_expense_3y，无法核验近三年研发费用占比红线")
+        gates["rd_ratio_3y"] = {"pass": None, "detail": "暂缺近三年研发或营收"}
+        missing_inputs.append("revenue_3y / rd_expense_3y（近三年研发占比）")
 
     dom_rd = data.get("domestic_rd_expense_3y")
     if rd_3y and float(rd_3y) > 0 and dom_rd is not None:
@@ -167,29 +181,37 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None) -> dict[str,
         if not ok_dom:
             errors.append(f"中国境内研发费用占比 {dom_ratio}% 低于60%红线")
     else:
-        gates["domestic_rd_ratio"] = {"pass": False, "detail": "缺少境内研发费用"}
-        errors.append("缺少 domestic_rd_expense_3y，无法核验中国境内研发费用占比≥60%红线")
+        gates["domestic_rd_ratio"] = {"pass": None, "detail": "暂缺境内研发费用"}
+        missing_inputs.append("domestic_rd_expense_3y（境内研发占比≥60%）")
 
-    # 6. Growth metrics
     rev_series = data.get("annual_revenues")
     if isinstance(rev_series, list) and len(rev_series) == 3:
         gates["revenue_growth"] = fact_ledger.calc_growth_metrics(rev_series[0], rev_series[1], rev_series[2])
 
-    all_gates_ok = all(g.get("pass", True) for g in gates.values() if isinstance(g, dict) and "pass" in g)
+    strict_ok = len(errors) == 0 and len(missing_inputs) == 0
+    if errors:
+        status = "fail"
+    elif missing_inputs:
+        status = "fail" if strict else "partial_pass"
+    else:
+        status = "pass"
     return {
         "program": "high_tech_enterprise",
         "policy_basis": "国科发火〔2016〕32号 + 国科发火〔2016〕195号",
-        "ok": len(errors) == 0 and all_gates_ok,
+        "status": status,
+        "ok": strict_ok if strict else (len(errors) == 0),
         "gates": gates,
         "errors": errors,
+        "missing_inputs": missing_inputs,
         "warnings": warnings,
     }
 
 
-def check_sme(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]:
+def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool = False) -> dict[str, Any]:
     """Deterministic MIIT Order [2026] #2 & [2026] #117 SME / Little Giant preassessment."""
     ref_date = as_of or date.today()
     errors: list[str] = []
+    missing_inputs: list[str] = []
     warnings: list[str] = []
     gates: dict[str, Any] = {}
     tier = str(data.get("target_tier") or "little_giant").strip()
@@ -198,13 +220,14 @@ def check_sme(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]
         return {
             "program": f"sme_{tier}",
             "policy_basis": "工信部企业〔2026〕2号 + 工信厅企业函〔2026〕117号",
+            "status": "fail",
             "ok": False,
             "gates": {},
             "errors": ["输入数据为空，缺少专精特新/小巨人必需核验字段"],
+            "missing_inputs": ["balance_sheet", "latest_revenue", "latest_rd_expense", "patents"],
             "warnings": [],
         }
 
-    # 1. Balance sheet & debt-to-asset ratio <= 75% (2026 Order #2!)
     bs = data.get("balance_sheet")
     if isinstance(bs, dict):
         ok_bs, msg_bs = fact_ledger.validate_balance_sheet(
@@ -220,10 +243,9 @@ def check_sme(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]
             if not ok_dar:
                 errors.append(f"上年末资产负债率 {dar}% 超过2026版2号文75%红线")
     else:
-        gates["balance_sheet"] = {"pass": False, "detail": "缺少资产负债表"}
-        errors.append("缺少 balance_sheet，无法核验资产负债表平衡与负债率≤75%红线")
+        gates["balance_sheet"] = {"pass": None, "detail": "暂缺资产负债表"}
+        missing_inputs.append("balance_sheet（资产负债表平衡与负债率≤75%）")
 
-    # 2. Revenue growth (2-year CAGR) & 2-year R&D intensity (2026 Order #2: 2y R&D >= 1200w & >=3%/yr for >=1亿)
     rev_series = data.get("annual_revenues")
     if isinstance(rev_series, list) and len(rev_series) == 3:
         gr = fact_ledger.calc_growth_metrics(rev_series[0], rev_series[1], rev_series[2])
@@ -233,7 +255,7 @@ def check_sme(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]
 
     rev_latest = data.get("latest_revenue")
     rd_latest = data.get("latest_rd_expense")
-    rd_2y = data.get("rd_expenses_2y")  # optional [prev_yr_rd, latest_yr_rd]
+    rd_2y = data.get("rd_expenses_2y")
     if rev_latest and float(rev_latest) > 0 and rd_latest is not None:
         rd_c = fact_ledger.calc_rd_ratio(rd_latest, rev_latest)
         warnings.extend(rd_c.get("warnings", []))
@@ -255,40 +277,52 @@ def check_sme(data: dict[str, Any], as_of: date | None = None) -> dict[str, Any]
             if not ok_rd:
                 errors.append(f"营收低于1亿元档位研发费用占比 {rd_c.get('ratio_pct')}% 低于6%红线")
     else:
-        gates["rd_intensity"] = {"pass": False, "detail": "缺少营收或研发费用"}
-        errors.append("缺少 latest_revenue 或 latest_rd_expense")
+        gates["rd_intensity"] = {"pass": None, "detail": "暂缺营收或研发费用"}
+        missing_inputs.append("latest_revenue / latest_rd_expense（研发强度核验）")
 
-    # 3. Patents (valid patent_no + dedup; 2026 Order #2 default >=4 I-class IP for new Little Giant)
     patents = data.get("patents")
     min_i_class = int(data.get("min_i_class_ip") or (4 if tier == "little_giant" else 1))
     if not isinstance(patents, list) or not patents:
-        gates["i_class_ip"] = {"pass": False, "valid_i_class_count": 0, "min_required": min_i_class}
-        errors.append(f"缺少有效知识产权清单（{tier} 要求不少于 {min_i_class} 项有效I类知识产权）")
+        gates["i_class_ip"] = {"pass": None if not strict else False, "valid_i_class_count": 0, "min_required": min_i_class}
+        missing_inputs.append(f"patents（I类知识产权≥{min_i_class}项核验）")
     else:
-        valid_pats, p_errs = _dedup_valid_patents(patents, ref_date)
+        valid_pats, p_errs, pending_certs = _eval_patents(patents, ref_date, strict=strict)
+        warnings.extend(pending_certs)
         errors.extend(p_errs)
         i_class_valid = sum(
             1 for p in valid_pats
             if "发明" in str(p.get("type") or "") or str(p.get("ip_class") or "").upper() == "I"
         )
         ok_ip = i_class_valid >= min_i_class and not p_errs
-        gates["i_class_ip"] = {"pass": ok_ip, "valid_i_class_count": i_class_valid, "min_required": min_i_class}
+        gates["i_class_ip"] = {
+            "pass": ok_ip,
+            "valid_i_class_count": i_class_valid,
+            "pending_certificate_count": len(pending_certs),
+            "min_required": min_i_class,
+        }
         if i_class_valid < min_i_class:
             errors.append(f"去重有效I类知识产权仅 {i_class_valid} 项，低于2026版2号文 {min_i_class} 项硬门槛")
 
-    all_gates_ok = all(g.get("pass", True) for g in gates.values() if isinstance(g, dict) and "pass" in g)
+    strict_ok = len(errors) == 0 and len(missing_inputs) == 0
+    if errors:
+        status = "fail"
+    elif missing_inputs:
+        status = "fail" if strict else "partial_pass"
+    else:
+        status = "pass"
     return {
         "program": f"sme_{tier}",
         "policy_basis": "工信部企业〔2026〕2号《优质中小企业梯度培育管理办法》 + 工信厅企业函〔2026〕117号",
-        "ok": len(errors) == 0 and all_gates_ok,
+        "status": status,
+        "ok": strict_ok if strict else (len(errors) == 0),
         "gates": gates,
         "errors": errors,
+        "missing_inputs": missing_inputs,
         "warnings": warnings,
     }
 
 
 def validate_policy_metadata(meta: dict[str, Any], as_of: date | None = None) -> dict[str, Any]:
-    """Real policy validity check: rejects expired expiry_date and missing required guidelines."""
     ref_date = as_of or date.today()
     errors: list[str] = []
     expiry_str = str(meta.get("expiry_date") or "").strip()
@@ -316,7 +350,7 @@ def main() -> int:
     p_prof.add_argument("--workspace", type=Path, default=None)
     p_prof.add_argument("--write-blackboard", action="store_true")
 
-    p_ht = sub.add_parser("hightech", help="高新技术企业9大硬条件自动化复算")
+    p_ht = sub.add_parser("hightech", help="高新技术企业9大硬条件自动化复算（默认允许部分体检，--strict 终审阻断缺项）")
     p_ht.add_argument("--input", type=Path, required=True)
     p_ht.add_argument("--strict", action="store_true")
 
@@ -345,6 +379,7 @@ def main() -> int:
     if args.cmd == "profile":
         res = kb_local.query_enterprise(args.company, credit_code=args.credit_code)
         if res.get("found"):
+            res["status"] = "found"
             ent = res["enterprise"]
             res["region_scope"] = kb_local.resolve_region_scope(
                 f"{ent.get('province', '')}{ent.get('city', '')}{ent.get('county', '')}"
@@ -357,18 +392,23 @@ def main() -> int:
                 bb.setdefault("checkupSnapshots", {})["profile_recognitions_count"] = len(res["recognitions"])
                 saved = fact_ledger.save_blackboard(args.workspace, bb, strict=True)
                 res["blackboard_path"] = str(saved)
+        elif res.get("ambiguous"):
+            res["status"] = "ambiguous"
+        else:
+            res["status"] = "not_found" if not res.get("error") else "error"
         print(json.dumps(res, ensure_ascii=False, indent=2))
-        return 0 if res.get("found") else 2
+        # Return exit 0 for normal found / ambiguous / not_found lookups so caller can prompt user cleanly; exit 2 only on DB error
+        return 2 if (res.get("status") == "error") else 0
 
     if args.cmd == "hightech":
         data = json.loads(args.input.read_text(encoding="utf-8"))
-        res = check_hightech(data)
+        res = check_hightech(data, strict=args.strict)
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0 if (res["ok"] or not args.strict) else 2
 
     if args.cmd == "sme":
         data = json.loads(args.input.read_text(encoding="utf-8"))
-        res = check_sme(data)
+        res = check_sme(data, strict=args.strict)
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0 if (res["ok"] or not args.strict) else 2
 

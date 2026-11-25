@@ -204,3 +204,48 @@ def test_codex_p1_standard_due_diligence_and_company_law(tmp_path: Path):
     ], capture_output=True, text=True)
     assert p_jsc.returncode == 2
     assert json.loads(p_jsc.stdout)["statutory_max_paidin_deadline"] == "2027-06-30"
+
+
+def test_anti_blocking_workflow_balances(tmp_path: Path):
+    # 1. Legitimate client/supplier/peer mentions must NOT falsely block as contamination, while subject-position contamination still blocks!
+    ok_ctx = quality_gate.audit_formal_text(
+        "本企业为杭州测试科技有限公司，主导产品稳定配套客户浙江先正达包装有限公司，并采购安徽科亿智能科技股份有限公司检测设备，对标同行业领军企业上海紫江企业集团股份有限公司。",
+        expected_company="杭州测试科技有限公司",
+    )
+    assert ok_ctx["ok"] is True, ok_ctx["errors"]
+    assert len(ok_ctx.get("external_entity_mentions", [])) == 3
+
+    bad_ctx = quality_gate.audit_formal_text(
+        "本项目由宁波误粘串户有限公司组织实施。",
+        expected_company="杭州测试科技有限公司",
+    )
+    assert bad_ctx["ok"] is False
+
+    # 2. Partial checkup (missing balance sheet + pending patent ZL no) works in default mode (exit 0, partial_pass) while --strict still blocks!
+    check_cli = SKILLS / "gov-project-checkup/scripts/run_checkup.py"
+    partial_ht = tmp_path / "partial_ht.json"
+    partial_ht.write_text(json.dumps({
+        "founded_date": "2018-01-01",
+        "patents": [{"patent_no": "IP01", "type": "发明专利"}],
+        "total_employees": 100, "tech_employees": 20,
+        "latest_revenue": 4000, "hightech_product_revenue": 3200,
+        "revenue_3y": 10000, "rd_expense_3y": 600, "domestic_rd_expense_3y": 600,
+    }), encoding="utf-8")
+    p_part = subprocess.run([sys.executable, str(check_cli), "hightech", "--input", str(partial_ht)], capture_output=True, text=True)
+    assert p_part.returncode == 0
+    out_p = json.loads(p_part.stdout)
+    assert out_p["status"] == "partial_pass" and out_p["missing_inputs"] and out_p["warnings"]
+
+    p_strict = subprocess.run([sys.executable, str(check_cli), "hightech", "--input", str(partial_ht), "--strict"], capture_output=True, text=True)
+    assert p_strict.returncode == 2
+
+    # 3. Grant validator --mode draft reports missing_fields without blocking while strict mode blocks
+    grant_cli = SKILLS / "general-grant-writer/scripts/validate_grant_deliverable.py"
+    part_inst = tmp_path / "part_inst.json"
+    part_inst.write_text(json.dumps({"tier": "provincial_institute", "latest_revenue": 10000, "latest_rd_expense": 550}), encoding="utf-8")
+    p_draft = subprocess.run([sys.executable, str(grant_cli), "--track", "institute", "--mode", "draft", "--input", str(part_inst)], capture_output=True, text=True)
+    assert p_draft.returncode == 0
+    assert json.loads(p_draft.stdout)["missing_fields"]
+    p_gstrict = subprocess.run([sys.executable, str(grant_cli), "--track", "institute", "--mode", "strict", "--input", str(part_inst)], capture_output=True, text=True)
+    assert p_gstrict.returncode == 2
+

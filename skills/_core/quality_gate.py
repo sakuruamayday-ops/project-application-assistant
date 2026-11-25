@@ -55,16 +55,23 @@ NUM_UNIT_RE = re.compile(
 FORBIDDEN_UNGROUNDED_CLAIMS = ("国际领先", "世界第一", "全球首创", "行业绝对领先", "国内唯一")
 
 
+EXTERNAL_ENTITY_CONTEXT_RE = re.compile(
+    r"(?:客户|配套|供应|采购|对标|竞品|领军|同行业|同行|检测|检验|审计|合作|委托|出具|母公司|子公司|控股股东|关联|服务于|进入|涵盖|包括|覆盖|替代|参考|标杆|例如|如|以及|与)"
+)
+
+
 def audit_formal_text(
     text: str,
     *,
     expected_company: str = "",
+    allowed_companies: list[str] | None = None,
     min_chars: int = 0,
     max_chars: int = 0,
     required_keywords: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Run hard quality gate on formal application prose."""
+    """Run hard quality gate on formal application prose (distinguishes genuine contamination vs legitimate client/supplier/peer mentions)."""
     errors: list[dict[str, Any]] = []
+    external_mentions: list[str] = []
     compact = re.sub(r"\s+", "", text or "")
     length = len(compact)
 
@@ -85,17 +92,31 @@ def audit_formal_text(
     if hd:
         errors.append({"rule": "defensive_hedge", "issue": f"正式交付正文混入防御兜底或免责话术：{hd[:5]}"})
 
-    # Cross-enterprise contamination check (supports alphanumeric company names & strips common leading verbs)
+    # Smart cross-enterprise contamination check:
+    # - Whitelists expected_company + allowed_companies
+    # - Recognizes legitimate client/supplier/peer/audit/testing-agency context (records as external_entity_mentions without blocking)
+    # - Hard-blocks uncontextualized / subject-position foreign company names!
     if expected_company:
         exp_clean = re.sub(r"[\s（）()]+", "", expected_company)
-        raw_cos = set(re.findall(r"[\u4e00-\u9fffA-Za-z0-9·]{2,24}(?:股份有限公司|有限责任公司|有限公司)", text or ""))
-        cleaned_cos = {re.sub(r"^(?:本项目由|本企业为|本公司为|单位为|系|由|向|与|和|及|为)", "", c) for c in raw_cos}
-        foreign = sorted(
-            c for c in cleaned_cos
-            if len(c) >= 6 and re.sub(r"[\s（）()]+", "", c) != exp_clean and not c.endswith(exp_clean)
-        )
-        if foreign:
-            errors.append({"rule": "cross_enterprise_contamination", "issue": f"检测到跨企业名称混入（期望「{expected_company}」）：{foreign}"})
+        allow_clean = {exp_clean} | {re.sub(r"[\s（）()]+", "", c) for c in (allowed_companies or []) if c}
+        foreign_block: set[str] = set()
+        raw_text = text or ""
+        for m in re.finditer(r"[\u4e00-\u9fffA-Za-z0-9·]{2,24}(?:股份有限公司|有限责任公司|有限公司)", raw_text):
+            raw_co = m.group(0)
+            cleaned = re.sub(r"^(?:本项目由|本企业为|本公司为|单位为|系|由|向|与|和|及|为|如|对|给|被|在)", "", raw_co)
+            norm_co = re.sub(r"[\s（）()]+", "", cleaned)
+            if len(cleaned) < 6 or any(norm_co == a or norm_co.endswith(a) for a in allow_clean):
+                continue
+            ctx_window = raw_text[max(0, m.start() - 25):min(len(raw_text), m.end() + 18)]
+            # Subject-position indicators override external context
+            is_subject_pos = bool(re.search(r"(?:本项目由|本企业为|本公司为|申报单位为|申请单位为)", raw_text[max(0, m.start() - 12):m.start() + 5]))
+            if not is_subject_pos and EXTERNAL_ENTITY_CONTEXT_RE.search(ctx_window):
+                if cleaned not in external_mentions:
+                    external_mentions.append(cleaned)
+            else:
+                foreign_block.add(cleaned)
+        if foreign_block:
+            errors.append({"rule": "cross_enterprise_contamination", "issue": f"检测到跨企业名称混入（期望「{expected_company}」）：{sorted(foreign_block)}"})
 
     # Smart suspicious-parentheses check (only flags bracketed editorial notes, never legal units/doc codes)
     suspicious_parens = []
@@ -106,12 +127,15 @@ def audit_formal_text(
     if suspicious_parens:
         errors.append({"rule": "suspicious_parentheses", "issue": f"正文中存在疑似编辑批注/兜底括号：{suspicious_parens[:8]}"})
 
-    return {
+    out: dict[str, Any] = {
         "ok": len(errors) == 0,
         "length": length,
         "error_count": len(errors),
         "errors": errors,
     }
+    if external_mentions:
+        out["external_entity_mentions"] = external_mentions
+    return out
 
 
 def _extract_num_tokens(text: str) -> Counter[str]:

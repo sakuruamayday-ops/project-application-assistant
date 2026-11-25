@@ -80,7 +80,9 @@ jobs:
             --build-lock services/knowledge-portal/requirements-build.lock \
             --wheelhouse "${RUNNER_TEMP}/portal-test-wheelhouse" \
             --expected-manifest-sha256 "${manifest_sha256}"
-      - run: python -m pytest -q tests
+      - name: Build V3 standalone 10-skill bundles
+        run: python scripts/build_workbuddy_single.py
+      - run: python -m pytest -q tests skills
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       - run: python -m pytest -q

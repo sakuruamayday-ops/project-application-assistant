@@ -364,7 +364,7 @@ def validate_feasibility(data: dict[str, Any]) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="通用专项申报10大赛道统一真严格验收门禁（违规退出码 2）")
+    parser = argparse.ArgumentParser(description="通用专项申报10大赛道统一门禁（支持 draft 初筛与 strict 终审）")
     parser.add_argument(
         "--track",
         required=True,
@@ -374,6 +374,7 @@ def main() -> int:
         ),
     )
     parser.add_argument("--input", type=Path, required=True, help="结构化评估/台账 JSON")
+    parser.add_argument("--mode", choices=("strict", "draft"), default="strict", help="strict=终审硬门禁(默认)，draft=早期初筛（缺字段仅标 missing_fields 不阻断）")
     parser.add_argument("--text-file", type=Path, default=None, help="可选：同步校验正式交付正文质量")
     parser.add_argument("--company", default="", help="配合 --text-file 校验防串户的企业全称")
     parser.add_argument("--min-chars", type=int, default=200)
@@ -412,7 +413,25 @@ def main() -> int:
         if not ta["ok"]:
             errs.extend(e["issue"] for e in ta["errors"])
 
-    out = {"track": args.track, "ok": len(errs) == 0, "error_count": len(errs), "errors": errs, **extra}
+    missing_fields: list[str] = []
+    if args.mode == "draft":
+        kept_errs = []
+        for e in errs:
+            if "缺少" in e or "为空" in e:
+                missing_fields.append(e)
+            else:
+                kept_errs.append(e)
+        errs = kept_errs
+
+    out = {
+        "track": args.track,
+        "mode": args.mode,
+        "ok": len(errs) == 0,
+        "error_count": len(errs),
+        "errors": errs,
+        "missing_fields": missing_fields,
+        **extra,
+    }
     print(json.dumps(out, ensure_ascii=False, indent=2))
     return 0 if out["ok"] else 2
 

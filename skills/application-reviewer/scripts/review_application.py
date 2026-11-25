@@ -105,6 +105,7 @@ def main() -> int:
     p_c = sub.add_parser("check-consistency", help="检查申报材料（DOCX/MD/TXT）占位符、兜底词、串户、括号与密度")
     p_c.add_argument("file", type=Path)
     p_c.add_argument("--company", default="")
+    p_c.add_argument("--allow-company", action="append", default=[], help="白名单外部企业全称（如客户、供应商、同行）")
     p_c.add_argument("--min-chars", type=int, default=0)
     p_c.add_argument("--max-chars", type=int, default=0)
     p_c.add_argument("--require", action="append", default=[])
@@ -129,6 +130,7 @@ def main() -> int:
         res = quality_gate.audit_formal_text(
             text,
             expected_company=args.company,
+            allowed_companies=args.allow_company,
             min_chars=args.min_chars,
             max_chars=args.max_chars,
             required_keywords=args.require,
