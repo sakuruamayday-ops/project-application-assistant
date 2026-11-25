@@ -125,8 +125,14 @@ def calc_growth_metrics(y1_val: Any, y2_val: Any, y3_val: Any) -> dict[str, Any]
     }
 
 
-def validate_patent_item(item: dict[str, Any], as_of: date | None = None, *, require_valid_no: bool = True) -> list[str]:
-    """Verify patent number format, 5th-digit type consistency, statutory expiry (20y inv / 10y util / 10y or 15y design per 2021-06-01 Patent Law Art.42), and transfer holding period."""
+def validate_patent_item(
+    item: dict[str, Any],
+    as_of: date | None = None,
+    *,
+    require_valid_no: bool = True,
+    require_transfer_holding_1y: bool = True,
+) -> list[str]:
+    """Verify patent number format, 5th-digit type consistency, statutory expiry (20y inv / 10y util / 10y or 15y design per 2021-06-01 Patent Law Art.42), and optional 1-year transfer holding period."""
     issues: list[str] = []
     ref_date = as_of or date.today()
     pno = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
@@ -167,17 +173,25 @@ def validate_patent_item(item: dict[str, Any], as_of: date | None = None, *, req
         expiry = date(fdate.year + term_years, fdate.month, 28)
     if expiry < ref_date:
         issues.append(f"专利法定保护期已届满：{pno} 申请日 {fdate.isoformat()}（{term_years}年期满于 {expiry.isoformat()}），不得计入有效知识产权")
-    # Transfer holding period (>= 12 months required for SME Little Giant / High-Tech)
+    # Transfer holding period: required (>= 12 months) only when policy explicitly mandates it (NOT required by High-Tech 国科发火〔2016〕32号/195号)
     acq = str(item.get("acquisition") or "")
     if any(k in acq for k in ("受让", "转让", "并购")):
-        tdate_str = str(item.get("transfer_date") or "")
-        if not tdate_str:
-            issues.append(f"受让专利 {pno} 缺少转让登记生效日（transfer_date），无法核验是否满1年")
-        else:
+        tdate_str = str(item.get("transfer_date") or "").strip()
+        if require_transfer_holding_1y:
+            if not tdate_str:
+                issues.append(f"受让专利 {pno} 缺少转让登记生效日（transfer_date），无法核验是否满1年")
+            else:
+                try:
+                    td = date.fromisoformat(tdate_str[:10])
+                    if (ref_date - td).days < 365:
+                        issues.append(f"受让专利 {pno} 转让日 {td.isoformat()} 距今不足1年，不满足满1年门槛")
+                except ValueError:
+                    issues.append(f"受让专利 {pno} transfer_date 日期格式无效：{tdate_str}")
+        elif tdate_str:
             try:
                 td = date.fromisoformat(tdate_str[:10])
-                if (ref_date - td).days < 365:
-                    issues.append(f"受让专利 {pno} 转让日 {td.isoformat()} 距今不足1年，不满足满1年门槛")
+                if td > ref_date:
+                    issues.append(f"受让专利 {pno} 转让登记生效日 {td.isoformat()} 晚于核验日 {ref_date.isoformat()}")
             except ValueError:
                 issues.append(f"受让专利 {pno} transfer_date 日期格式无效：{tdate_str}")
     return issues

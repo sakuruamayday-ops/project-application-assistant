@@ -32,7 +32,7 @@
     "scripts/compare_scenarios.py": "33a6b364f22cb593935eb6047bb99406f4b787ec2db29a61fd6d888367425117",
     "scripts/filter_project_map.py": "c4b08c0cf779894dcff664d9b82c01b77aa9dfd5e1a6f1383eb7ac8a616e2404",
     "scripts/preflight.py": "062f76228c9d9913e67f2cbea416c79df0144c517795d946631d3d0d2d2ff621",
-    "scripts/run_checkup.py": "2ad2af241e769c44eafc00ac8b0162f7d386c6610c5d17b3787f6efe969ab468",
+    "scripts/run_checkup.py": "a30551341e40da7d9e3bd8f54373d7c470e1a22d3933160a65ba7a8a47ad2be0",
     "scripts/search_catalogs.py": "e7a1b45e400c8e2552d9f91c2378acf363b43840f62b0b71820120070dabeea3"
   },
   "integrity_excludes": [

@@ -624,3 +624,52 @@ def test_round3_six_surgical_fixes(tmp_path: Path, monkeypatch):
         ],
     }))
     assert _run([sys.executable, grant_script, "--track", "subsidy", "--input", str(f_sub2)]).returncode == 2
+
+
+# 14. Post-real-case fixes: Zhejiang single_champion 179号文 wording, SME stat_cutoff_date filter, High-Tech transferred patent no 1-year false block
+def test_real_enterprise_shenxin_3_bugfixes(tmp_path: Path):
+    # Bug 1: single_champion Zhejiang 179号文 basic gate is 全球前五或全国前三 + 近三年任一年主营收入≥4亿元
+    adapters = json.loads((REPO_ROOT / "skills/sme-giant-writer/references/project-view-adapters.json").read_text(encoding="utf-8"))
+    sc = adapters["adapters"]["single_champion"]
+    assert "全球前五或全国前三" in sc["commercial_basis"]
+    assert "近三年任一年主营业务收入原则上达4亿元" in sc["commercial_basis"]
+    assert "近三年平均主营收入" not in json.dumps(sc, ensure_ascii=False)
+
+    sys.path.insert(0, str(REPO_ROOT / "skills/gov-project-checkup/scripts"))
+    import run_checkup  # noqa: E402
+
+    # Bug 2: Little Giant stat_cutoff_date excludes post-cutoff granted invention patent
+    sme_cutoff = {
+        "target_tier": "little_giant",
+        "stat_cutoff_date": "2025-12-31",
+        "balance_sheet": {"total_assets": 55168.21, "total_liabilities": 24811.25, "total_equity": 30356.96},
+        "latest_revenue": 61002.09, "annual_revenues": [38874.51, 48726.90, 61002.09],
+        "rd_expenses_2y": [1672.87, 2050.83],
+        "patents": [
+            {"patent_no": "ZL202011071894.5", "type": "发明专利", "filing_date": "2020-10-09", "grant_date": "2024-06-21", "acquisition": "自主研发"},
+            {"patent_no": "ZL202011071891.1", "type": "发明专利", "filing_date": "2020-10-09", "grant_date": "2025-04-04", "acquisition": "自主研发"},
+            {"patent_no": "ZL202310414797.9", "type": "发明专利", "filing_date": "2023-04-18", "grant_date": "2025-11-14", "acquisition": "自主研发"},
+            {"patent_no": "ZL202510920827.2", "type": "发明专利", "filing_date": "2025-07-04", "grant_date": "2026-06-19", "acquisition": "自主研发"},
+        ],
+    }
+    res_cut = run_checkup.check_sme(sme_cutoff, strict=True)
+    assert res_cut["status"] == "fail"
+    assert res_cut["gates"]["i_class_ip"]["valid_i_class_count"] == 3
+    assert any("晚于批次统计截止日" in e for e in res_cut["errors"])
+
+    # Bug 3: High-Tech does NOT falsely block transferred patent missing transfer_date (国科发火〔2016〕32号/195号 has no 1-year holding gate)
+    ht_transfer = {
+        "founded_date": "2003-07-01",
+        "balance_sheet": {"total_assets": 55168.21, "total_liabilities": 24811.25, "total_equity": 30356.96},
+        "patents": [
+            {"patent_no": "ZL202011071894.5", "type": "发明专利", "filing_date": "2020-10-09", "grant_date": "2024-06-21", "acquisition": "自主研发"},
+            {"patent_no": "ZL201911000594.5", "type": "发明专利", "filing_date": "2019-10-21", "grant_date": "2022-11-08", "acquisition": "受让"},
+        ],
+        "total_employees": 303, "tech_employees": 62,
+        "latest_revenue": 61002.09, "hightech_product_revenue": 56666.79,
+        "revenue_3y": 148603.50, "rd_expense_3y": 5001.79, "domestic_rd_expense_3y": 5001.79,
+    }
+    res_ht = run_checkup.check_hightech(ht_transfer, strict=True)
+    assert res_ht["status"] == "pass" and res_ht["gates"]["ip_validity"]["valid_count"] == 2
+    assert any("著录项目变更通知书" in w for w in res_ht["warnings"])
+

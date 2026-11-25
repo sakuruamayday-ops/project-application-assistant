@@ -48,9 +48,12 @@ def _eval_patents(
     strict: bool,
     exclude_transferred: bool = False,
     require_dominant_link: bool = False,
-) -> tuple[list[dict[str, Any]], list[str], list[str]]:
+    require_transfer_holding_1y: bool = False,
+    stat_cutoff: date | None = None,
+) -> tuple[list[dict[str, Any]], list[str], list[str], list[str]]:
     errors: list[str] = []
     pending_certs: list[str] = []
+    warnings: list[str] = []
     seen_keys: set[str] = set()
     valid: list[dict[str, Any]] = []
     for idx, p in enumerate(patents):
@@ -62,6 +65,9 @@ def _eval_patents(
         if exclude_transferred and any(k in acq for k in ("受让", "转让", "转入", "并购")):
             errors.append(f"patents[{idx}]({raw_no or '未编号'}) 为转入/受让取得，按2026版2号文不得计入自主研发I类知识产权")
             continue
+        if not exclude_transferred and not require_transfer_holding_1y and any(k in acq for k in ("受让", "转让", "并购")):
+            if not str(p.get("transfer_date") or "").strip():
+                warnings.append(f"patents[{idx}]({raw_no or '未编号'}) 为受让专利且未填转让登记生效日，高企不设满1年限制但建议附国知局著录项目变更通知书确认权属")
         rank = p.get("applicant_rank")
         if rank is not None:
             r_num = _finite_float(rank)
@@ -71,7 +77,25 @@ def _eval_patents(
         if require_dominant_link and p.get("linked_to_dominant_product") is False:
             errors.append(f"patents[{idx}]({raw_no or '未编号'}) 未关联主导产品，不得计入")
             continue
-        p_errs = fact_ledger.validate_patent_item(p, as_of=ref_date, require_valid_no=True)
+        if stat_cutoff is not None:
+            gdate_str = str(p.get("grant_date") or "").strip()
+            if gdate_str:
+                try:
+                    gd = date.fromisoformat(gdate_str[:10])
+                    if gd > stat_cutoff:
+                        errors.append(
+                            f"patents[{idx}]({raw_no or '未编号'}) 授权公告日 {gd.isoformat()} 晚于批次统计截止日 {stat_cutoff.isoformat()}，不得计入该时点有效知识产权（须以当批采信口径核定）"
+                        )
+                        continue
+                except ValueError:
+                    errors.append(f"patents[{idx}]({raw_no or '未编号'}) grant_date 日期格式无效：{gdate_str}")
+                    continue
+        p_errs = fact_ledger.validate_patent_item(
+            p,
+            as_of=ref_date,
+            require_valid_no=True,
+            require_transfer_holding_1y=require_transfer_holding_1y,
+        )
         only_missing_no = (
             len(p_errs) == 1
             and "专利号缺失或不符合中国专利号规范" in p_errs[0]
@@ -88,7 +112,7 @@ def _eval_patents(
             continue
         seen_keys.add(key)
         valid.append(p)
-    return valid, errors, pending_certs
+    return valid, errors, pending_certs, warnings
 
 
 def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: bool = False) -> dict[str, Any]:
@@ -151,8 +175,11 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: b
         gates["ip_validity"] = {"pass": None if not strict else False, "valid_count": 0}
         missing_inputs.append("patents（有效核心知识产权清单）")
     else:
-        valid_pats, patent_issues, pending_certs = _eval_patents(patents, ref_date, strict=strict)
+        valid_pats, patent_issues, pending_certs, patent_warnings = _eval_patents(
+            patents, ref_date, strict=strict, require_transfer_holding_1y=False
+        )
         warnings.extend(pending_certs)
+        warnings.extend(patent_warnings)
         errors.extend(patent_issues)
         if pending_certs:
             missing_inputs.append(f"patents（{len(pending_certs)}项待补正式ZL授权证书核验）")
@@ -443,10 +470,24 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
         gates["i_class_ip"] = {"pass": None if not strict else False, "valid_i_class_count": 0, "min_required": policy_min_i_class}
         missing_inputs.append(f"patents（自主研发I类知识产权≥{policy_min_i_class}项核验）")
     else:
-        valid_pats, p_errs, pending_certs = _eval_patents(
-            patents, ref_date, strict=strict, exclude_transferred=True, require_dominant_link=True
+        cutoff_raw = str(data.get("stat_cutoff_date") or data.get("cutoff_date") or "").strip()
+        stat_cutoff: date | None = None
+        if cutoff_raw:
+            try:
+                stat_cutoff = date.fromisoformat(cutoff_raw[:10])
+            except ValueError:
+                errors.append(f"stat_cutoff_date 日期格式无效：{cutoff_raw}")
+        valid_pats, p_errs, pending_certs, patent_warnings = _eval_patents(
+            patents,
+            ref_date,
+            strict=strict,
+            exclude_transferred=True,
+            require_dominant_link=True,
+            require_transfer_holding_1y=True,
+            stat_cutoff=stat_cutoff,
         )
         warnings.extend(pending_certs)
+        warnings.extend(patent_warnings)
         errors.extend(p_errs)
         if pending_certs:
             missing_inputs.append(f"patents（{len(pending_certs)}项待补正式ZL授权证书核验）")
@@ -539,6 +580,7 @@ def main() -> int:
 
     p_sme = sub.add_parser("sme", help="专精特新/小巨人（2026版2号文+117号文）自动化复算")
     p_sme.add_argument("--input", type=Path, required=True)
+    p_sme.add_argument("--stat-cutoff", default="", help="可选：批次统计截止日（如 2025-12-31），用于过滤期后授权专利")
     p_sme.add_argument("--strict", action="store_true")
 
     p_pol = sub.add_parser("policy", help="洁净检索本地政策库并校验证件有效期与省市区县层级")
@@ -593,6 +635,9 @@ def main() -> int:
 
     if args.cmd == "sme":
         data = json.loads(args.input.read_text(encoding="utf-8"))
+        if getattr(args, "stat_cutoff", ""):
+            data = dict(data)
+            data["stat_cutoff_date"] = args.stat_cutoff
         res = check_sme(data, strict=args.strict)
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0 if (res["ok"] or not args.strict) else 2
