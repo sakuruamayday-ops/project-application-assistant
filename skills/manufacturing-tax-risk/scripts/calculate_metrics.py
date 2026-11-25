@@ -497,6 +497,8 @@ def main():
     facts_json = dump_financial_json(result)
     metrics_json = dump_financial_json(metrics_output) if metrics_output is not None else None
 
+    if args.metrics_output is not None and args.output.resolve() == args.metrics_output.resolve():
+        raise ValueError("facts 输出路径与 --metrics-output 路径不得相同")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(facts_json, encoding="utf-8")
     if metrics_json is not None:

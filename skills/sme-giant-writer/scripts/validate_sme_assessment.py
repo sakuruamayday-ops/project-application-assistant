@@ -95,9 +95,23 @@ def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[s
     if (
         document.get("overall_conclusion") == "eligible"
         and isinstance(quality_score, dict)
-        and quality_score.get("status") != "verified-platform-score"
+        and (
+            quality_score.get("status") != "verified-platform-score"
+            or (isinstance(quality_score.get("value"), (int, float)) and float(quality_score["value"]) < 60.0)
+        )
     ):
-        errors.append("平台质量分未核验时总体结论不得为eligible")
+        errors.append("平台质量分未核验或低于60分合格线时总体结论不得为eligible")
+    # Enforce hard_gates linkage with overall_conclusion
+    hg = document.get("hard_gates")
+    if isinstance(hg, dict) and document.get("overall_conclusion") == "eligible":
+        for g_name, g_val in hg.items():
+            failed_gate = (
+                g_val is False
+                or str(g_val).strip().lower() in {"fail", "false", "ineligible", "不通过", "不达标"}
+                or (isinstance(g_val, dict) and (g_val.get("pass") is False or str(g_val.get("status", "")).lower() == "fail"))
+            )
+            if failed_gate:
+                errors.append(f"硬门槛 {g_name} 未通过时总体结论不得为eligible")
 
     # Optional v1.2 ai_meta validation (dual-field product lock, 3-tier patent triage, estimated metrics lineage).
     ai_meta = document.get("ai_meta") or document.get("__aiMeta")

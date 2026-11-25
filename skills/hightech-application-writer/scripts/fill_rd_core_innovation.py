@@ -327,6 +327,8 @@ def main() -> None:
     report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
     if input_path == output_path:
         raise SystemExit("输出文件不得与输入文件相同")
+    if report_path in {input_path, output_path}:
+        raise SystemExit("审计回执路径不得与输入或输出DOCX相同")
     if not input_path.is_file() or not spec_path.is_file():
         raise SystemExit("输入DOCX或JSON不存在")
     if output_path.exists() and not args.overwrite:
@@ -430,9 +432,6 @@ def main() -> None:
             new_xml = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             backup_path = None
-            if output_path.exists():
-                backup_path = unique_recovery_path(output_path, "backup")
-                shutil.move(output_path, backup_path)
             with tempfile.NamedTemporaryFile(dir=output_path.parent, suffix=".docx", delete=False) as handle:
                 temporary_path = Path(handle.name)
             readback_counts = {"RD": {"expected": len(targets), "actual": None, "status": "incomplete"}}
@@ -441,14 +440,22 @@ def main() -> None:
                     for member in source_zip.infolist():
                         payload = new_xml if member.filename == "word/document.xml" else source_zip.read(member.filename)
                         output_zip.writestr(copy.deepcopy(member), payload)
-                temporary_path.replace(output_path)
-                with zipfile.ZipFile(output_path, "r") as written_zip:
+                # Verify tempfile XML integrity BEFORE touching existing output_path!
+                with zipfile.ZipFile(temporary_path, "r") as written_zip:
                     written_root = etree.fromstring(written_zip.read("word/document.xml"))
-                batch.check(written_root, NS, lambda node: xml_cell_text(node).strip())
-                written_targets = collect_rd_targets(written_root, require_field=False)
+                verify_written_targets(written_root, formatted)
+                if output_path.exists():
+                    backup_path = unique_recovery_path(output_path, "backup")
+                    shutil.copy2(output_path, backup_path)
+                temporary_path.replace(output_path)
+                # Final post-replace readback & batch check on disk (catches replace corruption & restores backup)
+                with zipfile.ZipFile(output_path, "r") as final_zip:
+                    final_root = etree.fromstring(final_zip.read("word/document.xml"))
+                batch.check(final_root, NS, lambda node: xml_cell_text(node).strip())
+                written_targets = collect_rd_targets(final_root, require_field=False)
                 readback_counts["RD"].update(actual=len(written_targets),
                                                status="completed" if targets.keys() == written_targets.keys() else "incomplete")
-                verify_written_targets(written_root, formatted)
+                verify_written_targets(final_root, formatted)
                 if readback_counts["RD"]["status"] != "completed":
                     raise ValueError("成品研发项目编号或数量不一致")
             except Exception as error:

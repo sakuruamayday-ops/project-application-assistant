@@ -173,4 +173,4 @@ def test_all_10_tracks_positive_and_negative_probes(tmp_path: Path):
             "conditions": [{"match": "根本不存在的条款"}],
         },
     )
-    assert rc_feas == 2 and len(out_feas["errors"]) == 2
+    assert rc_feas == 2 and len(out_feas["errors"]) >= 4

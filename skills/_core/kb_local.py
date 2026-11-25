@@ -82,36 +82,50 @@ STATUS_RANK = {
 
 
 def resolve_region_scope(text: str) -> dict[str, Any]:
-    """Resolve province / city / district hierarchy cleanly across Zhejiang and national scopes."""
+    """Resolve province / city / district hierarchy cleanly (explicit province/city FIRST to prevent cross-province collision like 南昌市西湖区)."""
     raw = (text or "").strip()
     province = ""
     city = ""
     district = ""
 
-    # 1. Exact district match
-    for dist_name, parent_city in ZHEJIANG_DISTRICTS.items():
-        short = dist_name[:-1] if len(dist_name) >= 3 and dist_name[-1] in "区县市" else dist_name
-        if dist_name in raw or (len(short) >= 2 and short in raw):
-            district = dist_name
-            city = parent_city
-            province = "浙江省"
-            break
+    # 1. Explicit province / municipality match FIRST
+    m_prov = re.search(r"([\u4e00-\u9fa5]{2,5}(?:省|自治区)|北京|上海|天津|重庆)(?:市)?", raw)
+    if m_prov:
+        p = m_prov.group(1)
+        province = p if p.endswith(("省", "自治区")) else p + "市"
 
-    # 2. City match
-    if not city:
-        for c in ZHEJIANG_CITIES:
-            short = c[:-1]
-            if c in raw or short in raw:
-                city = c
+    # 2. Explicit non-Zhejiang city match check (search AFTER province prefix so "江西省南昌市" -> "南昌市")
+    after_prov = raw[m_prov.end():] if m_prov else raw
+    m_city = re.search(r"([\u4e00-\u9fa5]{2,5}市)", after_prov)
+    explicit_city = m_city.group(1) if m_city else ""
+    if explicit_city and explicit_city not in ZHEJIANG_CITIES and explicit_city not in {"北京市", "上海市", "天津市", "重庆市"}:
+        city = explicit_city
+
+    is_non_zj = (bool(province) and province != "浙江省") or (bool(city) and city not in ZHEJIANG_CITIES)
+
+    # 3. Match Zhejiang cities/districts ONLY when NOT explicitly outside Zhejiang
+    if not is_non_zj:
+        for dist_name, parent_city in ZHEJIANG_DISTRICTS.items():
+            if explicit_city and explicit_city in ZHEJIANG_CITIES and explicit_city != parent_city:
+                continue
+            short = dist_name[:-1] if len(dist_name) >= 3 and dist_name[-1] in "区县市" else dist_name
+            if dist_name in after_prov or (len(short) >= 2 and short in after_prov):
+                district = dist_name
+                city = parent_city
                 province = "浙江省"
                 break
-
-    # 3. Direct province fallback
-    if not province:
-        m = re.search(r"([\u4e00-\u9fa5]{2,5}(?:省|自治区)|北京|上海|天津|重庆)(?:市)?", raw)
-        if m:
-            p = m.group(1)
-            province = p if p.endswith(("省", "自治区")) else p + "市"
+        if not city:
+            for c in ZHEJIANG_CITIES:
+                short = c[:-1]
+                if c in after_prov or short in after_prov:
+                    city = c
+                    province = "浙江省"
+                    break
+    else:
+        after_city = after_prov[m_city.end():] if m_city else after_prov
+        m_dist = re.search(r"([\u4e00-\u9fa5]{2,5}(?:区|县))", after_city)
+        if m_dist:
+            district = m_dist.group(1)
 
     scopes = ["国家"]
     if province:
@@ -172,21 +186,50 @@ def deduplicate_recognitions(records: list[dict[str, Any]]) -> list[dict[str, An
     return out
 
 
-def query_enterprise(enterprise_name: str, db_path: Path = PROJECT_DB) -> dict[str, Any]:
-    """Query enterprise profile, financials, deduplicated recognitions, and application records directly from local DB."""
+def query_enterprise(enterprise_name: str, db_path: Path = PROJECT_DB, *, credit_code: str = "") -> dict[str, Any]:
+    """Query enterprise profile, financials, deduplicated recognitions, and application records directly from local DB.
+    Refuses ambiguous multi-company short-name collisions unless an exact full name or credit_code uniquely resolves one subject.
+    """
     if not db_path.is_file():
         return {"found": False, "error": f"local database not found: {db_path}"}
     with _ro_conn(db_path) as con:
-        row = con.execute(
-            """
-            SELECT id, name, unified_social_credit_code, province, city, county,
-                   founded_date, registered_capital, industry_l1, industry_l2, industry_l3, company_intro
-            FROM enterprise WHERE name LIKE ? ORDER BY length(name) ASC LIMIT 1
-            """,
-            (f"%{enterprise_name}%",),
-        ).fetchone()
-        if not row:
+        rows = []
+        if credit_code.strip():
+            rows = con.execute(
+                """
+                SELECT id, name, unified_social_credit_code, province, city, county,
+                       founded_date, registered_capital, industry_l1, industry_l2, industry_l3, company_intro
+                FROM enterprise WHERE upper(unified_social_credit_code) = ? LIMIT 5
+                """,
+                (credit_code.strip().upper(),),
+            ).fetchall()
+        if not rows:
+            rows = con.execute(
+                """
+                SELECT id, name, unified_social_credit_code, province, city, county,
+                       founded_date, registered_capital, industry_l1, industry_l2, industry_l3, company_intro
+                FROM enterprise WHERE name LIKE ? ORDER BY length(name) ASC LIMIT 10
+                """,
+                (f"%{enterprise_name.strip()}%",),
+            ).fetchall()
+        if not rows:
             return {"found": False, "query": enterprise_name}
+        exact = [r for r in rows if r["name"].strip() == enterprise_name.strip()]
+        if exact:
+            row = exact[0]
+        elif len(rows) > 1:
+            return {
+                "found": False,
+                "ambiguous": True,
+                "query": enterprise_name,
+                "error": f"简称「{enterprise_name}」命中 {len(rows)} 家不同企业，请提供完整企业名称或18位统一社会信用代码防止串户",
+                "candidates": [
+                    {"name": r["name"], "credit_code": r["unified_social_credit_code"], "city": r["city"]}
+                    for r in rows[:10]
+                ],
+            }
+        else:
+            row = rows[0]
         ent = dict(row)
         eid = ent["id"]
         fins = [
@@ -297,9 +340,12 @@ def search_local_rag(
         excerpt = str(item.get("excerpt") or "")
         haystack = f"{title} {source} {excerpt}".lower()
 
-        if exclude_privacy and any(p in title or p in source for p in PRIVACY_TITLE_TERMS):
+        if exclude_privacy and any(p in title or p in source or p in excerpt for p in PRIVACY_TITLE_TERMS):
             dropped_privacy += 1
             continue
+        # Redact mobile phone numbers & ID numbers from retrieved excerpts before returning downstream
+        excerpt_clean = re.sub(r"(?<!\d)1[3-9]\d{9}(?!\d)", "[已脱敏手机]", excerpt)
+        excerpt_clean = re.sub(r"(?<!\d)[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx](?!\d)", "[已脱敏证件]", excerpt_clean)
 
         # False-positive guard:
         # 1) Any alphanumeric identifier containing BOTH letters and digits (e.g. XYZ999888, CN120378087B) MUST match.
@@ -329,7 +375,7 @@ def search_local_rag(
             "region": item.get("适用地区") or item.get("region"),
             "validity_status": item.get("validity_status"),
             "score": item.get("score"),
-            "excerpt": excerpt[:500],
+            "excerpt": excerpt_clean[:500],
         })
         if len(filtered) >= limit:
             break

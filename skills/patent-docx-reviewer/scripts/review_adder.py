@@ -236,6 +236,8 @@ def add_comments(
     *,
     require_scope_impact: bool = False,
 ) -> dict[str, object]:
+    if source.resolve() == target.resolve():
+        raise ValueError("输出路径不得与原专利申请 DOCX 相同，请指定新路径防止覆盖原稿")
     occurrences = [review.get("occurrence", 1) for review in reviews]
     if any(type(occurrence) is not int or occurrence < 1 for occurrence in occurrences):
         raise ValueError("occurrence 必须是从 1 开始的正整数（1、2、3……）")
@@ -273,9 +275,13 @@ def add_comments(
             if len(matches) < occurrence:
                 skipped.append({"anchor": anchor, "reason": "未定位到指定 occurrence"})
                 continue
+            target_para = matches[occurrence - 1]
+            if in_para_occ > 1 and paragraph_text(target_para).count(anchor) < in_para_occ:
+                skipped.append({"anchor": anchor, "reason": f"段内仅出现 {paragraph_text(target_para).count(anchor)} 次，越界请求第 {in_para_occ} 次"})
+                continue
             comment_id = str(first_id + len(applied))
             precision = add_markers(
-                matches[occurrence - 1],
+                target_para,
                 comment_id,
                 anchor,
                 in_para_occ,
@@ -298,10 +304,17 @@ def add_comments(
         content_types.write(content_types_path, encoding="utf-8", xml_declaration=True)
 
         target.parent.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
-            for path in sorted(root_dir.rglob("*")):
-                if path.is_file():
-                    archive.write(path, path.relative_to(root_dir).as_posix())
+        tmp_zip = target.with_name(f".{target.name}.tmp")
+        try:
+            with zipfile.ZipFile(tmp_zip, "w", zipfile.ZIP_DEFLATED) as archive:
+                for path in sorted(root_dir.rglob("*")):
+                    if path.is_file():
+                        archive.write(path, path.relative_to(root_dir).as_posix())
+            tmp_zip.replace(target)
+        except Exception:
+            if tmp_zip.exists():
+                tmp_zip.unlink()
+            raise
     return {
         "expected": len(reviews),
         "applied": len(applied),
@@ -321,10 +334,16 @@ def main() -> None:
     parser.add_argument("input_docx", type=Path)
     parser.add_argument("output_docx", type=Path)
     parser.add_argument("--reviews-file", required=True, type=Path)
+    parser.add_argument("--require-scope-impact", action="store_true", help="强制每条意见包含「保护范围影响」字段")
     args = parser.parse_args()
     try:
         reviews = read_reviews(args.reviews_file)
-        result = add_comments(args.input_docx, args.output_docx, reviews)
+        result = add_comments(
+            args.input_docx,
+            args.output_docx,
+            reviews,
+            require_scope_impact=args.require_scope_impact,
+        )
     except (OSError, ValueError) as error:
         parser.error(str(error))
     print(json.dumps(result, ensure_ascii=False))

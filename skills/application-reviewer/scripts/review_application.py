@@ -33,15 +33,29 @@ def _read_doc_or_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+ALLOWED_LEDGER_KINDS = {"fact", "computed", "judgment"}
+
+
 def verify_ledger(ledger: dict[str, Any]) -> dict[str, Any]:
-    """Verify every computed claim arithmetically, check USCC/balance-sheet if present, and enforce source provenance."""
+    """Verify every computed claim arithmetically, require non-empty valid entries, and check USCC/balance-sheet."""
+    import math
+
     errors: list[dict[str, Any]] = []
     checked_calcs = 0
-    for idx, entry in enumerate(ledger.get("entries", [])):
+    if not isinstance(ledger, dict):
+        return {"ok": False, "entry_count": 0, "checked_calculations": 0, "error_count": 1, "errors": [{"rule": "schema", "issue": "台账根节点必须为 JSON 对象"}]}
+    entries = ledger.get("entries")
+    if not isinstance(entries, list) or len(entries) == 0:
+        errors.append({"rule": "empty_entries", "issue": "证据台账缺少有效的 entries 非空数组，禁止空跑通过"})
+        entries = []
+    for idx, entry in enumerate(entries):
         if not isinstance(entry, dict):
             errors.append({"index": idx, "rule": "schema", "issue": "台账条目必须为对象"})
             continue
-        kind = str(entry.get("kind") or "fact").strip()
+        kind = str(entry.get("kind") or "").strip()
+        if kind not in ALLOWED_LEDGER_KINDS:
+            errors.append({"index": idx, "rule": "invalid_kind", "issue": f"条目 {idx} kind 无效（「{kind}」），须为 {sorted(ALLOWED_LEDGER_KINDS)}"})
+            continue
         if not entry.get("claim"):
             errors.append({"index": idx, "rule": "missing_claim", "issue": "缺少主张描述 claim"})
         if kind in {"fact", "computed"} and not entry.get("source"):
@@ -49,11 +63,19 @@ def verify_ledger(ledger: dict[str, Any]) -> dict[str, Any]:
         if kind == "computed":
             formula = str(entry.get("formula") or "").strip()
             claimed = entry.get("claimed_value")
-            if not formula or claimed is None:
-                errors.append({"index": idx, "rule": "missing_formula", "issue": f"计算类条目 {idx} 缺少 formula 或 claimed_value"})
+            if not formula or claimed is None or isinstance(claimed, bool):
+                errors.append({"index": idx, "rule": "missing_formula", "issue": f"计算类条目 {idx} 缺少有效 formula 或 claimed_value"})
             else:
+                try:
+                    c_float = float(claimed)
+                except (TypeError, ValueError):
+                    errors.append({"index": idx, "rule": "invalid_claimed", "issue": f"计算类条目 {idx} claimed_value 非数字：{claimed}"})
+                    continue
+                if not math.isfinite(c_float):
+                    errors.append({"index": idx, "rule": "non_finite_claimed", "issue": f"计算类条目 {idx} claimed_value 非有限数值：{claimed}"})
+                    continue
                 checked_calcs += 1
-                vc = quality_gate.verify_calculation_claim(formula, float(claimed))
+                vc = quality_gate.verify_calculation_claim(formula, c_float)
                 if not vc["ok"]:
                     errors.append({"index": idx, "rule": "calculation_mismatch", "issue": vc["error"], "detail": vc})
     if ledger.get("credit_code"):
@@ -113,7 +135,15 @@ def main() -> int:
         )
         if args.blackboard:
             bb = json.loads(args.blackboard.read_text(encoding="utf-8"))
-            res["blackboard_reconciliation"] = fact_ledger.reconcile_text_against_estimates(bb, text)
+            if args.company and not fact_ledger._subject_matches(bb, args.company):
+                res["ok"] = False
+                res["error_count"] += 1
+                res["errors"].append({
+                    "rule": "blackboard_subject_mismatch",
+                    "issue": f"事实黑板主体「{bb.get('company_name', '')}」与目标企业「{args.company}」不匹配，禁止跨主体销项",
+                })
+            else:
+                res["blackboard_reconciliation"] = fact_ledger.reconcile_text_against_estimates(bb, text)
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0 if res["ok"] else 2
 

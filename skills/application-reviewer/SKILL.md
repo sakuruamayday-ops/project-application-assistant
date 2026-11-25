@@ -1,6 +1,6 @@
 ---
 name: application-reviewer
-description: 申报材料全维度质检、原生 DOCX 版本对比、证据台账算术复算与中文自然化去 AI 味润色审计工具。合并旧版 consistency-check、application-version-diff、evidence-ledger 与 gongchuang-humanizer-zh，所有门禁均为真严格退出码（违规返回 2）。
+description: 申报材料全维度质检、交叉核对、原生 DOCX/Word 版本对比、证据台账算术复算与中文自然化去 AI 味润色审计工具。适用于检查两版申请书改了哪里、核对前后数字/名称/时间线一致性、复算占比公式、排查串户/占位符/免责套话，及去 AI 味改写防丢指标。
 ---
 
 # 申报材料质检、版本对比与润色审计（application-reviewer）

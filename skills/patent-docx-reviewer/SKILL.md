@@ -1,6 +1,6 @@
 ---
 name: patent-docx-reviewer
-description: 检查、核稿、批注或修订中国专利申请 Word，核对摘要、权利要求、说明书、附图、引用关系、术语、公开充分性和 OOXML 完整性，生成可定位意见与批注副本；公司级查新、挖掘、预审和布局衔接 patent-strategy-assistant。
+description: 检查、核稿、批注或修订中国专利申请 Word 文件，核对摘要、权利要求保护范围、说明书、附图、引用关系、术语统一、公开充分性和 OOXML 完整性，生成带“保护范围影响”评估的可定位意见与精准批注副本。
 ---
 
 # 专利申请文件核稿（patent-docx-reviewer）

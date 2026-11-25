@@ -85,7 +85,8 @@ def audit(text: str) -> dict[str, object]:
         if name == "规范性引用文件":
             ref_section_text = section_body
             ref_section_line = line_no
-        else:
+        elif context != "informative":
+            # Only normative body clauses count for normative reference cross-citation (exclude 参考文献/前言/引言!)
             body_without_refs_parts.append(section_body)
 
         if any(term in name for term in TEST_TERMS):
@@ -117,16 +118,18 @@ def audit(text: str) -> dict[str, object]:
                 "message": "存在要求型条款，但未发现试验、测试、检验或验证方法章节",
             })
         else:
-            total_test_chars = sum(len(re.sub(r"\s+", "", body)) for _, _, body in test_bodies)
-            if total_test_chars < 30:
+            compact_test = re.sub(r"\s+", "", "".join(body for _, _, body in test_bodies))
+            # Reject empty, purely negative ("无无无..."), or low-diversity repeated filler strings
+            unique_chars = len(set(re.sub(r"[，。、；：！？,.;:!?\-\s无略待补]", "", compact_test)))
+            if len(compact_test) < 30 or unique_chars < 10:
                 findings.append({
                     "level": "error",
                     "code": "empty-verification-section",
                     "line": test_bodies[0][0],
-                    "message": f"试验/测试方法章节内容为空或过于简略（仅{total_test_chars}字），缺乏可复现检验步骤",
+                    "message": f"试验/测试方法章节内容为空、重复填充或过于简略（{len(compact_test)}字，有效字符种类{unique_chars}），缺乏可复现检验步骤",
                 })
 
-    # Normative references: check '参考' wording AND actual body citation
+    # Normative references: check '参考' wording AND exact standard-code citation in NORMATIVE body only
     if ref_section_text:
         if "参考" in ref_section_text:
             findings.append({
@@ -136,16 +139,16 @@ def audit(text: str) -> dict[str, object]:
                 "message": "规范性引用文件章节含“参考”表述，核对是否应移入参考文献",
             })
         listed_codes = sorted({re.sub(r"\s+", " ", m.group(0).strip()) for m in STD_CODE_PATTERN.finditer(ref_section_text)})
-        body_norm = re.sub(r"\s+", " ", "\n".join(body_without_refs_parts))
+        body_codes = {re.sub(r"\s+", " ", m.group(0).strip()) for m in STD_CODE_PATTERN.finditer("\n".join(body_without_refs_parts))}
+        body_stems = {re.split(r"[—\-]\d{4}", c)[0].strip() for c in body_codes}
         for code in listed_codes:
-            # Allow matching either full dated code or undated stem (before '—' or '-')
             stem = re.split(r"[—\-]\d{4}", code)[0].strip()
-            if code not in body_norm and stem not in body_norm:
+            if code not in body_codes and stem not in body_stems:
                 findings.append({
                     "level": "error",
                     "code": "uncited-normative-reference",
                     "line": ref_section_line,
-                    "message": f"规范性引用文件“{code}”在标准正文中未被引用，不符合 GB/T 1.1 规范性引用要求",
+                    "message": f"规范性引用文件“{code}”在标准规范性正文中未被引用，不符合 GB/T 1.1 规范性引用要求",
                 })
 
     # ALL placeholders flagged (no bogus '合成' exemption)

@@ -145,17 +145,20 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
 
     added = [{"new_index": np["index"], "text": np["text"][:140]} for ni, np in enumerate(new_paras) if ni not in matched_new]
 
-    # Table row reorder/change detection across matching table indices
+    # Table row reorder AND cell modification detection across matching table indices
     table_row_moves: list[dict[str, Any]] = []
+    table_row_changes: list[dict[str, Any]] = []
+    table_numeric_changes = 0
     for t_i in range(min(len(old["tables"]), len(new["tables"]))):
         orows = old["tables"][t_i]["rows"]
         nrows = new["tables"][t_i]["rows"]
-        # Compare row content ignoring leading serial number column (col 0)
+
         def sig(cells: list[str]) -> str:
             body = cells[1:] if len(cells) >= 2 and re.fullmatch(r"\d+", cells[0].strip()) else cells
             return re.sub(r"\s+", "", "|".join(body))
 
         n_map = {sig(r["cells"]): r["row_index"] for r in nrows if sig(r["cells"])}
+        o_map = {sig(r["cells"]): r["row_index"] for r in orows if sig(r["cells"])}
         for r in orows:
             s = sig(r["cells"])
             if s and s in n_map and n_map[s] != r["row_index"]:
@@ -165,6 +168,25 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
                     "new_row": n_map[s],
                     "preview": r["joined"][:120],
                 })
+        # Detect in-place cell/value changes for rows whose signature changed
+        for r_i in range(min(len(orows), len(nrows))):
+            oc, nc = orows[r_i]["cells"], nrows[r_i]["cells"]
+            osig, nsig = sig(oc), sig(nc)
+            if osig == nsig or osig in n_map or nsig in o_map:
+                continue
+            onums, nnums = _extract_numbers(" ".join(oc)), _extract_numbers(" ".join(nc))
+            num_changed = onums != nnums
+            if num_changed:
+                table_numeric_changes += 1
+            table_row_changes.append({
+                "table_index": t_i + 1,
+                "row_index": r_i + 1,
+                "old_row": orows[r_i]["joined"][:140],
+                "new_row": nrows[r_i]["joined"][:140],
+                "number_changed": num_changed,
+                "old_numbers": onums[:6],
+                "new_numbers": nnums[:6],
+            })
 
     return {
         "old_file": str(old_docx),
@@ -176,18 +198,20 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
             "deleted_paragraphs": len(deleted),
             "added_paragraphs": len(added),
             "moved_table_rows": len(table_row_moves),
-            "numeric_changes": sum(1 for m in modified + moved if m.get("number_changed")),
+            "modified_table_rows": len(table_row_changes),
+            "numeric_changes": sum(1 for m in modified + moved if m.get("number_changed")) + table_numeric_changes,
         },
         "moved": moved[:50],
         "modified": modified[:50],
         "deleted": deleted[:50],
         "added": added[:50],
         "table_row_moves": table_row_moves[:50],
+        "table_row_changes": table_row_changes[:50],
     }
 
 
 def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
-    """Read financial metrics from real-world Excel workbooks using tolerant synonym matching."""
+    """Read financial metrics from real-world Excel workbooks using tolerant synonym matching (skipping 行次/序号 columns)."""
     import openpyxl
 
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
@@ -195,11 +219,15 @@ def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
     for sname in wb.sheetnames:
         ws = wb[sname]
         rows = [list(r) for r in ws.iter_rows(values_only=True)]
-        # Detect year columns in top 6 rows
+        # Detect year columns & index/serial columns (行次/序号) in top 8 rows
         year_cols: dict[int, int] = {}
+        skip_cols: set[int] = set()
         for r in rows[:8]:
             for ci, cell in enumerate(r):
-                m = re.search(r"(20\d{2})", str(cell or ""))
+                s = re.sub(r"\s+", "", str(cell or ""))
+                if s in {"行次", "序号", "编号", "附注"}:
+                    skip_cols.add(ci)
+                m = re.search(r"(20\d{2})", s)
                 if m:
                     year_cols.setdefault(ci, int(m.group(1)))
         for ri, r in enumerate(rows, 1):
@@ -210,7 +238,9 @@ def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
             for metric, syns in FINANCIAL_SYNONYMS.items():
                 if any(s in compact_label for s in syns):
                     for ci, cell in enumerate(r[1:], 1):
-                        if isinstance(cell, (int, float)):
+                        if ci in skip_cols:
+                            continue
+                        if isinstance(cell, (int, float)) and not isinstance(cell, bool):
                             extracted.append({
                                 "sheet": sname,
                                 "row": ri,

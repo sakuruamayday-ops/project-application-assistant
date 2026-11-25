@@ -1,6 +1,6 @@
 ---
 name: patent-strategy-assistant
-description: 公司级专利综合战略助手，处理查新、现有技术、挖掘交底、AI 软件发明、权利要求、FTO、布局、浙江/杭州双中心预审及项目关联，整合技术特征证据图与分层检索。中国专利申请 Word 核稿衔接 patent-docx-reviewer。
+description: 公司级专利综合战略助手，处理专利查新检索、现有技术对比、专利挖掘交底、AI/软件算法发明、权利要求特征树与 FTO 自由实施尽调、专利布局、浙江/杭州双保护中心专利预审通道推荐及政府项目专利关联。
 ---
 
 # 专利综合分析（patent-strategy-assistant）

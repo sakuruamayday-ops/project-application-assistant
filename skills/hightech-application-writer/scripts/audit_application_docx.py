@@ -607,6 +607,23 @@ def audit_rd_expenses(document, years, expense_tables):
                 },
                 "rd_activity": activity[1],
             })
+    # Cross-year check: RD annual expense must NOT be booked outside the RD project's start..end year span!
+    for rd_id, table_number, table in rd_tables(document):
+        span_text = field_value(find_xml_label_cell(table, "起止时间"))
+        span_years = [int(y) for y in re.findall(r"(?:19|20)\d{2}", span_text)]
+        if len(span_years) >= 2:
+            start_yr, end_yr = min(span_years), max(span_years)
+            for year_str, field in years.items():
+                if not re.fullmatch(r"\d{4}", year_str):
+                    continue
+                yr_int = int(year_str)
+                act = activities.get((rd_id, year_str))
+                if act is not None and act[0] > Decimal("0") and (yr_int < start_yr or yr_int > end_yr):
+                    issues.append({
+                        "rd_id": rd_id,
+                        "year": year_str,
+                        "issue": f"研发费用跨期冲突：{rd_id} 起止时间为 {span_text}（{start_yr}-{end_yr}），但 {year_str} 年归集了 {act[0]} 万元支出",
+                    })
     return issues
 
 
@@ -839,7 +856,33 @@ def main():
         "placeholder_sample": placeholders[:20],
     }
     if args.blackboard:
-        result["estimated_metrics_reconciliation"] = _reconcile_blackboard_estimates(args.blackboard, body_text)
+        bb_res = _reconcile_blackboard_estimates(args.blackboard, body_text)
+        result["estimated_metrics_reconciliation"] = bb_res
+        # Subject match guard on --blackboard
+        bb_co = normalized(str(bb_res.get("company_name") or ""))
+        reg_co = ""
+        for tbl in document.tables:
+            nm = find_xml_label_cell(tbl._tbl, "企业名称")
+            if nm and find_xml_label_cell(tbl._tbl, "注册时间"):
+                reg_co = normalized(field_value(nm))
+                break
+        if bb_co and reg_co and bb_co != reg_co:
+            required_issues.append({
+                "section": "事实黑板",
+                "issue": f"黑板主体与申请书注册企业不一致（黑板：「{bb_res.get('company_name')}」，申请书：「{reg_co}」）",
+            })
+
+    # In --strict mode, require complete application structure (prevent 0-table empty shell from passing!)
+    if args.strict:
+        if len(document.tables) == 0:
+            required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
+        if not rd_core_innovation:
+            required_issues.append({"section": "研究开发活动", "issue": "未识别到任何已编号的 RD 研发活动表"})
+        if not ps_quality:
+            required_issues.append({"section": "高新技术产品", "issue": "未识别到任何已编号的 PS 高新技术产品表"})
+        if not innovation_detail:
+            required_issues.append({"section": "企业创新能力", "issue": "未识别到企业创新能力四栏"})
+
     for name, issues in (
         ("required_field", required_issues), ("format", format_issues), ("rd_expense", expense_issues),
     ):

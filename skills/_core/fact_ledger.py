@@ -118,32 +118,48 @@ def calc_growth_metrics(y1_val: Any, y2_val: Any, y3_val: Any) -> dict[str, Any]
     }
 
 
-def validate_patent_item(item: dict[str, Any], as_of: date | None = None) -> list[str]:
-    """Verify patent number 5th-digit type consistency, statutory expiry, and transfer holding period."""
+def validate_patent_item(item: dict[str, Any], as_of: date | None = None, *, require_valid_no: bool = True) -> list[str]:
+    """Verify patent number format, 5th-digit type consistency, statutory expiry (20y inv / 10y util / 10y or 15y design per 2021-06-01 Patent Law Art.42), and transfer holding period."""
     issues: list[str] = []
     ref_date = as_of or date.today()
     pno = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
     declared_type = str(item.get("type") or "")
-    # Chinese application/ZL number format: (ZL|CN)? YYYY T NNNNNNN(.X) where T is 5th digit of 12/13-digit app no
+    # Chinese application/ZL number format: (ZL|CN)? YYYY T NNNNNNN(.X)
     m = re.search(r"(?:ZL|CN)?((?:19|20)\d{2})(\d)\d{7}(?:\.[\dX])?", pno)
-    if m:
-        filing_year = int(m.group(1))
-        type_digit = m.group(2)
-        digit_map = {"1": "发明", "2": "实用新型", "3": "外观设计", "8": "PCT发明", "9": "PCT实用新型"}
-        expected_type = digit_map.get(type_digit)
-        if expected_type and declared_type:
-            if ("发明" in expected_type and "实用" in declared_type) or ("实用" in expected_type and "发明" in declared_type):
-                issues.append(f"专利号第5位类型倒挂：{pno} 第5位为{type_digit}({expected_type})，但填报类型为「{declared_type}」")
-        # Statutory term check (20y invention, 10y utility/pre-2021 design)
-        filing_date_str = str(item.get("filing_date") or "")
-        try:
-            fdate = date.fromisoformat(filing_date_str[:10]) if filing_date_str else date(filing_year, 12, 31)
-        except ValueError:
-            fdate = date(filing_year, 12, 31)
-        term_years = 20 if type_digit in {"1", "8"} else 10
-        expiry = date(fdate.year + term_years, fdate.month, min(fdate.day, 28))
-        if expiry < ref_date:
-            issues.append(f"专利法定保护期已届满：{pno} 申请日约 {fdate.isoformat()}（{term_years}年期满于 {expiry.isoformat()}），不得计入有效知识产权")
+    if not m:
+        if require_valid_no:
+            issues.append(f"专利号缺失或不符合中国专利号规范（须含12/13位申请号或ZL号）：「{pno or '空'}」")
+        return issues
+    filing_year = int(m.group(1))
+    type_digit = m.group(2)
+    digit_map = {"1": "发明", "2": "实用新型", "3": "外观设计", "8": "PCT发明", "9": "PCT实用新型"}
+    expected_type = digit_map.get(type_digit)
+    if expected_type and declared_type:
+        if (
+            ("发明" in expected_type and ("实用" in declared_type or "外观" in declared_type))
+            or ("实用" in expected_type and ("发明" in declared_type or "外观" in declared_type))
+            or ("外观" in expected_type and ("发明" in declared_type or "实用" in declared_type))
+        ):
+            issues.append(f"专利号第5位类型倒挂：{pno} 第5位为{type_digit}({expected_type})，但填报类型为「{declared_type}」")
+    filing_date_str = str(item.get("filing_date") or "")
+    try:
+        fdate = date.fromisoformat(filing_date_str[:10]) if filing_date_str else date(filing_year, 12, 31)
+    except ValueError:
+        issues.append(f"专利 {pno} filing_date 日期格式无效：{filing_date_str}")
+        fdate = date(filing_year, 12, 31)
+    # Patent Law Art. 42: Invention 20y; Utility Model 10y; Design 15y if filed on/after 2021-06-01 else 10y
+    if type_digit in {"1", "8"}:
+        term_years = 20
+    elif type_digit == "3":
+        term_years = 15 if fdate >= date(2021, 6, 1) else 10
+    else:
+        term_years = 10
+    try:
+        expiry = date(fdate.year + term_years, fdate.month, fdate.day)
+    except ValueError:
+        expiry = date(fdate.year + term_years, fdate.month, 28)
+    if expiry < ref_date:
+        issues.append(f"专利法定保护期已届满：{pno} 申请日 {fdate.isoformat()}（{term_years}年期满于 {expiry.isoformat()}），不得计入有效知识产权")
     # Transfer holding period (>= 12 months required for SME Little Giant / High-Tech)
     acq = str(item.get("acquisition") or "")
     if any(k in acq for k in ("受让", "转让", "并购")):
@@ -158,6 +174,11 @@ def validate_patent_item(item: dict[str, Any], as_of: date | None = None) -> lis
             except ValueError:
                 issues.append(f"受让专利 {pno} transfer_date 日期格式无效：{tdate_str}")
     return issues
+
+
+def normalize_patent_key(item: dict[str, Any]) -> str:
+    raw = re.sub(r"[^A-Za-z0-9]", "", str(item.get("patent_no") or item.get("no") or "")).upper()
+    return re.sub(r"^(?:ZL|CN)", "", raw)
 
 
 def normalize_company_name(name: str) -> str:
@@ -215,6 +236,27 @@ def _subject_matches(payload: dict[str, Any], company_name: str, credit_code: st
     )
 
 
+SENSITIVE_KEY_RE = re.compile(r"(?:password|passwd|secret|api[_-]?key|access[_-]?token|private[_-]?key)", re.I)
+
+
+def detect_sensitive_obj(obj: Any, path: str = "$") -> list[dict[str, str]]:
+    """Recursively scan dict keys and scalar string values for secrets/PII."""
+    hits: list[dict[str, str]] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            ks = str(k)
+            if SENSITIVE_KEY_RE.search(ks) and v not in (None, "", []):
+                hits.append({"type": "sensitive_key", "path": f"{path}.{ks}"})
+            hits.extend(detect_sensitive_obj(v, f"{path}.{ks}"))
+    elif isinstance(obj, list):
+        for i, item in enumerate(obj):
+            hits.extend(detect_sensitive_obj(item, f"{path}[{i}]"))
+    elif isinstance(obj, str):
+        for h in detect_sensitive_text(obj):
+            hits.append({**h, "path": path})
+    return hits
+
+
 def validate_blackboard(payload: dict[str, Any], *, check_uscc: bool = False) -> list[str]:
     errors: list[str] = []
     if not isinstance(payload, dict):
@@ -231,18 +273,62 @@ def validate_blackboard(payload: dict[str, Any], *, check_uscc: bool = False) ->
         ok, msg = validate_uscc(str(payload["credit_code"]))
         if not ok:
             errors.append(f"credit_code 无效：{msg}")
-    # Sensitive leak guard
-    sens = detect_sensitive_text(json.dumps(payload, ensure_ascii=False))
+    # Deep nested schema validation
+    lp = payload.get("lockedProduct")
+    if lp is not None and not isinstance(lp, dict):
+        errors.append("lockedProduct 必须为 JSON 对象")
+    elif isinstance(lp, dict):
+        bt = lp.get("businessType", "ambiguous")
+        if bt not in VALID_BUSINESS_TYPES:
+            errors.append(f"lockedProduct.businessType 无效：{bt}")
+    pt = payload.get("patentTierReport")
+    if pt is not None and not isinstance(pt, dict):
+        errors.append("patentTierReport 必须为 JSON 对象")
+    elif isinstance(pt, dict):
+        for tk in ("direct_support", "production_support", "weak_or_unrelated"):
+            if tk in pt and not isinstance(pt[tk], list):
+                errors.append(f"patentTierReport.{tk} 必须为数组")
+    em = payload.get("estimatedMetrics")
+    if em is not None and not isinstance(em, list):
+        errors.append("estimatedMetrics 必须为数组")
+    elif isinstance(em, list):
+        for idx, m_item in enumerate(em):
+            if not isinstance(m_item, dict):
+                errors.append(f"estimatedMetrics[{idx}] 必须为对象")
+            elif m_item.get("origin", "ai_design_target") not in VALID_ORIGINS:
+                errors.append(f"estimatedMetrics[{idx}].origin 无效：{m_item.get('origin')}")
+    for dkey in ("financialFacts", "checkupSnapshots"):
+        if payload.get(dkey) is not None and not isinstance(payload.get(dkey), dict):
+            errors.append(f"{dkey} 必须为 JSON 对象")
+    # Recursive sensitive key & value guard
+    sens = detect_sensitive_obj(payload)
     if sens:
         errors.append(f"检测到敏感凭据或个人隐私信息，禁止写入黑板：{sens[:3]}")
     return errors
 
 
+def _assert_inside_workspace(workspace: Path, target: Path) -> None:
+    ws_resolved = workspace.resolve()
+    facts_dir = ws_resolved / ".facts"
+    if facts_dir.is_symlink():
+        raise ValueError(f"安全拦截：.facts 目录不得为符号链接：{facts_dir}")
+    if target.is_symlink():
+        raise ValueError(f"安全拦截：黑板目标不得为符号链接：{target}")
+    try:
+        target.resolve().relative_to(ws_resolved)
+    except ValueError as exc:
+        raise ValueError(f"安全拦截：黑板路径越出工作区边界：{target}") from exc
+
+
 def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *, strict: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
     warnings: list[str] = []
     target = blackboard_path(workspace, company_name, credit_code)
+    _assert_inside_workspace(workspace, target)
     candidates = [target] if target.is_file() else (sorted((workspace / ".facts").glob("*.facts.json")) if (workspace / ".facts").is_dir() else [])
     for c in candidates:
+        if c.is_symlink():
+            warnings.append(f"跳过符号链接黑板：{c.name}")
+            continue
         try:
             payload = json.loads(c.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
@@ -259,22 +345,30 @@ def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *
 
 
 def save_blackboard(workspace: Path, payload: dict[str, Any], *, strict: bool = True, allow_sensitive: bool = False) -> Path:
+    import tempfile
+
     company_name = str(payload.get("company_name", "")).strip()
     if not company_name:
         raise ValueError("company_name 不能为空")
     credit_code = str(payload.get("credit_code", "")).strip().upper()
-    if not allow_sensitive:
-        sens = detect_sensitive_text(json.dumps(payload, ensure_ascii=False))
-        if sens:
-            raise ValueError(f"拒绝写入敏感凭据或个人隐私信息：{sens[:3]}")
     payload["schema_version"] = SCHEMA_VERSION
     payload["company_name"] = company_name
     payload["credit_code"] = credit_code
     payload["updated_at"] = _now_iso()
+    if not allow_sensitive:
+        sens = detect_sensitive_obj(payload)
+        if sens:
+            raise ValueError(f"拒绝写入敏感凭据或个人隐私信息：{sens[:3]}")
+    if strict:
+        errs = validate_blackboard(payload, check_uscc=bool(credit_code))
+        if errs:
+            raise ValueError("严格模式黑板校验失败：" + "；".join(errs))
     target = blackboard_path(workspace, company_name, credit_code)
+    _assert_inside_workspace(workspace, target)
     target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = target.with_name(target.name + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with tempfile.NamedTemporaryFile("w", dir=target.parent, prefix=".facts_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
+        tmp = Path(fh.name)
+        fh.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
     tmp.replace(target)
     return target
 

@@ -15,6 +15,8 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+from collections import Counter
+import math
 import operator
 import re
 from pathlib import Path
@@ -40,9 +42,9 @@ ALLOWED_PAREN_CONTENT_RE = re.compile(
     r"服务|内、外部|非)?$"
 )
 
-# Comprehensive numeric + engineering/scientific unit extractor for rewrite fidelity checks
+# Comprehensive numeric + sign + engineering/scientific unit extractor for rewrite fidelity checks
 NUM_UNIT_RE = re.compile(
-    r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:"
+    r"(?:[+\-−±≤≥<>]\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:"
     r"个百分点|百分点|万元|亿元|千元|元|%|‰|ppm|ppb|MPa|kPa|Pa|mbar|℃|°C|K|"
     r"mm|cm|μm|um|nm|km|m²|㎡|m³|kg|g|mg|t|吨|ms|μs|秒|分钟|小时|天|年|个月|"
     r"kW|MW|W|kV|V|mA|A|MHz|kHz|Hz|GHz|dB\(A\)|dB|rpm|N·m|N|cc|mL|L|Gbps|Mbps|KB|MB|GB|"
@@ -83,11 +85,15 @@ def audit_formal_text(
     if hd:
         errors.append({"rule": "defensive_hedge", "issue": f"正式交付正文混入防御兜底或免责话术：{hd[:5]}"})
 
-    # Cross-enterprise contamination check (strict blocker!)
+    # Cross-enterprise contamination check (supports alphanumeric company names & strips common leading verbs)
     if expected_company:
         exp_clean = re.sub(r"[\s（）()]+", "", expected_company)
-        found_cos = set(re.findall(r"[\u4e00-\u9fff]{2,20}(?:股份有限公司|有限责任公司|有限公司)", text or ""))
-        foreign = sorted(c for c in found_cos if re.sub(r"[\s（）()]+", "", c) != exp_clean)
+        raw_cos = set(re.findall(r"[\u4e00-\u9fffA-Za-z0-9·]{2,24}(?:股份有限公司|有限责任公司|有限公司)", text or ""))
+        cleaned_cos = {re.sub(r"^(?:本项目由|本企业为|本公司为|单位为|系|由|向|与|和|及|为)", "", c) for c in raw_cos}
+        foreign = sorted(
+            c for c in cleaned_cos
+            if len(c) >= 6 and re.sub(r"[\s（）()]+", "", c) != exp_clean and not c.endswith(exp_clean)
+        )
         if foreign:
             errors.append({"rule": "cross_enterprise_contamination", "issue": f"检测到跨企业名称混入（期望「{expected_company}」）：{foreign}"})
 
@@ -108,26 +114,26 @@ def audit_formal_text(
     }
 
 
-def _extract_num_tokens(text: str) -> set[str]:
-    out = set()
+def _extract_num_tokens(text: str) -> Counter[str]:
+    counts: Counter[str] = Counter()
     for m in NUM_UNIT_RE.finditer(text or ""):
-        tok = re.sub(r"\s+|,", "", m.group(0))
+        tok = re.sub(r"\s+|,", "", m.group(0)).replace("−", "-")
         if tok:
-            out.add(tok)
-    return out
+            counts[tok] += 1
+    return counts
 
 
 def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: int = 0) -> dict[str, Any]:
-    """Strict humanizer rewrite audit: fails (ok=False) if numbers/units are dropped, fabricated, or claims inflated."""
+    """Strict humanizer rewrite audit: preserves signs, units, and multiplicity; rejects dropped/fabricated/inflated claims."""
     errors: list[dict[str, Any]] = []
     src_nums = _extract_num_tokens(source_text)
     new_nums = _extract_num_tokens(rewritten_text)
-    dropped = sorted(src_nums - new_nums)
-    added = sorted(new_nums - src_nums)
+    dropped = sorted((src_nums - new_nums).elements())
+    added = sorted((new_nums - src_nums).elements())
     if dropped:
-        errors.append({"rule": "dropped_numbers", "issue": f"润色丢失原文数值/单位：{dropped[:10]}"})
+        errors.append({"rule": "dropped_numbers", "issue": f"润色丢失或改变符号/频次的原文数值/单位：{dropped[:10]}"})
     if added:
-        errors.append({"rule": "fabricated_numbers", "issue": f"润色凭空新增数值/单位：{added[:10]}"})
+        errors.append({"rule": "fabricated_numbers", "issue": f"润色凭空新增或篡改符号/频次的数值/单位：{added[:10]}"})
 
     # Check fabricated superlative claims not present in source
     added_claims = [c for c in FORBIDDEN_UNGROUNDED_CLAIMS if c in rewritten_text and c not in source_text]
@@ -145,8 +151,8 @@ def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: 
 
     return {
         "ok": len(errors) == 0,
-        "source_number_count": len(src_nums),
-        "rewritten_number_count": len(new_nums),
+        "source_number_count": sum(src_nums.values()),
+        "rewritten_number_count": sum(new_nums.values()),
         "dropped_numbers": dropped,
         "added_numbers": added,
         "rewritten_length": new_len,
@@ -180,12 +186,16 @@ def _safe_eval_expr(expr: str) -> float:
 
 
 def verify_calculation_claim(formula: str, claimed_value: float, *, rel_tol: float = 0.005, abs_tol: float = 0.02) -> dict[str, Any]:
-    """Deterministically recompute an evidence-ledger calculation claim and reject bad math."""
+    """Deterministically recompute an evidence-ledger calculation claim and reject bad math or non-finite values."""
+    if not isinstance(claimed_value, (int, float)) or isinstance(claimed_value, bool) or not math.isfinite(claimed_value):
+        return {"ok": False, "error": f"填报结果非有限数值：{claimed_value}"}
     clean = formula.replace("×", "*").replace("÷", "/").replace("−", "-").strip()
     try:
         actual = _safe_eval_expr(clean)
     except Exception as exc:
         return {"ok": False, "error": f"公式无法安全复算 ({clean}): {exc}"}
+    if not math.isfinite(actual):
+        return {"ok": False, "error": f"公式计算结果非有限数值：{actual}"}
     diff = abs(actual - claimed_value)
     scale = max(abs(actual), abs(claimed_value), 1.0)
     ok = diff <= max(abs_tol, rel_tol * scale)

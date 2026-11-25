@@ -18,17 +18,17 @@ from claim_structure import analyze_feature
 ROOT = Path(__file__).resolve().parents[1]
 RULES = ROOT / "references" / "ipc-inference-rules.json"
 CENTERS = ROOT / "references" / "ipc-snapshots" / "dual-center-ipc-index.json"
+BUNDLED_EXTRACTOR = ROOT / "scripts" / "patent_extractor.py"
 LOCAL_CHECKER_EXTRACTOR = (
-    ROOT.parent / "checking-patdocx-cn-single-agent/scripts/patent_extractor.py"
+    ROOT.parent / "patent-docx-reviewer/scripts/patent_extractor.py"
 )
 RUNTIME_CHECKER_EXTRACTOR = (
     Path.home()
-    / ".codex/skills/checking-patdocx-cn-single-agent/scripts/patent_extractor.py"
+    / ".gemini/config/plugins/gongchuang-v3-10/skills/patent-docx-reviewer/scripts/patent_extractor.py"
 )
-CHECKER_EXTRACTOR = (
-    LOCAL_CHECKER_EXTRACTOR
-    if LOCAL_CHECKER_EXTRACTOR.is_file()
-    else RUNTIME_CHECKER_EXTRACTOR
+CHECKER_EXTRACTOR = next(
+    (p for p in (BUNDLED_EXTRACTOR, LOCAL_CHECKER_EXTRACTOR, RUNTIME_CHECKER_EXTRACTOR) if p.is_file()),
+    BUNDLED_EXTRACTOR,
 )
 SECTION_WEIGHTS = {
     "title": 6,

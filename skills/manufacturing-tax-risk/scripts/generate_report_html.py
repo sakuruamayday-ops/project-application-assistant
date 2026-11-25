@@ -227,14 +227,19 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
         obj[key] = ["—" if item is None else require_text(item, f"{path}.{key}[{index}]") for index, item in enumerate(value)]
         return obj[key]
 
-    company = metrics.get("company")
-    if isinstance(company, dict):
-        company = company.get("name")
+    company_obj = metrics.get("company")
+    company = company_obj.get("name") if isinstance(company_obj, dict) else company_obj
+    metrics_uscc = (company_obj.get("unified_social_credit_code") or "").strip().upper() if isinstance(company_obj, dict) else ""
+    data_uscc = str(data.get("credit_code") or "").strip().upper()
     if not data.get("company") and company:
         data["company"] = company
     texts(data, ("company", "report_date", "risk_level", "one_line_conclusion"), "root")
-    if company and str(company).strip() != data["company"].strip():
+    if not company or not str(company).strip():
+        raise ValueError("跨企业串户硬拦截：metrics 缺少计算主体 company.name，禁止无主体绑定生成报告")
+    if str(company).strip() != data["company"].strip():
         raise ValueError(f"跨企业串户硬拦截：计算资料主体「{company}」与报告主体「{data['company']}」不一致，禁止生成混合报告")
+    if metrics_uscc and data_uscc and metrics_uscc != data_uscc:
+        raise ValueError(f"跨企业串户硬拦截：计算资料信用代码({metrics_uscc})与报告主体信用代码({data_uscc})不一致")
     for key, maximum in (("company", 40), ("one_line_conclusion", 180), ("use_restriction", 120)):
         if message := text_limit(data.get(key), maximum, f"root.{key}"):
             warnings.append(message)

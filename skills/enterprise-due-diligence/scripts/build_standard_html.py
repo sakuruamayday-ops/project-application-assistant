@@ -223,7 +223,10 @@ def render_standard_html(input_path: Path) -> str:
     sections = data.get("sections", {})
     if not isinstance(sections, dict):
         raise ValueError("sections需为章节业务数据对象")
-    sections = {key: value for key, value in sections.items() if key in {f"{number:02}" for number in range(1, 14)}}
+    valid_keys = {f"{number:02}" for number in range(1, 14)}
+    unknown_keys = sorted(k for k in sections if k not in valid_keys)
+    if unknown_keys:
+        raise ValueError(f"sections 存在无效章节编号（须为 01-13，禁止静默丢弃）：{unknown_keys}")
     if any(not isinstance(value, dict) for value in sections.values()):
         raise ValueError("每章内容必须是业务数据对象")
     css = (ASSETS / "standard-style.css").read_text(encoding="utf-8")
