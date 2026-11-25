@@ -339,6 +339,53 @@ def audit_rd_core_innovation(document, *, include_domain_in_limit: bool = False)
     return result, issues
 
 
+def audit_rd_purpose_and_org(document) -> tuple[dict, list[dict]]:
+    """Audit RD purpose & organization-implementation cells for dual-section structure and substance."""
+    result: dict[str, dict] = {}
+    issues: list[dict] = []
+    org_signals = ("自主研发", "产学研", "联合研发", "委外", "研发小组", "项目组", "项目负责人", "分工", "阶段", "验收", "经费", "核算")
+    for current_rd, _, table in rd_tables(document):
+        purpose_row = find_xml_label_cell(table, "目的及组织实施方式")
+        if not purpose_row:
+            continue
+        cells, label_index = purpose_row
+        if label_index + 1 >= len(cells):
+            issues.append({"rd_id": current_rd, "issue": "目的及组织实施方式数据单元格缺失"})
+            continue
+        text = xml_cell_text(cells[label_index + 1]).strip()
+        if is_unfilled(text):
+            continue
+        compact = normalized(text)
+        length = len(compact)
+        item_issues: list[str] = []
+        if length > 400:
+            item_issues.append(f"目的及组织实施方式共{length}字，超过400字上限")
+        if length < 180:
+            item_issues.append(
+                f"目的及组织实施方式仅{length}字，内容过于单薄，须按「立项目的：」「组织实施方式：」双段写透（推荐280—395字）"
+            )
+        has_purpose = ("立项目的" in compact) or ("研究目的" in compact) or ("研发目的" in compact)
+        has_org = ("组织实施方式" in compact) or ("实施方式" in compact)
+        if not has_purpose:
+            item_issues.append("缺少显式「立项目的：」段落，未清晰阐述行业痛点、现有瓶颈与研发目标")
+        if not has_org:
+            item_issues.append("缺少显式「组织实施方式：」段落，未清晰阐述研发方式、团队分工、阶段推进及资源/验收保障")
+        matched_org_signals = [s for s in org_signals if s in compact]
+        if len(matched_org_signals) < 3:
+            item_issues.append(
+                f"组织实施方式要素不完整（仅命中{matched_org_signals}），须写明研发方式、团队分工、分阶段推进与经费/验收保障"
+            )
+        result[current_rd] = {
+            "length": length,
+            "has_purpose_heading": has_purpose,
+            "has_org_heading": has_org,
+            "org_signals": matched_org_signals,
+            "issues": item_issues,
+        }
+        issues.extend({"rd_id": current_rd, "issue": issue} for issue in item_issues)
+    return result, issues
+
+
 def audit_rd_stage_results(document) -> tuple[dict, list[dict]]:
     result: dict[str, dict] = {}
     issues: list[dict] = []
@@ -686,6 +733,7 @@ def main():
     rd_core_innovation, rd_core_issues = audit_rd_core_innovation(
         document, include_domain_in_limit=args.include_domain_in_limit
     )
+    rd_purpose_org, rd_purpose_issues = audit_rd_purpose_and_org(document)
     rd_stage_results, rd_stage_issues = audit_rd_stage_results(document)
     limited_fields, limited_field_issues = audit_limited_fields(document)
     required_issues, format_issues, expense_issues = audit_application_fields(document)
@@ -702,6 +750,9 @@ def main():
         "innovation_capability": innovation_detail,
         "innovation_issue_count": len(innovation_issues),
         "innovation_issues": innovation_issues,
+        "rd_purpose_org": rd_purpose_org,
+        "rd_purpose_issue_count": len(rd_purpose_issues),
+        "rd_purpose_issues": rd_purpose_issues,
         "rd_core_innovation": rd_core_innovation,
         "rd_core_issue_count": len(rd_core_issues),
         "rd_core_issues": rd_core_issues,
@@ -727,6 +778,7 @@ def main():
         (
             font_issues,
             innovation_issues,
+            rd_purpose_issues,
             rd_core_issues,
             rd_stage_issues,
             limited_field_issues,
