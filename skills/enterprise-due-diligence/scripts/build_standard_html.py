@@ -200,8 +200,17 @@ def section(number: str, data: dict, company: dict) -> str:
     return "\n".join(parts) or f'<p class="notice">{cell({"text": PENDING, "status": "medium"})}</p>'
 
 
+def _no_duplicate_keys_hook(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    obj: dict[str, object] = {}
+    for k, v in pairs:
+        if k in obj:
+            raise ValueError(f"输入 JSON 存在重复键「{k}」，禁止静默覆盖丢章")
+        obj[k] = v
+    return obj
+
+
 def render_standard_html(input_path: Path) -> str:
-    data = json.loads(input_path.read_text(encoding="utf-8-sig"))
+    data = json.loads(input_path.read_text(encoding="utf-8-sig"), object_pairs_hook=_no_duplicate_keys_hook)
     if not isinstance(data, dict):
         raise ValueError("输入需为业务数据对象")
     company = data.get("company", {})

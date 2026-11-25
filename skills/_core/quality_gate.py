@@ -42,9 +42,9 @@ ALLOWED_PAREN_CONTENT_RE = re.compile(
     r"服务|内、外部|非)?$"
 )
 
-# Comprehensive numeric + sign + engineering/scientific unit extractor for rewrite fidelity checks
+# Comprehensive numeric + sign (including Chinese 负 and full-width －) + engineering/scientific unit extractor
 NUM_UNIT_RE = re.compile(
-    r"(?:[+\-−±≤≥<>]\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:"
+    r"(?:(?:[+\-−－±≤≥<>]|负)\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:"
     r"个百分点|百分点|万元|亿元|千元|元|%|‰|ppm|ppb|MPa|kPa|Pa|mbar|℃|°C|K|"
     r"mm|cm|μm|um|nm|km|m²|㎡|m³|kg|g|mg|t|吨|ms|μs|秒|分钟|小时|天|年|个月|"
     r"kW|MW|W|kV|V|mA|A|MHz|kHz|Hz|GHz|dB\(A\)|dB|rpm|N·m|N|cc|mL|L|Gbps|Mbps|KB|MB|GB|"
@@ -54,22 +54,53 @@ NUM_UNIT_RE = re.compile(
 
 FORBIDDEN_UNGROUNDED_CLAIMS = ("国际领先", "世界第一", "全球首创", "行业绝对领先", "国内唯一")
 
-
-EXTERNAL_ENTITY_CONTEXT_RE = re.compile(
-    r"(?:客户|配套|供应|采购|对标|竞品|领军|同行业|同行|检测|检验|审计|合作|委托|出具|母公司|子公司|控股股东|关联|服务于|进入|涵盖|包括|覆盖|替代|参考|标杆|例如|如|以及|与)"
+DECLARANT_FIELD_RE = re.compile(
+    r"(?:申报单位|申请单位|申请企业|申报企业|企业名称|依托单位|填报单位|本项目由|本企业为|本公司为)\s*(?:[:：|｜\t为是])?\s*([\u4e00-\u9fffA-Za-z0-9·（）()]{2,32}?(?:股份有限公司|有限责任公司|有限公司))"
 )
+USCC_FIELD_RE = re.compile(
+    r"(?:统一社会信用代码|社会信用代码|信用代码)\s*[:：|｜\t]?\s*([0-9A-HJ-NPQRTUWXY]{18})",
+    re.I,
+)
+COMPANY_ENTITY_RE = re.compile(
+    r"[\u4e00-\u9fffA-Za-z0-9·]{2,24}(?:股份有限公司|有限责任公司|有限公司)"
+)
+COMPANY_PREFIX_STRIP_RE = re.compile(
+    r"^(?:本项目由|本企业为|本公司为|申报单位为|申请单位为|单位为|采购自|购自|委托|系|由|向|与|和|及|为|如|对|给|被|在)"
+)
+EXTERNAL_PREFIX_RE = re.compile(
+    r"(?:购自|采购自|向|委托|对标|客户(?:为|是|包括|涵盖)?|供应商(?:为|是|包括)?|配套|服务于|合作(?:单位|伙伴|方)?(?:为|是)?|检验(?:机构)?(?:为|是)?|检测(?:机构)?(?:为|是)?|审计(?:机构)?(?:为|是)?|母公司|子公司|控股股东|关联(?:方|企业)?|同行业?|竞品|标杆|例如|如)\s*$"
+)
+EXTERNAL_SUFFIX_RE = re.compile(
+    r"^\s*(?:等(?:客户|供应商|企业|同行|竞品|单位)|供应|提供|出具|检测|检验|审计|合作|配套|客户|供应商)"
+)
+
+
+def extract_declared_subject(text: str) -> dict[str, str]:
+    """Extract explicit declarant company name and USCC from cover / registration table / declaration header."""
+    company = ""
+    credit_code = ""
+    m_co = DECLARANT_FIELD_RE.search(text or "")
+    if m_co:
+        company = COMPANY_PREFIX_STRIP_RE.sub("", m_co.group(1).strip())
+    m_cc = USCC_FIELD_RE.search(text or "")
+    if m_cc:
+        credit_code = m_cc.group(1).strip().upper()
+    return {"company": company, "credit_code": credit_code}
 
 
 def audit_formal_text(
     text: str,
     *,
     expected_company: str = "",
+    expected_credit_code: str = "",
     allowed_companies: list[str] | None = None,
     min_chars: int = 0,
     max_chars: int = 0,
     required_keywords: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Run hard quality gate on formal application prose (distinguishes genuine contamination vs legitimate client/supplier/peer mentions)."""
+    """Run hard quality gate on formal application prose.
+    Checks explicit declarant/cover subject & credit_code FIRST, then classifies remaining mentions by local role context.
+    """
     errors: list[dict[str, Any]] = []
     external_mentions: list[str] = []
     compact = re.sub(r"\s+", "", text or "")
@@ -92,29 +123,63 @@ def audit_formal_text(
     if hd:
         errors.append({"rule": "defensive_hedge", "issue": f"正式交付正文混入防御兜底或免责话术：{hd[:5]}"})
 
-    # Smart cross-enterprise contamination check:
-    # - Whitelists expected_company + allowed_companies
-    # - Recognizes legitimate client/supplier/peer/audit/testing-agency context (records as external_entity_mentions without blocking)
-    # - Hard-blocks uncontextualized / subject-position foreign company names!
+    raw_text = text or ""
+    if expected_credit_code:
+        exp_cc = expected_credit_code.strip().upper()
+        for m_cc in USCC_FIELD_RE.finditer(raw_text):
+            found_cc = m_cc.group(1).strip().upper()
+            if found_cc != exp_cc:
+                errors.append({"rule": "credit_code_mismatch", "issue": f"申报主体信用代码不一致：正文为「{found_cc}」，期望「{exp_cc}」"})
+
     if expected_company:
         exp_clean = re.sub(r"[\s（）()]+", "", expected_company)
         allow_clean = {exp_clean} | {re.sub(r"[\s（）()]+", "", c) for c in (allowed_companies or []) if c}
         foreign_block: set[str] = set()
-        raw_text = text or ""
-        for m in re.finditer(r"[\u4e00-\u9fffA-Za-z0-9·]{2,24}(?:股份有限公司|有限责任公司|有限公司)", raw_text):
+
+        # Pass 1: Explicit declarant / cover / registration fields ALWAYS represent the filing subject (never excused by same-sentence client mentions!)
+        declarant_spans: list[tuple[int, int]] = []
+        for m_decl in DECLARANT_FIELD_RE.finditer(raw_text):
+            decl_co = COMPANY_PREFIX_STRIP_RE.sub("", m_decl.group(1).strip())
+            norm_decl = re.sub(r"[\s（）()]+", "", decl_co)
+            declarant_spans.append((m_decl.start(1), m_decl.end(1)))
+            if len(decl_co) >= 6 and norm_decl != exp_clean and not norm_decl.endswith(exp_clean):
+                foreign_block.add(decl_co)
+
+        # Pass 2: Remaining entity mentions evaluated strictly by immediate local role prefix/suffix (e.g., "购自乙方有限公司")
+        for m in COMPANY_ENTITY_RE.finditer(raw_text):
+            if any(not (m.end() <= s or m.start() >= e) for s, e in declarant_spans):
+                continue
             raw_co = m.group(0)
-            cleaned = re.sub(r"^(?:本项目由|本企业为|本公司为|单位为|系|由|向|与|和|及|为|如|对|给|被|在)", "", raw_co)
+            cleaned = COMPANY_PREFIX_STRIP_RE.sub("", raw_co)
+            strip_len = len(raw_co) - len(cleaned)
+            entity_start = m.start() + strip_len
             norm_co = re.sub(r"[\s（）()]+", "", cleaned)
             if len(cleaned) < 6 or any(norm_co == a or norm_co.endswith(a) for a in allow_clean):
                 continue
-            ctx_window = raw_text[max(0, m.start() - 25):min(len(raw_text), m.end() + 18)]
-            # Subject-position indicators override external context
-            is_subject_pos = bool(re.search(r"(?:本项目由|本企业为|本公司为|申报单位为|申请单位为)", raw_text[max(0, m.start() - 12):m.start() + 5]))
-            if not is_subject_pos and EXTERNAL_ENTITY_CONTEXT_RE.search(ctx_window):
+            # Also peel off common leading verbs/role descriptors glued to the regex match (e.g. "设备购自乙方有限公司", "领军企业上海紫江...")
+            m_glue = re.search(
+                r"(购自|采购自|采购|委托|向|对标|同行业?领军企业|领军企业|标杆企业|龙头企业|同行企业|竞争对手|合作伙伴|客户为?|供应商为?|配套客户|配套|服务于|与|和|及|如)([\u4e00-\u9fffA-Za-z0-9·]{2,20}(?:股份有限公司|有限责任公司|有限公司))$",
+                cleaned,
+            )
+            if m_glue:
+                cleaned = m_glue.group(2)
+                norm_co = re.sub(r"[\s（）()]+", "", cleaned)
+                if len(cleaned) < 6 or any(norm_co == a or norm_co.endswith(a) for a in allow_clean):
+                    continue
+                if cleaned not in external_mentions:
+                    external_mentions.append(cleaned)
+                continue
+            before = raw_text[max(0, entity_start - 16):entity_start]
+            after = raw_text[m.end():min(len(raw_text), m.end() + 14)]
+            # Do not cross sentence/clause boundaries when checking immediate role context
+            before_clause = re.split(r"[。；;！？\n]", before)[-1]
+            after_clause = re.split(r"[。；;！？\n]", after)[0]
+            if EXTERNAL_PREFIX_RE.search(before_clause) or EXTERNAL_SUFFIX_RE.search(after_clause):
                 if cleaned not in external_mentions:
                     external_mentions.append(cleaned)
             else:
                 foreign_block.add(cleaned)
+
         if foreign_block:
             errors.append({"rule": "cross_enterprise_contamination", "issue": f"检测到跨企业名称混入（期望「{expected_company}」）：{sorted(foreign_block)}"})
 
@@ -138,17 +203,41 @@ def audit_formal_text(
     return out
 
 
+def _normalize_num_token(raw: str) -> str:
+    tok = re.sub(r"\s+|,", "", raw).replace("−", "-").replace("－", "-")
+    if tok.startswith("负"):
+        tok = "-" + tok[1:]
+    return tok
+
+
 def _extract_num_tokens(text: str) -> Counter[str]:
     counts: Counter[str] = Counter()
     for m in NUM_UNIT_RE.finditer(text or ""):
-        tok = re.sub(r"\s+|,", "", m.group(0)).replace("−", "-")
+        tok = _normalize_num_token(m.group(0))
         if tok:
             counts[tok] += 1
     return counts
 
 
+METRIC_BIND_RE = re.compile(
+    r"(研发费用?|研发投入|设备费用?|材料费用?|营业收入|主营业务收入|营收|净利润|利润总额|资产总额|负债总额|净资产|毛利率|研发强度|高新收入|科技人员|专利数?量?)\s*(?:为|达|达到|约|共|共计|合计|占|占比|[:：=])?\s*"
+    r"((?:(?:[+\-−－±≤≥<>]|负)\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:万元|亿元|千元|元|%|‰|个百分点|人|名|项|件)?)"
+)
+
+
+def _extract_metric_bindings(text: str) -> dict[str, Counter[str]]:
+    bindings: dict[str, Counter[str]] = {}
+    for m in METRIC_BIND_RE.finditer(text or ""):
+        label = m.group(1).rstrip("用")
+        if label == "研发投入":
+            label = "研发费"
+        val = _normalize_num_token(m.group(2))
+        bindings.setdefault(label, Counter())[val] += 1
+    return bindings
+
+
 def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: int = 0) -> dict[str, Any]:
-    """Strict humanizer rewrite audit: preserves signs, units, and multiplicity; rejects dropped/fabricated/inflated claims."""
+    """Strict humanizer rewrite audit: preserves signs (incl. Chinese 负), units, multiplicity, and metric-to-value bindings."""
     errors: list[dict[str, Any]] = []
     src_nums = _extract_num_tokens(source_text)
     new_nums = _extract_num_tokens(rewritten_text)
@@ -158,6 +247,16 @@ def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: 
         errors.append({"rule": "dropped_numbers", "issue": f"润色丢失或改变符号/频次的原文数值/单位：{dropped[:10]}"})
     if added:
         errors.append({"rule": "fabricated_numbers", "issue": f"润色凭空新增或篡改符号/频次的数值/单位：{added[:10]}"})
+
+    # Detect metric-value swaps (e.g., swapping 研发费 and 设备费 amounts when both labels appear in source & rewrite)
+    src_bind = _extract_metric_bindings(source_text)
+    new_bind = _extract_metric_bindings(rewritten_text)
+    swapped = []
+    for label in sorted(set(src_bind) & set(new_bind)):
+        if src_bind[label] != new_bind[label]:
+            swapped.append(f"{label}: 原{list(src_bind[label].elements())} -> 改{list(new_bind[label].elements())}")
+    if swapped:
+        errors.append({"rule": "metric_value_swap", "issue": f"润色篡改或对调了指标对应数值：{swapped[:6]}"})
 
     # Check fabricated superlative claims not present in source
     added_claims = [c for c in FORBIDDEN_UNGROUNDED_CLAIMS if c in rewritten_text and c not in source_text]
@@ -198,15 +297,34 @@ def _safe_eval_expr(expr: str) -> float:
     node = ast.parse(expr, mode="eval").body
 
     def _ev(n: ast.AST) -> float:
-        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)):
-            return float(n.value)
+        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)) and not isinstance(n.value, bool):
+            val = float(n.value)
+            if not math.isfinite(val):
+                raise ValueError(f"non-finite literal operand: {n.value}")
+            return val
         if isinstance(n, ast.BinOp) and type(n.op) in _SAFE_OPS:
-            return _SAFE_OPS[type(n.op)](_ev(n.left), _ev(n.right))
+            left = _ev(n.left)
+            right = _ev(n.right)
+            if not (math.isfinite(left) and math.isfinite(right)):
+                raise ValueError("non-finite operand in binary expression")
+            res = float(_SAFE_OPS[type(n.op)](left, right))
+            if not math.isfinite(res):
+                raise ValueError(f"non-finite intermediate result: {res}")
+            return res
         if isinstance(n, ast.UnaryOp) and type(n.op) in _SAFE_OPS:
-            return _SAFE_OPS[type(n.op)](_ev(n.operand))
+            op_val = _ev(n.operand)
+            if not math.isfinite(op_val):
+                raise ValueError("non-finite operand in unary expression")
+            res = float(_SAFE_OPS[type(n.op)](op_val))
+            if not math.isfinite(res):
+                raise ValueError(f"non-finite intermediate result: {res}")
+            return res
         raise ValueError(f"unsupported expression node: {type(n).__name__}")
 
-    return _ev(node)
+    out = _ev(node)
+    if not math.isfinite(out):
+        raise ValueError(f"non-finite result: {out}")
+    return out
 
 
 def verify_calculation_claim(formula: str, claimed_value: float, *, rel_tol: float = 0.005, abs_tol: float = 0.02) -> dict[str, Any]:

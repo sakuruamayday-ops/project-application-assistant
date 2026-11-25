@@ -92,26 +92,40 @@ def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[s
                 errors.append("平台质量分必须为0至100且含可验证来源")
         elif score_value is not None:
             errors.append("平台质量分待评价时value必须为null")
+    project_level = str(context.get("project_level") or "")
+    is_provincial_sme = (
+        any(tok in project_level for tok in ("专精特新中小企业", "省级专精特新", "省专", "specialized-sme", "provincial_sme"))
+        and "小巨人" not in project_level
+        and "little_giant" not in project_level.lower()
+    )
+    score_floor = 50.0 if is_provincial_sme else 60.0
     if (
         document.get("overall_conclusion") == "eligible"
         and isinstance(quality_score, dict)
         and (
             quality_score.get("status") != "verified-platform-score"
-            or (isinstance(quality_score.get("value"), (int, float)) and float(quality_score["value"]) < 60.0)
+            or not isinstance(quality_score.get("value"), (int, float))
+            or isinstance(quality_score.get("value"), bool)
+            or float(quality_score["value"]) < score_floor
         )
     ):
-        errors.append("平台质量分未核验或低于60分合格线时总体结论不得为eligible")
-    # Enforce hard_gates linkage with overall_conclusion
+        errors.append(f"平台质量分未核验或低于{int(score_floor)}分合格线时总体结论不得为eligible")
+    # Enforce non-empty, explicitly passing hard_gates when overall_conclusion == eligible (reject {}, null, fail)
     hg = document.get("hard_gates")
-    if isinstance(hg, dict) and document.get("overall_conclusion") == "eligible":
-        for g_name, g_val in hg.items():
-            failed_gate = (
-                g_val is False
-                or str(g_val).strip().lower() in {"fail", "false", "ineligible", "不通过", "不达标"}
-                or (isinstance(g_val, dict) and (g_val.get("pass") is False or str(g_val.get("status", "")).lower() == "fail"))
-            )
-            if failed_gate:
-                errors.append(f"硬门槛 {g_name} 未通过时总体结论不得为eligible")
+    if document.get("overall_conclusion") == "eligible":
+        if not isinstance(hg, dict) or len(hg) == 0:
+            errors.append("hard_gates 为空时总体结论不得为eligible，须逐项列明已核验硬门槛")
+        else:
+            for g_name, g_val in hg.items():
+                if isinstance(g_val, dict):
+                    passed_gate = g_val.get("pass") is True or str(g_val.get("status", "")).strip().lower() in {"pass", "passed", "通过", "达标"}
+                else:
+                    passed_gate = (
+                        g_val is True
+                        or str(g_val).strip().lower() in {"pass", "passed", "true", "eligible", "通过", "达标"}
+                    )
+                if not passed_gate:
+                    errors.append(f"硬门槛 {g_name} 未明确通过（当前：{g_val!r}）时总体结论不得为eligible")
 
     # Optional v1.2 ai_meta validation (dual-field product lock, 3-tier patent triage, estimated metrics lineage).
     ai_meta = document.get("ai_meta") or document.get("__aiMeta")

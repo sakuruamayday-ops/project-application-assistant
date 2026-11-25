@@ -497,13 +497,64 @@ def main():
     facts_json = dump_financial_json(result)
     metrics_json = dump_financial_json(metrics_output) if metrics_output is not None else None
 
-    if args.metrics_output is not None and args.output.resolve() == args.metrics_output.resolve():
-        raise ValueError("facts 输出路径与 --metrics-output 路径不得相同")
+    input_resolved = args.input.resolve()
+    output_resolved = args.output.resolve()
+    metrics_resolved = args.metrics_output.resolve() if args.metrics_output is not None else None
+    if output_resolved == input_resolved:
+        raise ValueError("facts 输出路径不得与输入 JSON 路径相同")
+    if metrics_resolved is not None and metrics_resolved in {input_resolved, output_resolved}:
+        raise ValueError("--metrics-output 路径不得与输入 JSON 或 facts 输出路径相同")
+
+    # Stage & verify paired outputs in temp files before committing atomically (rollback first file if second fails)
+    import os
+    import tempfile
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(facts_json, encoding="utf-8")
-    if metrics_json is not None:
+    if args.metrics_output is not None:
         args.metrics_output.parent.mkdir(parents=True, exist_ok=True)
-        args.metrics_output.write_text(metrics_json, encoding="utf-8")
+
+    staged: list[tuple[Path, Path]] = []
+    backups: list[tuple[Path, Path | None, bool]] = []
+    try:
+        with tempfile.NamedTemporaryFile("w", dir=args.output.parent, prefix=".facts_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
+            facts_tmp = Path(fh.name)
+            fh.write(facts_json)
+            fh.flush()
+            os.fsync(fh.fileno())
+        json.loads(facts_tmp.read_text(encoding="utf-8"))
+        staged.append((facts_tmp, args.output))
+
+        if metrics_json is not None and args.metrics_output is not None:
+            with tempfile.NamedTemporaryFile("w", dir=args.metrics_output.parent, prefix=".metrics_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
+                metrics_tmp = Path(fh.name)
+                fh.write(metrics_json)
+                fh.flush()
+                os.fsync(fh.fileno())
+            json.loads(metrics_tmp.read_text(encoding="utf-8"))
+            staged.append((metrics_tmp, args.metrics_output))
+
+        for tmp_path, dest_path in staged:
+            existed = dest_path.exists()
+            bak_path: Path | None = None
+            if existed:
+                bak_path = dest_path.with_name(f".{dest_path.name}.bak.{os.getpid()}")
+                bak_path.write_bytes(dest_path.read_bytes())
+            backups.append((dest_path, bak_path, existed))
+            tmp_path.replace(dest_path)
+    except Exception:
+        for tmp_path, _ in staged:
+            if tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+        for dest_path, bak_path, existed in reversed(backups):
+            if existed and bak_path is not None and bak_path.exists():
+                bak_path.replace(dest_path)
+            elif not existed and dest_path.exists():
+                dest_path.unlink(missing_ok=True)
+        raise
+    else:
+        for _, bak_path, _ in backups:
+            if bak_path is not None and bak_path.exists():
+                bak_path.unlink(missing_ok=True)
     print(receipt)
 
 

@@ -504,6 +504,77 @@ def render(data: dict[str, Any], metrics: dict[str, Any], css: str) -> str:
 <title>{esc(title)}</title><style>{css}</style></head><body>{''.join(pages)}</body></html>"""
 
 
+def _extract_year_int(val: Any) -> int | None:
+    m = re.search(r"(20\d{2}|19\d{2})", str(val or ""))
+    return int(m.group(1)) if m else None
+
+
+def collect_referenced_years(value: Any) -> set[int]:
+    years: set[int] = set()
+    if isinstance(value, dict):
+        for item in value.values():
+            years.update(collect_referenced_years(item))
+    elif isinstance(value, list):
+        for item in value:
+            years.update(collect_referenced_years(item))
+    elif isinstance(value, str):
+        for m in re.finditer(r"\{\{financial\.(\d{4})\.(facts|metrics)\.([a-z_]+)\}\}", value):
+            years.add(int(m.group(1)))
+    return years
+
+
+def check_reconciliation_gates(
+    raw_data: dict[str, Any],
+    resolved_data: dict[str, Any],
+    metrics: dict[str, Any],
+) -> list[str]:
+    """Check formal delivery gates: USCC binding, period alignment, consolidation scope, and balance-sheet equation."""
+    blocking: list[str] = []
+    company_obj = metrics.get("company")
+    metrics_uscc = (company_obj.get("unified_social_credit_code") or "").strip().upper() if isinstance(company_obj, dict) else ""
+    data_uscc = str(resolved_data.get("credit_code") or "").strip().upper()
+    if data_uscc and not metrics_uscc:
+        blocking.append(f"主体信用代码未闭合：报告声明信用代码({data_uscc})，但 metrics 缺失 unified_social_credit_code")
+    if metrics_uscc and data_uscc and metrics_uscc != data_uscc:
+        blocking.append(f"主体信用代码不一致：metrics({metrics_uscc}) != 报告({data_uscc})")
+
+    # Period window check (prevent 2025 metrics inside a report ending in 2024!)
+    period = resolved_data.get("period") if isinstance(resolved_data.get("period"), dict) else {}
+    p_start = _extract_year_int(period.get("start"))
+    p_end = _extract_year_int(period.get("end"))
+    if p_start and p_end:
+        if p_end < p_start:
+            blocking.append(f"报告期间倒挂：{p_start} > {p_end}")
+        ref_years = collect_referenced_years(raw_data)
+        overview_years = {
+            yr for yr in (_extract_year_int(y) for y in (resolved_data.get("financial_overview", {}).get("years") or []))
+            if yr is not None
+        }
+        out_of_range = sorted(y for y in (ref_years | overview_years) if y < p_start or y > p_end)
+        if out_of_range:
+            blocking.append(f"期间错配：报告期间为 {p_start}—{p_end}，但引用或列示了超期年份指标 {out_of_range}")
+
+    # Consolidation scope check when both sides declare explicit non-unknown scope
+    d_scope = str((resolved_data.get("basis") or {}).get("consolidation_scope") or "").strip().lower() if isinstance(resolved_data.get("basis"), dict) else ""
+    m_scope = str((metrics.get("basis") or {}).get("consolidation_scope") or "").strip().lower() if isinstance(metrics.get("basis"), dict) else ""
+    if d_scope and m_scope and d_scope != "unknown" and m_scope != "unknown" and d_scope != m_scope:
+        blocking.append(f"合并口径不一致：报告({d_scope}) != metrics({m_scope})")
+
+    # Balance-sheet equation check (assets == liabilities + equity within 0.005 tolerance)
+    indicators = metrics.get("indicators") if isinstance(metrics.get("indicators"), dict) else {}
+    gap_map = (indicators.get("balance_equation_gap") or {}).get("values") if isinstance(indicators.get("balance_equation_gap"), dict) else {}
+    if isinstance(gap_map, dict):
+        for yr, gap in sorted(gap_map.items()):
+            if gap is not None:
+                try:
+                    gap_val = float(gap)
+                except (TypeError, ValueError):
+                    continue
+                if abs(gap_val) >= 0.005:
+                    blocking.append(f"{yr}年资产负债表恒等式未平（差额 {gap_val}），禁止以正式 ok 状态交付")
+    return blocking
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="report-data JSON")
@@ -516,6 +587,7 @@ def main() -> None:
     parser.add_argument("--css", type=Path, help="gold-analysis.css path")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--prepare-input", action="store_true", help="create a new editable report input from calculator fields")
+    parser.add_argument("--allow-draft", action="store_true", help="口径/勾稽未闭合时保留诊断草稿且返回退出码0（回执状态仍标记为 draft_unreconciled）")
     args = parser.parse_args()
 
     metrics = (json.loads(args.metrics_json.read_text(encoding="utf-8")) if args.metrics_json
@@ -530,41 +602,67 @@ def main() -> None:
             handle.write(json.dumps(data, ensure_ascii=False, indent=2))
         print(json.dumps({"status": "draft-input", "input": str(args.input)}, ensure_ascii=False))
         return
-    data = json.loads(args.input.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or not data:
+    raw_data = json.loads(args.input.read_text(encoding="utf-8"))
+    if not isinstance(raw_data, dict) or not raw_data:
         parser.error("未提供财税报告内容，需提供非空 JSON 对象")
-    data = resolve_financial_references(data, metrics)
+    data = resolve_financial_references(raw_data, metrics)
     warnings = validate(data, metrics)
+    blocking_issues = check_reconciliation_gates(raw_data, data, metrics)
     if args.validate_only:
-        print(json.dumps({"status": "valid", "input": str(args.input), "warnings": warnings}, ensure_ascii=False))
+        status = "valid" if not blocking_issues else "blocked_unreconciled"
+        print(json.dumps({"status": status, "input": str(args.input), "warnings": warnings, "blocking_issues": blocking_issues}, ensure_ascii=False))
+        if blocking_issues and not args.allow_draft:
+            raise SystemExit(2)
         return
     if not args.output:
         parser.error("output is required unless --validate-only is used")
+    streaming = args.output == Path("-")
+    if not streaming:
+        out_res = args.output.resolve()
+        protected = {args.input.resolve()}
+        if args.metrics_json is not None:
+            protected.add(args.metrics_json.resolve())
+        if args.css is not None:
+            protected.add(args.css.resolve())
+        if out_res in protected:
+            raise ValueError("HTML 输出路径不得与输入 JSON、--metrics-json 或 --css 相同")
     css_path = args.css or Path(__file__).resolve().parent.parent / "assets" / "gold-analysis.css"
     css = css_path.read_text(encoding="utf-8")
+    if blocking_issues:
+        data = {**data, "policies": []}  # Ensure rendered HTML carries 草稿 title badge
     result = render(data, metrics, css)
     body_html = result.split("</style>", 1)[-1]
     if "{{" in body_html or "}}" in body_html:
         warnings.append("正文含待填写模板标记，已保留当前内容")
-    streaming = args.output == Path("-")
     if streaming:
         sys.stdout.buffer.write(result.encode("utf-8"))
     else:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(result, encoding="utf-8")
+        tmp_html = args.output.with_name(f".{args.output.name}.tmp")
+        try:
+            tmp_html.write_text(result, encoding="utf-8")
+            tmp_html.replace(args.output)
+        except Exception:
+            if tmp_html.exists():
+                tmp_html.unlink(missing_ok=True)
+            raise
+    receipt_status = "ok" if not blocking_issues else ("draft_unreconciled" if args.allow_draft else "blocked_unreconciled")
     print(
         json.dumps(
             {
-                "status": "ok",
+                "status": receipt_status,
                 "pages": result.count('<section class="page'),
                 "output": str(args.output),
                 "metrics": str(args.metrics_json) if args.metrics_json else None,
                 "warnings": warnings,
+                "blocking_issues": blocking_issues,
             },
             ensure_ascii=False,
         ),
         file=sys.stderr if streaming else sys.stdout,
     )
+    if blocking_issues and not args.allow_draft:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

@@ -15,14 +15,15 @@ description: 国家高新技术企业认定申请书撰写与严格审计工具�
    - 每个 RD 表的「取得的阶段性成果（限400字）」为 4 条带编号具体成果，**严格模式合计不少于 120 字**。
    - 每个 PS 表的 3 个限400字栏目（关键技术及主要技术指标、与同类产品竞争优势、知识产权支撑作用）与「七、企业创新能力」4 栏，**严格模式每栏不少于 180 字、不超过 400 字**，且须含对应量化指标、竞品对比维度或 IP 编号映射。
 2. **空白母版先扩表再回填**：若使用 `assets/高新技术企业认定申请书空白模板.docx`，须先执行 `scripts/expand_rd_ps_tables.py` 生成 `RD01..RDn` / `PS01..PSm` 编号表，再执行 `scripts/fill_rd_core_innovation.py` 与 `scripts/fill_application_fields.py`。
-3. **双层硬门禁验收**：交付前必须运行：
+3. **双层硬门禁验收**：整本终审交付前必须运行：
    ```bash
    python3 scripts/audit_application_docx.py <成品.docx> \
      --innovation-evidence <证据边界.json> \
      --include-domain-in-limit \
+     --require-complete-form \
      --strict
    ```
-   任何退出码非 `0`（含占位符、超 400 字、低于 180 字、缺少双段结构、字体非宋体小四、跨年经费勾稽不一致）一律打回重写。
+   （分段写稿自检时可仅传 `--include-domain-in-limit --strict`。）任何退出码非 `0`（含占位符、超 400 字、低于 180 字、缺少双段结构、字体非宋体小四、跨年经费勾稽不一致）一律打回重写。
 4. **交付前 Critic Pass 自检**：输出前以高企评审专家视角复核：① 技术指标是否与测试报告/专利一致；② 企业名称是否零串户；③ 文本是否像资深工程师亲手撰写而非套话堆砌。
 
 ## 资产与脚本清单

@@ -124,7 +124,7 @@ def main() -> int:
     p_cap.add_argument("--subscribed-deadline", required=True, help="章程约定认缴截止日 YYYY-MM-DD")
     p_cap.add_argument("--registered-wan", type=float, required=True)
     p_cap.add_argument("--paid-in-wan", type=float, required=True)
-    p_cap.add_argument("--company-type", choices=("llc", "jsc"), default="llc", help="llc=有限责任公司(默认), jsc=股份有限公司")
+    p_cap.add_argument("--company-type", choices=("llc", "jsc"), default=None, help="llc=有限责任公司, jsc=股份有限公司（--strict 终审必填）")
     p_cap.add_argument("--strict", action="store_true")
 
     p_law = sub.add_parser("search-law", help="本地知识库检索合规法规（零 MCP 依赖，后端错误返回退出码2）")
@@ -133,11 +133,25 @@ def main() -> int:
 
     args = parser.parse_args()
     if args.cmd == "paid-in":
+        if args.company_type is None:
+            if args.strict:
+                print(json.dumps({
+                    "ok": False,
+                    "error": "严格模式必须显式指定 --company-type llc（有限责任公司）或 jsc（股份有限公司），防止存量股份公司误按有限公司放行",
+                }, ensure_ascii=False))
+                return 2
+            resolved_type = "llc"
+            type_warning = "未显式指定 --company-type，初筛暂按有限责任公司(llc)测算；若为股份有限公司须传 --company-type jsc 复核2027-06-30全额实缴红线"
+        else:
+            resolved_type = args.company_type
+            type_warning = ""
         try:
             res = check_paid_in_schedule(
                 args.founded, args.subscribed_deadline, args.registered_wan, args.paid_in_wan,
-                company_type=args.company_type,
+                company_type=resolved_type,
             )
+            if type_warning:
+                res["warnings"] = [type_warning]
         except ValueError as exc:
             print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
             return 2

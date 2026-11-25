@@ -190,6 +190,7 @@ def test_codex_p1_standard_due_diligence_and_company_law(tmp_path: Path):
     law_cli = SKILLS / "enterprise-due-diligence/scripts/check_company_law.py"
     p_ann = subprocess.run([
         sys.executable, str(law_cli), "paid-in",
+        "--company-type", "llc",
         "--founded", "2024-07-31", "--subscribed-deadline", "2029-07-31",
         "--registered-wan", "100", "--paid-in-wan", "0", "--strict",
     ], capture_output=True, text=True)

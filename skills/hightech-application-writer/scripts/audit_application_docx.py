@@ -343,7 +343,7 @@ def audit_rd_core_innovation(document, *, include_domain_in_limit: bool = False)
     return result, issues
 
 
-def audit_rd_purpose_and_org(document, *, strict: bool = False) -> tuple[dict, list[dict]]:
+def audit_rd_purpose_and_org(document, *, strict: bool = False, require_rows: bool = False) -> tuple[dict, list[dict]]:
     """Audit RD purpose & organization-implementation cells for dual-section structure and substance."""
     result: dict[str, dict] = {}
     issues: list[dict] = []
@@ -351,6 +351,8 @@ def audit_rd_purpose_and_org(document, *, strict: bool = False) -> tuple[dict, l
     for current_rd, _, table in rd_tables(document):
         purpose_row = find_xml_label_cell(table, "目的及组织实施方式")
         if not purpose_row:
+            if require_rows:
+                issues.append({"rd_id": current_rd, "issue": "整本终审缺少必填行：目的及组织实施方式"})
             continue
         cells, label_index = purpose_row
         if label_index + 1 >= len(cells):
@@ -395,12 +397,14 @@ def audit_rd_purpose_and_org(document, *, strict: bool = False) -> tuple[dict, l
     return result, issues
 
 
-def audit_rd_stage_results(document, *, strict: bool = False) -> tuple[dict, list[dict]]:
+def audit_rd_stage_results(document, *, strict: bool = False, require_rows: bool = False) -> tuple[dict, list[dict]]:
     result: dict[str, dict] = {}
     issues: list[dict] = []
     for current_rd, _, table in rd_tables(document):
         result_row = find_xml_label_cell(table, "取得的阶段性成果")
         if not result_row:
+            if require_rows:
+                issues.append({"rd_id": current_rd, "issue": "整本终审缺少必填行：取得的阶段性成果"})
             continue
         cells, label_index = result_row
         if label_index + 1 >= len(cells):
@@ -446,11 +450,11 @@ def ps_tables(document):
                 current_ps = None
 
 
-def audit_ps_fields(document, *, strict: bool = False) -> tuple[dict, list[dict]]:
+def audit_ps_fields(document, *, strict: bool = False, require_rows: bool = False) -> tuple[dict, list[dict]]:
     """Audit PS 3 narrative fields for strict substance density, metrics, competition comparison, and IP linkage."""
     result: dict[str, dict] = {}
     issues: list[dict] = []
-    if not strict:
+    if not strict and not require_rows:
         return result, issues
     ps_specs = (
         ("关键技术及主要技术指标", "metrics"),
@@ -464,6 +468,10 @@ def audit_ps_fields(document, *, strict: bool = False) -> tuple[dict, list[dict]
         for prefix, kind in ps_specs:
             row = find_xml_label_cell(table, prefix)
             if not row or row[1] + 1 >= len(row[0]):
+                if require_rows:
+                    msg = f"整本终审缺少必填行：{prefix}"
+                    ps_detail[prefix] = {"length": 0, "issues": [msg]}
+                    issues.append({"ps_id": current_ps, "field": prefix, "issue": msg})
                 continue
             text = xml_cell_text(row[0][row[1] + 1]).strip()
             compact = normalized(text)
@@ -565,12 +573,10 @@ def audit_summary_years(table, table_number, issues):
 
 def audit_rd_expenses(document, years, expense_tables):
     issues = []
-    if not years:
+    if not years and expense_tables:
         expense_years = sorted({year for year, *_ in expense_tables})
         if len(expense_years) == len(RD_YEAR_FIELDS):
             years = dict(zip(expense_years, RD_YEAR_FIELDS))
-    if not years or not expense_tables:
-        return issues
 
     activities = {}
     for rd_id, table_number, table in rd_tables(document):
@@ -586,34 +592,53 @@ def audit_rd_expenses(document, years, expense_tables):
                     "section": "企业研究开发活动情况表", "table": table_number,
                     "field": field, "value": value, "unit": amount[1],
                 })
+        # Also detect explicit 4-digit year rows directly inside the RD table (e.g. "2024年") even if summary/expense tables are absent
+        for tr in table.findall(qn("w:tr")):
+            cells = tr.findall(qn("w:tc"))
+            for ci, cell in enumerate(cells):
+                lbl = normalized(xml_text(cell))
+                ym = re.fullmatch(r"(20\d{2})年(?:度)?(?:支出|费用|经费)?", lbl)
+                if ym and ci + 1 < len(cells):
+                    yr = ym.group(1)
+                    if (rd_id, yr) not in activities:
+                        val = xml_cell_text(cells[ci + 1]).strip()
+                        amt = amount_in_wanyuan(val, default_unit)
+                        if amt is not None:
+                            activities[rd_id, yr] = (amt[0], {
+                                "section": "企业研究开发活动情况表", "table": table_number,
+                                "field": lbl, "value": val, "unit": amt[1],
+                            })
 
-    for year, heading, default_unit, table_number, header, subtotal, slot, year_count in expense_tables:
-        for column, (header_cell, subtotal_cell) in enumerate(zip(header, subtotal), 1):
-            rd_id = normalized(xml_cell_text(header_cell)).upper()
-            activity = activities.get((rd_id, year))
-            if activity is None:
-                continue
-            cell_value = xml_cell_text(subtotal_cell).strip()
-            value = expense_value(cell_value, slot, year_count)
-            amount = amount_in_wanyuan(value, default_unit) if value is not None else None
-            if amount is None or abs(amount[0] - activity[0]) <= Decimal("0.005"):
-                continue
-            issues.append({
-                "rd_id": rd_id, "year": year, "issue": "年度研发费用勾稽不一致",
-                "expense_detail": {
-                    "section": heading, "table": table_number, "column": column,
-                    "field": EXPENSE_SUBTOTAL, "value": cell_value if value is None else value,
-                    "unit": amount[1] if amount is not None else default_unit,
-                },
-                "rd_activity": activity[1],
-            })
-    # Cross-year check: RD annual expense must NOT be booked outside the RD project's start..end year span!
+    if years and expense_tables:
+        for year, heading, default_unit, table_number, header, subtotal, slot, year_count in expense_tables:
+            for column, (header_cell, subtotal_cell) in enumerate(zip(header, subtotal), 1):
+                rd_id = normalized(xml_cell_text(header_cell)).upper()
+                activity = activities.get((rd_id, year))
+                if activity is None:
+                    continue
+                cell_value = xml_cell_text(subtotal_cell).strip()
+                value = expense_value(cell_value, slot, year_count)
+                amount = amount_in_wanyuan(value, default_unit) if value is not None else None
+                if amount is None or abs(amount[0] - activity[0]) <= Decimal("0.005"):
+                    continue
+                issues.append({
+                    "rd_id": rd_id, "year": year, "issue": "年度研发费用勾稽不一致",
+                    "expense_detail": {
+                        "section": heading, "table": table_number, "column": column,
+                        "field": EXPENSE_SUBTOTAL, "value": cell_value if value is None else value,
+                        "unit": amount[1] if amount is not None else default_unit,
+                    },
+                    "rd_activity": activity[1],
+                })
+
+    # Independent cross-year check: runs EVEN IF expense breakdown tables are deleted!
     for rd_id, table_number, table in rd_tables(document):
         span_text = field_value(find_xml_label_cell(table, "起止时间"))
         span_years = [int(y) for y in re.findall(r"(?:19|20)\d{2}", span_text)]
         if len(span_years) >= 2:
             start_yr, end_yr = min(span_years), max(span_years)
-            for year_str, field in years.items():
+            checked_years = sorted({yr for (rid, yr) in activities if rid == rd_id})
+            for year_str in checked_years:
                 if not re.fullmatch(r"\d{4}", year_str):
                     continue
                 yr_int = int(year_str)
@@ -747,6 +772,7 @@ def _reconcile_blackboard_estimates(blackboard_path: Path, body_text: str) -> di
             resolved.append(entry)
     return {
         "company_name": payload.get("company_name", ""),
+        "credit_code": str(payload.get("credit_code") or "").strip().upper(),
         "pending_count": len(pending),
         "resolved_count": len(resolved),
         "pending_estimates": pending,
@@ -816,7 +842,8 @@ def main():
                     {"text": run.text[:40], "font": font, "eastAsia": east_asia, "size": size}
                 )
 
-    innovation_detail, innovation_issues = audit_innovation_capability(document, evidence, strict=args.strict)
+    effective_strict = args.strict or args.require_complete_form
+    innovation_detail, innovation_issues = audit_innovation_capability(document, evidence, strict=effective_strict)
     innovation_lengths = {
         label: item["length"] for label, item in innovation_detail.items()
     }
@@ -824,9 +851,15 @@ def main():
     rd_core_innovation, rd_core_issues = audit_rd_core_innovation(
         document, include_domain_in_limit=args.include_domain_in_limit
     )
-    rd_purpose_org, rd_purpose_issues = audit_rd_purpose_and_org(document, strict=args.strict)
-    rd_stage_results, rd_stage_issues = audit_rd_stage_results(document, strict=args.strict)
-    ps_quality, ps_quality_issues = audit_ps_fields(document, strict=args.strict)
+    rd_purpose_org, rd_purpose_issues = audit_rd_purpose_and_org(
+        document, strict=effective_strict, require_rows=args.require_complete_form
+    )
+    rd_stage_results, rd_stage_issues = audit_rd_stage_results(
+        document, strict=effective_strict, require_rows=args.require_complete_form
+    )
+    ps_quality, ps_quality_issues = audit_ps_fields(
+        document, strict=effective_strict, require_rows=args.require_complete_form
+    )
     limited_fields, limited_field_issues = audit_limited_fields(document)
     required_issues, format_issues, expense_issues = audit_application_fields(document)
 
@@ -863,30 +896,44 @@ def main():
     if args.blackboard:
         bb_res = _reconcile_blackboard_estimates(args.blackboard, body_text)
         result["estimated_metrics_reconciliation"] = bb_res
-        # Subject match guard on --blackboard
+        # Subject + credit_code match guard on --blackboard
         bb_co = normalized(str(bb_res.get("company_name") or ""))
+        bb_cc = str(bb_res.get("credit_code") or "").strip().upper()
         reg_co = ""
+        reg_cc = ""
         for tbl in document.tables:
             nm = find_xml_label_cell(tbl._tbl, "企业名称")
-            if nm and find_xml_label_cell(tbl._tbl, "注册时间"):
+            if nm and (find_xml_label_cell(tbl._tbl, "注册时间") or find_xml_label_cell(tbl._tbl, "统一社会信用代码")):
                 reg_co = normalized(field_value(nm))
+                cc_row = find_xml_label_cell(tbl._tbl, "统一社会信用代码")
+                if cc_row:
+                    reg_cc = re.sub(r"\s+", "", field_value(cc_row)).upper()
                 break
+        if not reg_cc:
+            m_cc = re.search(r"(?:统一社会信用代码|信用代码)\s*[:：]?\s*([0-9A-HJ-NPQRTUWXY]{18})", body_text, re.I)
+            if m_cc:
+                reg_cc = m_cc.group(1).upper()
         if bb_co and reg_co and bb_co != reg_co:
             required_issues.append({
                 "section": "事实黑板",
                 "issue": f"黑板主体与申请书注册企业不一致（黑板：「{bb_res.get('company_name')}」，申请书：「{reg_co}」）",
             })
+        if bb_cc and reg_cc and bb_cc != reg_cc:
+            required_issues.append({
+                "section": "事实黑板",
+                "issue": f"黑板统一社会信用代码与申请书不一致（黑板：「{bb_cc}」，申请书：「{reg_cc}」）",
+            })
 
-    # In --strict mode, always block 0-table empty shells; allow staged drafting unless --require-complete-form is passed!
-    if args.strict and len(document.tables) == 0:
+    # In --strict or --require-complete-form mode, always block 0-table empty shells!
+    if effective_strict and len(document.tables) == 0:
         required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
     if args.require_complete_form:
         if not rd_core_innovation:
             required_issues.append({"section": "研究开发活动", "issue": "整本终审未识别到任何已编号的 RD 研发活动表"})
         if not ps_quality:
             required_issues.append({"section": "高新技术产品", "issue": "整本终审未识别到任何已编号的 PS 高新技术产品表"})
-        if not innovation_detail:
-            required_issues.append({"section": "企业创新能力", "issue": "整本终审未识别到企业创新能力四栏"})
+        if not innovation_detail or len(innovation_detail) < 4:
+            required_issues.append({"section": "企业创新能力", "issue": f"整本终审企业创新能力四栏不完整（当前识别 {len(innovation_detail)}/4 栏）"})
 
     for name, issues in (
         ("required_field", required_issues), ("format", format_issues), ("rd_expense", expense_issues),
@@ -895,7 +942,7 @@ def main():
             result[f"{name}_issue_count"] = len(issues)
             result[f"{name}_issues"] = issues
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.strict and any(
+    if effective_strict and any(
         (
             font_issues,
             placeholders,

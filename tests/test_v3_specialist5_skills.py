@@ -108,6 +108,7 @@ def test_enterprise_due_diligence_uscc_and_company_law(tmp_path: Path):
     p_law = subprocess.run(
         [
             sys.executable, str(law_cli), "paid-in",
+            "--company-type", "llc",
             "--founded", "2018-06-01",
             "--subscribed-deadline", "2045-12-31",
             "--registered-wan", "5000",

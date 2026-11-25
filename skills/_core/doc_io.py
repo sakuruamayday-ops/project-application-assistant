@@ -67,7 +67,15 @@ def _strip_num_prefix(s: str) -> str:
 
 
 def _extract_numbers(s: str) -> list[str]:
-    return re.findall(r"\d+(?:,\d{3})*(?:\.\d+)?%?", s or "")
+    """Extract signed numbers (including minus, full-width －, and Chinese 负) so -120 -> 120 is detected."""
+    raw = re.findall(r"(?:(?:[+\-−－]|负)\s*)?\d+(?:,\d{3})*(?:\.\d+)?%?", s or "")
+    out = []
+    for tok in raw:
+        t = re.sub(r"\s+|,", "", tok).replace("−", "-").replace("－", "-")
+        if t.startswith("负"):
+            t = "-" + t[1:]
+        out.append(t)
+    return out
 
 
 def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float = 0.78) -> dict[str, Any]:
@@ -145,48 +153,99 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
 
     added = [{"new_index": np["index"], "text": np["text"][:140]} for ni, np in enumerate(new_paras) if ni not in matched_new]
 
-    # Table row reorder AND cell modification detection across matching table indices
+    # Table row reorder, in-place modification, AND unmatched added/deleted row & table detection
     table_row_moves: list[dict[str, Any]] = []
     table_row_changes: list[dict[str, Any]] = []
+    table_rows_added: list[dict[str, Any]] = []
+    table_rows_deleted: list[dict[str, Any]] = []
     table_numeric_changes = 0
-    for t_i in range(min(len(old["tables"]), len(new["tables"]))):
-        orows = old["tables"][t_i]["rows"]
-        nrows = new["tables"][t_i]["rows"]
 
-        def sig(cells: list[str]) -> str:
-            body = cells[1:] if len(cells) >= 2 and re.fullmatch(r"\d+", cells[0].strip()) else cells
-            return re.sub(r"\s+", "", "|".join(body))
+    def _row_sig(cells: list[str]) -> str:
+        body = cells[1:] if len(cells) >= 2 and re.fullmatch(r"\d+", cells[0].strip()) else cells
+        return re.sub(r"\s+", "", "|".join(body))
 
-        n_map = {sig(r["cells"]): r["row_index"] for r in nrows if sig(r["cells"])}
-        o_map = {sig(r["cells"]): r["row_index"] for r in orows if sig(r["cells"])}
-        for r in orows:
-            s = sig(r["cells"])
-            if s and s in n_map and n_map[s] != r["row_index"]:
-                table_row_moves.append({
+    max_tables = max(len(old["tables"]), len(new["tables"]))
+    for t_i in range(max_tables):
+        orows = old["tables"][t_i]["rows"] if t_i < len(old["tables"]) else []
+        nrows = new["tables"][t_i]["rows"] if t_i < len(new["tables"]) else []
+
+        # Exact signature matching first (handles moved rows without misclassifying them as added/deleted)
+        new_sig_buckets: dict[str, list[int]] = {}
+        for ni, nr in enumerate(nrows):
+            s = _row_sig(nr["cells"])
+            if s:
+                new_sig_buckets.setdefault(s, []).append(ni)
+
+        matched_old_rows: set[int] = set()
+        matched_new_rows: set[int] = set()
+        for oi, orow in enumerate(orows):
+            s = _row_sig(orow["cells"])
+            cands = [ni for ni in new_sig_buckets.get(s, []) if ni not in matched_new_rows]
+            if cands:
+                ni = cands[0]
+                matched_old_rows.add(oi)
+                matched_new_rows.add(ni)
+                if nrows[ni]["row_index"] != orow["row_index"]:
+                    table_row_moves.append({
+                        "table_index": t_i + 1,
+                        "old_row": orow["row_index"],
+                        "new_row": nrows[ni]["row_index"],
+                        "preview": orow["joined"][:120],
+                    })
+
+        # Pair unmatched rows at identical row positions (in-place edits) vs unmatched tail/extra rows (added/deleted)
+        unmatched_o = [oi for oi in range(len(orows)) if oi not in matched_old_rows]
+        unmatched_n = [ni for ni in range(len(nrows)) if ni not in matched_new_rows]
+        paired_o: set[int] = set()
+        paired_n: set[int] = set()
+
+        for oi in unmatched_o:
+            if oi in unmatched_n and oi not in paired_n:
+                paired_o.add(oi)
+                paired_n.add(oi)
+                oc, nc = orows[oi]["cells"], nrows[oi]["cells"]
+                onums, nnums = _extract_numbers(" ".join(oc)), _extract_numbers(" ".join(nc))
+                num_changed = onums != nnums
+                if num_changed:
+                    table_numeric_changes += 1
+                table_row_changes.append({
                     "table_index": t_i + 1,
-                    "old_row": r["row_index"],
-                    "new_row": n_map[s],
-                    "preview": r["joined"][:120],
+                    "row_index": oi + 1,
+                    "old_row": orows[oi]["joined"][:140],
+                    "new_row": nrows[oi]["joined"][:140],
+                    "number_changed": num_changed,
+                    "old_numbers": onums[:6],
+                    "new_numbers": nnums[:6],
                 })
-        # Detect in-place cell/value changes for rows whose signature changed
-        for r_i in range(min(len(orows), len(nrows))):
-            oc, nc = orows[r_i]["cells"], nrows[r_i]["cells"]
-            osig, nsig = sig(oc), sig(nc)
-            if osig == nsig or osig in n_map or nsig in o_map:
-                continue
-            onums, nnums = _extract_numbers(" ".join(oc)), _extract_numbers(" ".join(nc))
-            num_changed = onums != nnums
-            if num_changed:
-                table_numeric_changes += 1
-            table_row_changes.append({
-                "table_index": t_i + 1,
-                "row_index": r_i + 1,
-                "old_row": orows[r_i]["joined"][:140],
-                "new_row": nrows[r_i]["joined"][:140],
-                "number_changed": num_changed,
-                "old_numbers": onums[:6],
-                "new_numbers": nnums[:6],
-            })
+
+        for oi in unmatched_o:
+            if oi not in paired_o:
+                onums = _extract_numbers(" ".join(orows[oi]["cells"]))
+                if onums:
+                    table_numeric_changes += 1
+                table_rows_deleted.append({
+                    "table_index": t_i + 1,
+                    "old_row": orows[oi]["row_index"],
+                    "row": orows[oi]["joined"][:140],
+                    "number_changed": bool(onums),
+                    "old_numbers": onums[:6],
+                })
+
+        for ni in unmatched_n:
+            if ni not in paired_n:
+                nnums = _extract_numbers(" ".join(nrows[ni]["cells"]))
+                if nnums:
+                    table_numeric_changes += 1
+                table_rows_added.append({
+                    "table_index": t_i + 1,
+                    "new_row": nrows[ni]["row_index"],
+                    "row": nrows[ni]["joined"][:140],
+                    "number_changed": bool(nnums),
+                    "new_numbers": nnums[:6],
+                })
+
+    para_added_nums = sum(1 for a in added if _extract_numbers(a["text"]))
+    para_deleted_nums = sum(1 for d in deleted if _extract_numbers(d["text"]))
 
     return {
         "old_file": str(old_docx),
@@ -199,7 +258,9 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
             "added_paragraphs": len(added),
             "moved_table_rows": len(table_row_moves),
             "modified_table_rows": len(table_row_changes),
-            "numeric_changes": sum(1 for m in modified + moved if m.get("number_changed")) + table_numeric_changes,
+            "added_table_rows": len(table_rows_added),
+            "deleted_table_rows": len(table_rows_deleted),
+            "numeric_changes": sum(1 for m in modified + moved if m.get("number_changed")) + para_added_nums + para_deleted_nums + table_numeric_changes,
         },
         "moved": moved[:50],
         "modified": modified[:50],
@@ -207,11 +268,30 @@ def diff_docx_versions(old_docx: Path, new_docx: Path, *, move_threshold: float 
         "added": added[:50],
         "table_row_moves": table_row_moves[:50],
         "table_row_changes": table_row_changes[:50],
+        "table_rows_added": table_rows_added[:50],
+        "table_rows_deleted": table_rows_deleted[:50],
     }
 
 
+SKIP_HEADER_LABELS = {"行次", "序号", "编号", "附注", "栏次", "代码", "科目代码"}
+AMOUNT_HEADER_HINTS = ("金额", "余额", "发生额", "期末", "期初", "年初", "年末", "本期", "上期", "本年", "上年", "数额")
+
+
+def _is_financial_data_row(row: list[Any], skip_cols: set[int]) -> bool:
+    first_text = "".join(str(c or "") for c in row[:2] if isinstance(c, str)).strip()
+    compact = re.sub(r"[\s（）()：:、]", "", first_text)
+    if compact and any(any(s in compact for s in syns) for syns in FINANCIAL_SYNONYMS.values()):
+        return True
+    has_num = any(
+        isinstance(c, (int, float)) and not isinstance(c, bool)
+        for ci, c in enumerate(row[1:], 1)
+        if ci not in skip_cols
+    )
+    return has_num
+
+
 def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
-    """Read financial metrics from real-world Excel workbooks using tolerant synonym matching (skipping 行次/序号 columns)."""
+    """Read financial metrics from real-world Excel workbooks using actual header row detection (up to row 30) and strict skip_cols."""
     import openpyxl
 
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
@@ -219,19 +299,44 @@ def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
     for sname in wb.sheetnames:
         ws = wb[sname]
         rows = [list(r) for r in ws.iter_rows(values_only=True)]
-        # Detect year columns & index/serial columns (行次/序号) in top 8 rows
+        # Scan up to top 30 rows to locate actual header row(s), stopping once financial data rows begin
         year_cols: dict[int, int] = {}
         skip_cols: set[int] = set()
-        for r in rows[:8]:
+        amount_cols: set[int] = set()
+        header_row_idx = -1
+        for ri, r in enumerate(rows[:30]):
+            if _is_financial_data_row(r, skip_cols):
+                break
+            row_has_header_cue = False
             for ci, cell in enumerate(r):
                 s = re.sub(r"\s+", "", str(cell or ""))
-                if s in {"行次", "序号", "编号", "附注"}:
+                if not s:
+                    continue
+                if s in SKIP_HEADER_LABELS:
                     skip_cols.add(ci)
+                    row_has_header_cue = True
                 m = re.search(r"(20\d{2})", s)
                 if m:
                     year_cols.setdefault(ci, int(m.group(1)))
+                    amount_cols.add(ci)
+                    row_has_header_cue = True
+                if any(h in s for h in AMOUNT_HEADER_HINTS):
+                    amount_cols.add(ci)
+                    row_has_header_cue = True
+            if row_has_header_cue:
+                header_row_idx = ri
+        amount_cols -= skip_cols
         for ri, r in enumerate(rows, 1):
-            row_label = "".join(str(c or "") for c in r[:2]).strip()
+            if header_row_idx >= 0 and (ri - 1) <= header_row_idx:
+                continue
+            # Build row label from text columns (excluding numeric-only cells and skip_cols)
+            label_parts = []
+            for ci, c in enumerate(r[:3]):
+                if ci in skip_cols:
+                    continue
+                if isinstance(c, str) and c.strip():
+                    label_parts.append(c.strip())
+            row_label = "".join(label_parts).strip()
             compact_label = re.sub(r"[\s（）()：:、]", "", row_label)
             if not compact_label:
                 continue
@@ -239,6 +344,8 @@ def read_financial_excel_tolerant(xlsx_path: Path) -> dict[str, Any]:
                 if any(s in compact_label for s in syns):
                     for ci, cell in enumerate(r[1:], 1):
                         if ci in skip_cols:
+                            continue
+                        if amount_cols and ci not in amount_cols:
                             continue
                         if isinstance(cell, (int, float)) and not isinstance(cell, bool):
                             extracted.append({

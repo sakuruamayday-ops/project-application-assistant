@@ -17,6 +17,6 @@
 
 ## 3. 数据源与商业边界
 
-- **本地知识库优先直连**：优先直接读取本机只读知识库（`kb_local.py` → `jiaotang.db` + 洁净过滤后的 `rag-query.sh` + 本地原件），零 `jiaotang-kb` MCP 强依赖；若环境已配置官方/付费 MCP 且连通，则叠加权威实时数据（`origin: mcp_verified`）；已配置但出现 `401/403/429/5xx`/超时时显式报错，绝不静默降级。
+- **本地知识库优先直连**：优先直接读取本机只读知识库（`kb_local.py` → 本地只读企业数据库 + 洁净过滤后的 `rag-query.sh` + 本地原件），零 `jiaotang-kb` MCP 强依赖；若环境已配置官方/付费 MCP 且连通，则叠加权威实时数据（`origin: mcp_verified`）；已配置但出现 `401/403/429/5xx`/超时时显式报错，绝不静默降级。
 - **唯一事实黑板**：所有跨技能交接一律通过 `python3 scripts/_core/fact_ledger.py upsert|read|validate|reconcile` 读写 `.facts/<企业简称_后6位>.facts.json`（`workbuddy-facts-blackboard/v1`），严禁手写自由格式 JSON，杜绝多企业串户与 Schema 漂移。
 - **免费体检 vs 收费引擎**：免费技能只认原件实绩与可验证公开事实，输出红黄绿灯体检与四列缺口清单，不估分、不携带商业 Word 母版；收费技能承接黑板直接生成高分正文、无损回填母版或输出精排成品。

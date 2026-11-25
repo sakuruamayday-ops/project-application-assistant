@@ -7,7 +7,7 @@ description: 企业合作前公开信息全景尽调与法律合规核查工具�
 
 本技能合并了企业合作前全景调研与法律合规核查能力：
 - **GB 32100 18 位信用代码硬校验**：生成报告时自动校验 `credit_code` 长度、合法字符集与第18位模31校验码。
-- **新《公司法》5 年实缴过渡期核算**：运行 `python3 scripts/check_company_law.py paid-in --founded <YYYY-MM-DD> --subscribed-deadline <YYYY-MM-DD> --registered-wan <N> --paid-in-wan <M> --strict` 核算 2027-06-30 调整窗口与 2032-06-30 实缴红线，并可通过 `search-law` 直查本地知识库法规（零 MCP 依赖）。
+- **新《公司法》5 年实缴过渡期核算**：运行 `python3 scripts/check_company_law.py paid-in --company-type <llc|jsc> --founded <YYYY-MM-DD> --subscribed-deadline <YYYY-MM-DD> --registered-wan <N> --paid-in-wan <M> --strict` 核算 2027-06-30 调整窗口与 2032-06-30（有限公司）/ 2027-06-30（存量股份公司）实缴红线，并可通过 `search-law` 直查本地知识库法规（零 MCP 依赖）。
 - 法律合规参考手册见 `references/legal/`。
 
 全景、合作前尽调和全景报告按本技能组织；单字段查询按具体问题使用专业能力。同行比较是全景章节，后续提供新企业时沿用本轮已选模式并重新核验主体。

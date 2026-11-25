@@ -120,3 +120,24 @@ def test_all_10_standalone_zips_a_grade(tmp_path: Path):
     s10 = _extract_bundle(tmp_path, "manufacturing-tax-risk")
     assert (s10 / "scripts" / "generate_report_html.py").is_file()
     assert "跨企业串户硬拦截" in (s10 / "scripts" / "generate_report_html.py").read_text(encoding="utf-8")
+
+    # Universal V3 Delivery Constitution check: EVERY SINGLE ONE of the 10 standalone ZIPs
+    # MUST be able to execute `python3 scripts/_core/fact_ledger.py read` without exit code 2!
+    for sdir in (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10):
+        fl_script = sdir / "scripts" / "_core" / "fact_ledger.py"
+        assert fl_script.is_file(), f"missing unified fact_ledger.py in {sdir.name}"
+        proc = _run(
+            [sys.executable, str(fl_script), "read", "--workspace", str(tmp_path / f"ws_{sdir.name}"), "--company", "验收测试有限公司"],
+            sdir,
+        )
+        assert proc.returncode == 0, f"constitution fact_ledger read failed in {sdir.name}: {proc.stderr}"
+        assert json.loads(proc.stdout)["found"] is False
+
+    # Check all 12 high-frequency-project-rules.jsonl management_rule paths resolve to real files in source repo
+    rules_file = REPO_ROOT / "skills" / "gov-project-checkup" / "references" / "high-frequency-project-rules.jsonl"
+    for line in rules_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        rec = json.loads(line)
+        target = (rules_file.parent / rec["management_rule"]).resolve()
+        assert target.is_file(), f"broken management_rule path in high-frequency-project-rules.jsonl: {rec['management_rule']}"

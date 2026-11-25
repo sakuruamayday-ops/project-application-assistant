@@ -1,0 +1,46 @@
+{
+  "schema_version": 2,
+  "skill_name": "sme-giant-writer",
+  "release_tag": "V3.0.0",
+  "required_paths": [
+    "SKILL.md"
+  ],
+  "mutable_paths": [
+    "local-overrides"
+  ],
+  "files": {
+    "SKILL.md": "de512a39124f7e8716f10005774b468cb96323e5891a09167d133c06dd431e38",
+    "assets/enterprise-technical-product-revenue-matrix.template.json": "7b8e35cabedc6afca049aa806970e57b6b3c607ed2d5240b72fc02290f63864e",
+    "assets/专精特新小巨人前期培育方向卡模板.docx": "cc3d1333969b10cf2d461f97f1a1f9af147e34eedfb71663ba7960be67706be8",
+    "references/application-version-gate.md": "533136969e15c3782d29ad072d08de5bce2f62451f6feff19084a0b46038462a",
+    "references/core-formula-process-performance-matrix.md": "6ade231c0ccea71a85d4b0b566b9301b9a8aedbf625282f86b388baaf0346ab5",
+    "references/current-policy-baseline-2026.md": "3b26c7b95143fcbb72e3a39bd21b87b5bf1b9791d2dfa0664eeaeb74bf5f69b2",
+    "references/direction-card-first-template.md": "524acb946ac69eebc7f3d5128b19d0f2883cb027f9e6b1ea8d1ec6357b0250ef",
+    "references/direction-card-six-questions-guide.md": "86f5697f0c9c06959014052007370532e5adf4beaaffd420eba006ff987a11a5",
+    "references/direction-card-to-six-questions.md": "87c7bba587d2124712d54cca50e1e5874a7cdfb0206c51c0719259d89de8831c",
+    "references/enterprise-introduction-method.md": "dc0c43d0dcf1ce2df75d717787a36219a0ca05208661a049e735dd3885148999",
+    "references/evaluation-workflow.md": "5ab806fc15f11933af325d6410515b347428d53a4aca7835fccb773fe05f485b",
+    "references/four-judgment-decision-table.md": "740dcdf62372ee469e73a49c9e5789b707661a29abb34730184bdbe7d9ea43bc",
+    "references/key-technology-first-innovation-method.md": "8b78126d466a278a31eddaec3caaebad6a1dd9e28b3165fbe6edc48a74b728ca",
+    "references/main-product-naming-and-boundary-gate.md": "f0afc6df54f4f0252e1291b88cc94f3384a1369c6da1f405707a9d4bba7dac44",
+    "references/market-boundary-and-substitution-gate.md": "9bc541719eb3697eff917e944df8fc19e7a7d8d70cadac9034690b24ae7da27e",
+    "references/market-share-grading.md": "0cd2af9e8f490e7f1efb76206a7497d76689b5356dae77812970d7de91dcc38c",
+    "references/market-share-workpaper-method.md": "14c1c24b08a326767e60df9c6a770c0b8de248c12cbb6818060ca22d2e60dd01",
+    "references/material-checkup-report-template.md": "0b7dad3740c51c46626c121244a6de40ab0db4bce6638b5c692328a810d43fd5",
+    "references/policies/工信部政法〔2023〕138号-制造业单项冠军企业认定管理办法(转发件).md": "62e3f3773856f91d2159460c6fb326111d3c1d6ed148fc1378a8d7eff38bec03",
+    "references/policies/浙经信大企〔2025〕179号-浙江省制造业单项冠军企业认定管理办法（试行）-2025.md": "d0c2fb4e969adda430b5b81e01884590f7a2c36cf0ba55367fd8a8215b58f414",
+    "references/policy-application-path-contract.md": "7fd6c861374293bc43bfe7bb28be099f4283cc2effeceb929b270930bbee580b",
+    "references/portable-runtime-protocol.md": "d4004ca3fa57e1e2df725d125302b2d3fb532daef72dbbd527ccdb381cefb355",
+    "references/project-view-adapters.json": "f0adeab1396f80680933229142a1ed4d799eb32b46e47750074431637779e637",
+    "references/sme-action-workflow.md": "f69cea4a78424bc3269fa1571ec259ab3644effdbb94ae79cc93ca2b23b86072",
+    "references/technology-advancement-feasibility-rubric.md": "087b52da7e05b85b78c76ec7a74d8d5d859b69b588badb93c5a4543478c70483",
+    "scripts/technical_product_revenue_matrix.py": "5d51b901aba7dc4ef297ca8dd741904c598c9c1eec0c166fa2623387ca55988c",
+    "scripts/validate_sme_assessment.py": "100209c02a33bd2517bf6ab66946fa292f195ae264e0c85ec734646829f6e80d"
+  },
+  "integrity_excludes": [
+    "publisher-ed25519.pub",
+    "release-manifest.json",
+    "release-manifest.json.sig",
+    "release-signature.json"
+  ]
+}

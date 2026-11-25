@@ -105,6 +105,7 @@ def main() -> int:
     p_c = sub.add_parser("check-consistency", help="检查申报材料（DOCX/MD/TXT）占位符、兜底词、串户、括号与密度")
     p_c.add_argument("file", type=Path)
     p_c.add_argument("--company", default="")
+    p_c.add_argument("--credit-code", default="")
     p_c.add_argument("--allow-company", action="append", default=[], help="白名单外部企业全称（如客户、供应商、同行）")
     p_c.add_argument("--min-chars", type=int, default=0)
     p_c.add_argument("--max-chars", type=int, default=0)
@@ -130,6 +131,7 @@ def main() -> int:
         res = quality_gate.audit_formal_text(
             text,
             expected_company=args.company,
+            expected_credit_code=args.credit_code,
             allowed_companies=args.allow_company,
             min_chars=args.min_chars,
             max_chars=args.max_chars,
@@ -137,12 +139,22 @@ def main() -> int:
         )
         if args.blackboard:
             bb = json.loads(args.blackboard.read_text(encoding="utf-8"))
-            if args.company and not fact_ledger._subject_matches(bb, args.company):
+            declared = quality_gate.extract_declared_subject(text)
+            effective_co = args.company or declared.get("company", "")
+            effective_cc = args.credit_code or declared.get("credit_code", "")
+            if not effective_co and not effective_cc:
+                res["ok"] = False
+                res["error_count"] += 1
+                res["errors"].append({
+                    "rule": "blackboard_subject_unbound",
+                    "issue": "未传入 --company 且正文未识别到显式申报主体，已暂停事实黑板销项以防错主体核销",
+                })
+            elif not fact_ledger._subject_matches(bb, effective_co, effective_cc):
                 res["ok"] = False
                 res["error_count"] += 1
                 res["errors"].append({
                     "rule": "blackboard_subject_mismatch",
-                    "issue": f"事实黑板主体「{bb.get('company_name', '')}」与目标企业「{args.company}」不匹配，禁止跨主体销项",
+                    "issue": f"事实黑板主体「{bb.get('company_name', '')}({bb.get('credit_code', '')})」与材料主体「{effective_co}({effective_cc})」不匹配，禁止跨主体销项",
                 })
             else:
                 res["blackboard_reconciliation"] = fact_ledger.reconcile_text_against_estimates(bb, text)

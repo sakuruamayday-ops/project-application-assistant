@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Local read-only Jiaotang Knowledge Base connector (zero MCP dependency).
+Local read-only Enterprise Knowledge Base connector (zero MCP dependency).
 Directly queries:
-  - /Users/zsh/JiaotangData/企业数据库/data/jiaotang.db (read-only)
-  - /Users/zsh/rag/rag-query.sh (with noise/duplicate/privacy filtering & false-positive guard)
-  - Full provincial/city/district region resolver (fixes Hangzhou-only hardcoding)
+  - Local read-only SQLite enterprise database (override via LOCAL_KB_DB_PATH or LOCAL_KB_DATA_ROOT; auto-discovers ~/.../企业数据库/data/*.db)
+  - Local rag-query.sh (override via LOCAL_KB_RAG_QUERY, with source-permission & privacy filtering)
+  - Full provincial/city/district region resolver (including Zhejiang county-level cities)
 """
 from __future__ import annotations
 
@@ -17,10 +17,28 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-DATA_ROOT = Path(os.environ.get("JIAOTANG_DATA_ROOT", "/Users/zsh/JiaotangData"))
-PROJECT_DB = DATA_ROOT / "企业数据库/data/jiaotang.db"
+
+def _discover_default_db() -> Path:
+    explicit_db = os.environ.get("LOCAL_KB_DB_PATH", "").strip()
+    if explicit_db:
+        return Path(explicit_db).expanduser()
+    explicit_root = os.environ.get("LOCAL_KB_DATA_ROOT", "").strip()
+    if explicit_root:
+        root = Path(explicit_root).expanduser()
+        found = sorted((root / "企业数据库" / "data").glob("*.db"))
+        if found:
+            return found[0]
+        return root / "企业数据库" / "data" / "enterprise.db"
+    discovered = sorted(Path.home().glob("*/企业数据库/data/*.db"))
+    if discovered:
+        return discovered[0]
+    return Path.home() / "LocalKB" / "企业数据库" / "data" / "enterprise.db"
+
+
+PROJECT_DB = _discover_default_db()
+DATA_ROOT = PROJECT_DB.parents[2] if len(PROJECT_DB.parents) >= 3 else Path.home() / "LocalKB"
 KB_ROOT = DATA_ROOT / "知识库"
-RAG_QUERY_SH = Path(os.environ.get("JIAOTANG_RAG_QUERY", "/Users/zsh/rag/rag-query.sh"))
+RAG_QUERY_SH = Path(os.environ.get("LOCAL_KB_RAG_QUERY") or str(Path.home() / "rag" / "rag-query.sh"))
 
 # Complete Zhejiang 11 prefecture-level cities + major counties/districts for reliable policy scoping
 ZHEJIANG_DISTRICTS: dict[str, str] = {
@@ -82,7 +100,7 @@ STATUS_RANK = {
 
 
 def resolve_region_scope(text: str) -> dict[str, Any]:
-    """Resolve province / city / district hierarchy cleanly (explicit province/city FIRST to prevent cross-province collision like 南昌市西湖区)."""
+    """Resolve province / city / district (including county-level cities like 金华市义乌市) cleanly without cross-province collision."""
     raw = (text or "").strip()
     province = ""
     city = ""
@@ -94,36 +112,47 @@ def resolve_region_scope(text: str) -> dict[str, Any]:
         p = m_prov.group(1)
         province = p if p.endswith(("省", "自治区")) else p + "市"
 
-    # 2. Explicit non-Zhejiang city match check (search AFTER province prefix so "江西省南昌市" -> "南昌市")
+    # 2. Match first city token AFTER province prefix without crossing another 市/区/县 delimiter
     after_prov = raw[m_prov.end():] if m_prov else raw
-    m_city = re.search(r"([\u4e00-\u9fa5]{2,5}市)", after_prov)
+    m_city = re.search(r"([^\s省市区县]{2,5}市)", after_prov)
     explicit_city = m_city.group(1) if m_city else ""
-    if explicit_city and explicit_city not in ZHEJIANG_CITIES and explicit_city not in {"北京市", "上海市", "天津市", "重庆市"}:
+    if (
+        explicit_city
+        and explicit_city not in ZHEJIANG_CITIES
+        and explicit_city not in ZHEJIANG_DISTRICTS
+        and explicit_city not in {"北京市", "上海市", "天津市", "重庆市"}
+    ):
         city = explicit_city
 
     is_non_zj = (bool(province) and province != "浙江省") or (bool(city) and city not in ZHEJIANG_CITIES)
 
     # 3. Match Zhejiang cities/districts ONLY when NOT explicitly outside Zhejiang
     if not is_non_zj:
+        # If explicit prefecture city matched (e.g. 金华市 in 浙江省金华市义乌市), search district after it first
+        dist_search_text = after_prov[m_city.end():] if (m_city and explicit_city in ZHEJIANG_CITIES) else after_prov
         for dist_name, parent_city in ZHEJIANG_DISTRICTS.items():
             if explicit_city and explicit_city in ZHEJIANG_CITIES and explicit_city != parent_city:
                 continue
             short = dist_name[:-1] if len(dist_name) >= 3 and dist_name[-1] in "区县市" else dist_name
-            if dist_name in after_prov or (len(short) >= 2 and short in after_prov):
+            if dist_name in dist_search_text or (len(short) >= 2 and short in dist_search_text):
                 district = dist_name
                 city = parent_city
                 province = "浙江省"
                 break
         if not city:
-            for c in ZHEJIANG_CITIES:
-                short = c[:-1]
-                if c in after_prov or short in after_prov:
-                    city = c
-                    province = "浙江省"
-                    break
+            if explicit_city in ZHEJIANG_CITIES:
+                city = explicit_city
+                province = "浙江省"
+            else:
+                for c in ZHEJIANG_CITIES:
+                    short = c[:-1]
+                    if c in after_prov or short in after_prov:
+                        city = c
+                        province = "浙江省"
+                        break
     else:
         after_city = after_prov[m_city.end():] if m_city else after_prov
-        m_dist = re.search(r"([\u4e00-\u9fa5]{2,5}(?:区|县))", after_city)
+        m_dist = re.search(r"([^\s省市区县]{2,6}(?:区|县|市))", after_city)
         if m_dist:
             district = m_dist.group(1)
 
@@ -186,50 +215,82 @@ def deduplicate_recognitions(records: list[dict[str, Any]]) -> list[dict[str, An
     return out
 
 
+def _norm_company(name: str) -> str:
+    return re.sub(r"[\s\u3000（）()·\-_]+", "", (name or "").strip())
+
+
 def query_enterprise(enterprise_name: str, db_path: Path = PROJECT_DB, *, credit_code: str = "") -> dict[str, Any]:
     """Query enterprise profile, financials, deduplicated recognitions, and application records directly from local DB.
-    Refuses ambiguous multi-company short-name collisions unless an exact full name or credit_code uniquely resolves one subject.
+    Enforces strict identity verification:
+      - If credit_code is supplied and not found, NEVER silently falls back to enterprise_name.
+      - If BOTH enterprise_name and credit_code are supplied, verifies they resolve to the SAME enterprise.
+      - Refuses ambiguous multi-company short-name collisions unless an exact full name or credit_code uniquely resolves one subject.
     """
     if not db_path.is_file():
         return {"found": False, "error": f"local database not found: {db_path}"}
+    norm_code = credit_code.strip().upper()
+    norm_query_name = enterprise_name.strip()
     with _ro_conn(db_path) as con:
         rows = []
-        if credit_code.strip():
+        if norm_code:
             rows = con.execute(
                 """
                 SELECT id, name, unified_social_credit_code, province, city, county,
                        founded_date, registered_capital, industry_l1, industry_l2, industry_l3, company_intro
                 FROM enterprise WHERE upper(unified_social_credit_code) = ? LIMIT 5
                 """,
-                (credit_code.strip().upper(),),
+                (norm_code,),
             ).fetchall()
-        if not rows:
+            if not rows:
+                return {
+                    "found": False,
+                    "credit_code_not_found": True,
+                    "query": norm_query_name,
+                    "credit_code": norm_code,
+                    "error": f"未在本地库检索到统一社会信用代码「{norm_code}」对应企业，已停止按企业名称回退以防串户",
+                }
+            row = rows[0]
+            if norm_query_name:
+                q_norm = _norm_company(norm_query_name)
+                db_norm = _norm_company(str(row["name"] or ""))
+                is_full_query = norm_query_name.endswith(("有限公司", "有限责任公司", "股份有限公司"))
+                same_subject = (q_norm == db_norm) if is_full_query else (q_norm in db_norm or db_norm in q_norm)
+                if not same_subject:
+                    return {
+                        "found": False,
+                        "subject_conflict": True,
+                        "query": norm_query_name,
+                        "credit_code": norm_code,
+                        "matched_name_by_code": row["name"],
+                        "error": f"企业标识冲突：输入名称「{norm_query_name}」与信用代码「{norm_code}」对应主体「{row['name']}」不一致，已拦截且不返回财务数据",
+                    }
+        else:
             rows = con.execute(
                 """
                 SELECT id, name, unified_social_credit_code, province, city, county,
                        founded_date, registered_capital, industry_l1, industry_l2, industry_l3, company_intro
                 FROM enterprise WHERE name LIKE ? ORDER BY length(name) ASC LIMIT 10
                 """,
-                (f"%{enterprise_name.strip()}%",),
+                (f"%{norm_query_name}%",),
             ).fetchall()
-        if not rows:
-            return {"found": False, "query": enterprise_name}
-        exact = [r for r in rows if r["name"].strip() == enterprise_name.strip()]
-        if exact:
-            row = exact[0]
-        elif len(rows) > 1:
-            return {
-                "found": False,
-                "ambiguous": True,
-                "query": enterprise_name,
-                "error": f"简称「{enterprise_name}」命中 {len(rows)} 家不同企业，请提供完整企业名称或18位统一社会信用代码防止串户",
-                "candidates": [
-                    {"name": r["name"], "credit_code": r["unified_social_credit_code"], "city": r["city"]}
-                    for r in rows[:10]
-                ],
-            }
-        else:
-            row = rows[0]
+            if not rows:
+                return {"found": False, "query": norm_query_name}
+            exact = [r for r in rows if _norm_company(r["name"]) == _norm_company(norm_query_name)]
+            if exact:
+                row = exact[0]
+            elif len(rows) > 1:
+                return {
+                    "found": False,
+                    "ambiguous": True,
+                    "query": norm_query_name,
+                    "error": f"简称「{norm_query_name}」命中 {len(rows)} 家不同企业，请提供完整企业名称或18位统一社会信用代码防止串户",
+                    "candidates": [
+                        {"name": r["name"], "credit_code": r["unified_social_credit_code"], "city": r["city"]}
+                        for r in rows[:10]
+                    ],
+                }
+            else:
+                row = rows[0]
         ent = dict(row)
         eid = ent["id"]
         fins = [
@@ -278,7 +339,7 @@ def query_enterprise(enterprise_name: str, db_path: Path = PROJECT_DB, *, credit
     ]
     return {
         "found": True,
-        "source": "local_jiaotang_db",
+        "source": "local_enterprise_db",
         "enterprise": ent,
         "financials": fins,
         "financial_conflicts": fin_conflicts,
@@ -300,6 +361,26 @@ def _canonical_doc_stem(title: str) -> str:
     return re.sub(r"\s+", "", stem)
 
 
+RESTRICTED_ACCESS_VALUES = {
+    "restricted", "private", "confidential", "internal", "secret", "client_private", "client-private",
+    "受限", "机密", "绝密", "内部受限", "仅内部", "客户机密", "禁止外发",
+}
+
+
+def _is_restricted_rag_item(item: dict[str, Any]) -> bool:
+    for bool_key in ("restricted", "is_restricted", "confidential", "is_private", "private"):
+        if item.get(bool_key) is True:
+            return True
+    for key in ("access_level", "visibility", "permission", "security_level", "access", "scope", "data_classification", "权限", "访问级别", "密级"):
+        val = str(item.get(key) or "").strip().lower()
+        if val and (val in RESTRICTED_ACCESS_VALUES or any(tok in val for tok in ("restricted", "private", "confidential", "受限", "机密", "仅内部"))):
+            return True
+    role_and_src = f"{item.get('document_role') or ''} {item.get('source') or ''}".lower()
+    if any(tok in role_and_src for tok in ("restricted", "confidential", "client_private", "受限资料", "客户机密", "内部受限")):
+        return True
+    return False
+
+
 def search_local_rag(
     query: str,
     limit: int = 8,
@@ -308,7 +389,7 @@ def search_local_rag(
     exclude_privacy: bool = True,
     dedup_copies: bool = True,
 ) -> dict[str, Any]:
-    """Run local rag-query.sh with strict false-positive rejection, copy dedup, and privacy filtering."""
+    """Run local rag-query.sh with source-permission filtering FIRST, then PII redaction, false-positive rejection & copy dedup."""
     if not RAG_QUERY_SH.is_file():
         return {"query": query, "count": 0, "error": f"rag-query.sh missing: {RAG_QUERY_SH}", "results": []}
     fetch_k = min(30, max(limit * 3, 12))
@@ -331,10 +412,18 @@ def search_local_rag(
     seen_stems: set[str] = set()
     filtered = []
     dropped_privacy = 0
+    dropped_restricted = 0
     dropped_duplicates = 0
     dropped_irrelevant = 0
 
     for item in data.get("results", []):
+        if not isinstance(item, dict):
+            continue
+        # 1. Source permission filter FIRST (even if excerpt contains no privacy keywords)
+        if exclude_privacy and _is_restricted_rag_item(item):
+            dropped_restricted += 1
+            continue
+
         title = str(item.get("title") or "")
         source = str(item.get("source") or "")
         excerpt = str(item.get("excerpt") or "")
@@ -343,14 +432,11 @@ def search_local_rag(
         if exclude_privacy and any(p in title or p in source or p in excerpt for p in PRIVACY_TITLE_TERMS):
             dropped_privacy += 1
             continue
-        # Redact mobile phone numbers & ID numbers from retrieved excerpts before returning downstream
+        # 2. Redact mobile phone numbers & ID numbers from allowed excerpts before returning downstream
         excerpt_clean = re.sub(r"(?<!\d)1[3-9]\d{9}(?!\d)", "[已脱敏手机]", excerpt)
         excerpt_clean = re.sub(r"(?<!\d)[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx](?!\d)", "[已脱敏证件]", excerpt_clean)
 
         # False-positive guard:
-        # 1) Any alphanumeric identifier containing BOTH letters and digits (e.g. XYZ999888, CN120378087B) MUST match.
-        # 2) Other long alphanumeric tokens must have at least one match.
-        # 3) Pure Chinese queries require >=1 core term hit.
         if code_tokens and not all(tok in haystack for tok in code_tokens):
             dropped_irrelevant += 1
             continue
@@ -385,6 +471,7 @@ def search_local_rag(
         "effective_query": data.get("effective_query"),
         "count": len(filtered),
         "dropped": {
+            "restricted": dropped_restricted,
             "privacy": dropped_privacy,
             "duplicates": dropped_duplicates,
             "irrelevant": dropped_irrelevant,
@@ -400,7 +487,7 @@ def query_peers(
     limit: int = 20,
     db_path: Path = PROJECT_DB,
 ) -> dict[str, Any]:
-    """Query deduplicated comparable peers directly from local jiaotang.db recognition table."""
+    """Query deduplicated comparable peers directly from local enterprise database recognition table."""
     if not db_path.is_file():
         return {"count": 0, "error": f"local database not found: {db_path}", "peers": []}
     clauses = ["r.project_name LIKE ?"]

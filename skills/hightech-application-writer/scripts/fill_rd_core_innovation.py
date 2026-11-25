@@ -325,10 +325,10 @@ def main() -> None:
     spec_path = args.spec.resolve()
     output_path = args.output.resolve()
     report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
-    if input_path == output_path:
-        raise SystemExit("输出文件不得与输入文件相同")
-    if report_path in {input_path, output_path}:
-        raise SystemExit("审计回执路径不得与输入或输出DOCX相同")
+    if output_path in {input_path, spec_path}:
+        raise SystemExit("输出文件不得与输入DOCX或规格JSON相同")
+    if report_path in {input_path, spec_path, output_path}:
+        raise SystemExit("审计回执路径不得与输入DOCX、规格JSON或输出DOCX相同")
     if not input_path.is_file() or not spec_path.is_file():
         raise SystemExit("输入DOCX或JSON不存在")
     if output_path.exists() and not args.overwrite:

@@ -165,6 +165,21 @@ def add_markers(
     return precision
 
 
+def _format_comment_body(review: dict[str, object]) -> str:
+    body = str(review.get("comment") or review.get("suggestion") or review.get("issue") or "请复核")
+    scope = str(review.get("保护范围影响") or review.get("scope_impact") or "").strip()
+    if scope and "保护范围影响" not in body:
+        body = f"{body}\n保护范围影响：{scope}"
+    return body
+
+
+def _has_scope_impact(review: dict[str, object]) -> bool:
+    if str(review.get("保护范围影响") or review.get("scope_impact") or "").strip():
+        return True
+    body = str(review.get("comment") or review.get("suggestion") or review.get("issue") or "")
+    return ("保护范围影响" in body) or ("缺范围判断依据" in body)
+
+
 def comments_xml(
     reviews: list[dict[str, object]], root: ET.Element | None = None, first_id: int = 0
 ) -> bytes:
@@ -185,7 +200,7 @@ def comments_xml(
         paragraph = ET.SubElement(comment, qname(W, "p"))
         run = ET.SubElement(paragraph, qname(W, "r"))
         text = ET.SubElement(run, qname(W, "t"))
-        text.text = str(review.get("comment") or review.get("suggestion") or review.get("issue") or "请复核")
+        text.text = _format_comment_body(review)
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
@@ -235,16 +250,20 @@ def add_comments(
     reviews: list[dict[str, object]],
     *,
     require_scope_impact: bool = False,
+    overwrite: bool = False,
+    abort_on_skip: bool = False,
 ) -> dict[str, object]:
     if source.resolve() == target.resolve():
         raise ValueError("输出路径不得与原专利申请 DOCX 相同，请指定新路径防止覆盖原稿")
+    if target.exists() and not overwrite:
+        raise ValueError(f"目标文件已存在；如需覆盖请显式传入 --overwrite：{target}")
     occurrences = [review.get("occurrence", 1) for review in reviews]
     if any(type(occurrence) is not int or occurrence < 1 for occurrence in occurrences):
         raise ValueError("occurrence 必须是从 1 开始的正整数（1、2、3……）")
     if require_scope_impact:
         missing_scope = [
             idx for idx, rev in enumerate(reviews)
-            if not str(rev.get("保护范围影响") or rev.get("scope_impact") or "").strip()
+            if not _has_scope_impact(rev)
         ]
         if missing_scope:
             raise ValueError(f"以下审核意见缺少必填字段「保护范围影响」：{missing_scope}")
@@ -290,6 +309,19 @@ def add_comments(
                 skipped.append({"anchor": anchor, "reason": "目标段落没有可批注文本"})
                 continue
             applied.append({**review, "_anchor_precision": precision})
+
+        # Do NOT overwrite/commit target when skipped items trigger abort_on_skip (or an existing target would be clobbered)
+        if skipped and (abort_on_skip or target.exists()):
+            return {
+                "expected": len(reviews),
+                "applied": len(applied),
+                "exact_anchors": sum(item.get("_anchor_precision") == "exact" for item in applied),
+                "paragraph_anchors": sum(item.get("_anchor_precision") == "paragraph" for item in applied),
+                "skipped": skipped,
+                "output": str(target),
+                "output_written": False,
+            }
+
         document.write(document_path, encoding="utf-8", xml_declaration=True)
 
         if applied or existing_comments is None:
@@ -334,15 +366,21 @@ def main() -> None:
     parser.add_argument("input_docx", type=Path)
     parser.add_argument("output_docx", type=Path)
     parser.add_argument("--reviews-file", required=True, type=Path)
-    parser.add_argument("--require-scope-impact", action="store_true", help="强制每条意见包含「保护范围影响」字段")
+    parser.add_argument("--require-scope-impact", action="store_true", default=True, help="强制每条意见包含「保护范围影响」（正式CLI默认开启）")
+    parser.add_argument("--allow-missing-scope-impact", action="store_true", help="仅草稿模式允许缺少「保护范围影响」")
+    parser.add_argument("--overwrite", action="store_true", help="显式允许覆盖已存在的输出文件")
     args = parser.parse_args()
     try:
+        if args.reviews_file.resolve() == args.output_docx.resolve():
+            raise ValueError("输出路径不得与 --reviews-file 相同")
         reviews = read_reviews(args.reviews_file)
         result = add_comments(
             args.input_docx,
             args.output_docx,
             reviews,
-            require_scope_impact=args.require_scope_impact,
+            require_scope_impact=not args.allow_missing_scope_impact,
+            overwrite=args.overwrite,
+            abort_on_skip=True,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))

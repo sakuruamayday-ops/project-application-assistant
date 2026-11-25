@@ -27,8 +27,22 @@ INFORMATIVE_HEADINGS = {"前言", "引言", "目次", "规范性引用文件", "
 PLACEHOLDER_PATTERN = re.compile(r"【([^】\n]+)】|(?<![A-Za-z0-9])X{3,}(?![A-Za-z0-9])")
 TEST_TERMS = ("试验方法", "测试方法", "检验方法", "验证方法", "检查方法")
 STD_CODE_PATTERN = re.compile(
-    r"\b(?:GB(?:/T|/Z)?|ISO(?:/IEC)?|IEC|IEEE|HG/T|JB/T|QB/T|YY/T|SJ/T|YD/T|NB/T|SH/T|JC/T|FZ/T|T/[A-Z0-9]+|DB\d{2}(?:/T)?)\s*\d+(?:[.\-]\d+)*"
+    r"\b(?:GB(?:/T|/Z)?|ISO(?:/IEC)?|IEC|IEEE|HG/T|JB/T|QB/T|YY/T|SJ/T|YD/T|NB/T|SH/T|JC/T|FZ/T|T/[A-Z0-9]+|DB\d{2}(?:/T)?)\s*\d+(?:[.\-]\d+)*(?:[—\-]\d{4})?"
 )
+TEST_FILLER_RE = re.compile(r"(?:请补充|待补充|按实际填写|此处填写|填写具体|由企业填写|待完善|见后续)")
+TEST_SUBSTANCE_RE = re.compile(r"(?:测试|试验|测定|检测|检验|测量|运行|触发|核对|记录|采样|按.*进行|采用.*仪|GB/T|ISO|IEC|附录)")
+
+
+def _strip_notes(section_body: str) -> str:
+    return "\n".join(line for line in section_body.splitlines() if not NOTE_LINE.match(line))
+
+
+def _split_std_code(code: str) -> tuple[str, str]:
+    norm = re.sub(r"\s+", " ", code.strip())
+    m = re.match(r"^(.*?)[—\-](\d{4})$", norm)
+    if m:
+        return m.group(1).strip(), m.group(2)
+    return norm, ""
 
 
 def normalize_heading(value: str) -> str:
@@ -85,11 +99,11 @@ def audit(text: str) -> dict[str, object]:
         if name == "规范性引用文件":
             ref_section_text = section_body
             ref_section_line = line_no
-        elif context != "informative":
-            # Only normative body clauses count for normative reference cross-citation (exclude 参考文献/前言/引言!)
-            body_without_refs_parts.append(section_body)
+        elif context not in {"informative", "scope"}:
+            # Only normative body clauses (excluding 注/示例 lines!) count for normative reference cross-citation
+            body_without_refs_parts.append(_strip_notes(section_body))
 
-        if any(term in name for term in TEST_TERMS):
+        if context != "informative" and any(term in name for term in TEST_TERMS):
             test_bodies.append((line_no, name, section_body))
 
         if context == "informative":
@@ -108,28 +122,32 @@ def audit(text: str) -> dict[str, object]:
     for m in re.finditer(r"不可(?!少|缺少|或缺|分割|分离|避免)", text):
         findings.append({"level": "warning", "code": "permission-negative", "line": _line_no(text, m.start()), "message": "发现“不可”，按 GB/T 1.1 核对是否应改用“不应”或“不能”"})
 
-    # Test / verification section existence AND non-empty substance check
+    # Test / verification section existence AND non-empty normative substance check
     if requirement_count:
         if not test_bodies:
             findings.append({
                 "level": "error",
                 "code": "missing-verification",
                 "line": 1,
-                "message": "存在要求型条款，但未发现试验、测试、检验或验证方法章节",
+                "message": "存在要求型条款，但未在规范性章节中发现试验、测试、检验或验证方法章节（资料性附录不可替代）",
             })
         else:
-            compact_test = re.sub(r"\s+", "", "".join(body for _, _, body in test_bodies))
-            # Reject empty, purely negative ("无无无..."), or low-diversity repeated filler strings
+            raw_test_text = "\n".join(_strip_notes(body) for _, _, body in test_bodies)
+            non_empty_lines = [ln.strip() for ln in raw_test_text.splitlines() if ln.strip()]
+            unique_lines = list(dict.fromkeys(non_empty_lines))
+            compact_test = re.sub(r"\s+", "", "".join(unique_lines))
             unique_chars = len(set(re.sub(r"[，。、；：！？,.;:!?\-\s无略待补]", "", compact_test)))
-            if len(compact_test) < 30 or unique_chars < 10:
+            has_filler = bool(TEST_FILLER_RE.search(raw_test_text))
+            has_substance = bool(TEST_SUBSTANCE_RE.search(compact_test))
+            if has_filler or len(compact_test) < 30 or unique_chars < 10 or not has_substance:
                 findings.append({
                     "level": "error",
                     "code": "empty-verification-section",
                     "line": test_bodies[0][0],
-                    "message": f"试验/测试方法章节内容为空、重复填充或过于简略（{len(compact_test)}字，有效字符种类{unique_chars}），缺乏可复现检验步骤",
+                    "message": f"试验/测试方法章节内容为空、含填空指示、重复填充或缺乏可执行检验步骤（去重后{len(compact_test)}字，有效字符种类{unique_chars}）",
                 })
 
-    # Normative references: check '参考' wording AND exact standard-code citation in NORMATIVE body only
+    # Normative references: check '参考' wording AND exact dated/undated citation in NORMATIVE body (excluding 注/示例)
     if ref_section_text:
         if "参考" in ref_section_text:
             findings.append({
@@ -138,18 +156,39 @@ def audit(text: str) -> dict[str, object]:
                 "line": ref_section_line,
                 "message": "规范性引用文件章节含“参考”表述，核对是否应移入参考文献",
             })
-        listed_codes = sorted({re.sub(r"\s+", " ", m.group(0).strip()) for m in STD_CODE_PATTERN.finditer(ref_section_text)})
+        listed_codes = sorted({re.sub(r"\s+", " ", m.group(0).strip()) for m in STD_CODE_PATTERN.finditer(_strip_notes(ref_section_text))})
         body_codes = {re.sub(r"\s+", " ", m.group(0).strip()) for m in STD_CODE_PATTERN.finditer("\n".join(body_without_refs_parts))}
-        body_stems = {re.split(r"[—\-]\d{4}", c)[0].strip() for c in body_codes}
+        body_by_stem: dict[str, set[str]] = {}
+        for bc in body_codes:
+            stem, yr = _split_std_code(bc)
+            body_by_stem.setdefault(stem, set()).add(yr)
         for code in listed_codes:
-            stem = re.split(r"[—\-]\d{4}", code)[0].strip()
-            if code not in body_codes and stem not in body_stems:
+            stem, listed_yr = _split_std_code(code)
+            cited_years = body_by_stem.get(stem)
+            if not cited_years:
                 findings.append({
                     "level": "error",
                     "code": "uncited-normative-reference",
                     "line": ref_section_line,
-                    "message": f"规范性引用文件“{code}”在标准规范性正文中未被引用，不符合 GB/T 1.1 规范性引用要求",
+                    "message": f"规范性引用文件“{code}”在标准规范性正文条款中未被引用（注/示例与资料性附录不计入），不符合 GB/T 1.1",
                 })
+            elif listed_yr:
+                # Dated reference in Clause 2: body citing a DIFFERENT year is a version mismatch!
+                wrong_years = {y for y in cited_years if y and y != listed_yr}
+                if wrong_years:
+                    findings.append({
+                        "level": "error",
+                        "code": "normative-reference-version-mismatch",
+                        "line": ref_section_line,
+                        "message": f"规范性引用文件“{code}”与正文引用版次年份不一致（正文引用年份：{sorted(wrong_years)}）",
+                    })
+                elif listed_yr not in cited_years and "" not in cited_years:
+                    findings.append({
+                        "level": "error",
+                        "code": "normative-reference-version-mismatch",
+                        "line": ref_section_line,
+                        "message": f"规范性引用文件“{code}”未在正文中按对应注日期版次引用",
+                    })
 
     # ALL placeholders flagged (no bogus '合成' exemption)
     for m in PLACEHOLDER_PATTERN.finditer(text):

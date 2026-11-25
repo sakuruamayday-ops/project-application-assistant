@@ -1,0 +1,46 @@
+{
+  "schema_version": 2,
+  "skill_name": "general-grant-writer",
+  "release_tag": "V3.0.0",
+  "required_paths": [
+    "SKILL.md"
+  ],
+  "mutable_paths": [
+    "local-overrides"
+  ],
+  "files": {
+    "SKILL.md": "7b717237f50c0f7af8d3848a61b7b24c03d2b8e4f6a56c837856f981990d2917",
+    "assets/fonts/NotoSansSC-Variable.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+    "assets/fonts/OFL-NotoSansSC.txt": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+    "references/evidence-state-model.md": "edbc84186575e8cafc3a8e9131a3d84e6e3ce55e067affb0c81f7050f215163e",
+    "references/feasibility-decision-model.md": "4dacbbd88c0d2ab0a56c4887c3003f7cc0d923259b3a14d3aa23c464e6fdb200",
+    "references/playbooks/01-institute-and-tech-innovation.md": "c2e087ac87578c20ca8dc404056f4f589c84f7853b11c693955a5f2409263bc1",
+    "references/playbooks/02-three-first-and-industrialization.md": "795037939a57c57dce16ea1d01fabd1ec749f99bcae6f65ff5c815bf33bfa136",
+    "references/playbooks/03-investment-subsidy-and-tech-renovation.md": "06c45a836283fb21bf7c460be00c488b5edc01e0232c875e04c6b27334909815",
+    "references/playbooks/04-digitalization-and-smart-factory.md": "65636198c7670ef68beb0a3625fa58eb3754d15c18813a18b6b8dfaef455a77c",
+    "references/playbooks/05-green-factory-and-carbon.md": "3ebbbc19b30f652e625c9347285bb0ee8b7bfde8283ae9fb70fa51a3c4f31613",
+    "references/playbooks/06-agriculture-and-rural.md": "88b483e84fe6c973504d0d71e432cd261f6a5191876bdeac601c4bf3b7f9179a",
+    "references/playbooks/07-talent-and-startup.md": "a3d7174dc57fe1a6f6915e02ba6ac5f5ba09e84f694d56aa8fc2c02ea74800e9",
+    "references/playbooks/08-trade-and-open-economy.md": "1256e05ecfda8968a8dcb7054bed29d8fd9b7ba9737bd8bb9b815733d209d244",
+    "references/playbooks/09-ip-projects.md": "04e3e7349f5f37fc0ee3680af917631c8cba4528c407515c935d4753a5239a40",
+    "references/playbooks/10-general-feasibility-and-writing.md": "d401121ef679151da00a82d67e2566d0ab395fbf901f461739cad10aa6c2671d",
+    "references/policies/hangzhou-talent-and-ai-voucher-snapshot-2026-08-06.md": "1033e188ac1b62487121b0c49d607701ca003d883cd80b8073cb5fd366e638f8",
+    "references/policies/工信部节〔2024〕13号-绿色工厂梯度培育及管理暂行办法-2024.md": "c2df694284e31c68f3eaf727d50dcecafd26d931538181ea250dd390c3b216c5",
+    "references/policies/浙经信高新〔2025〕169号-浙江省重点企业研究院、企业研究院建设与管理办法-2025.md": "7325c3719d70635370eebf2db80e0d03406831a20b821bc1e8563455c5857b8d",
+    "references/report-template-registry.json": "ebc4d74ac82634dd42867fbbc8e7fb90521b7ffe4db1f9f5271c11bd84fb36d8",
+    "references/two-report-contract.md": "ca59fd4c2527c1a26410fb429852d6a9c99aec05f6b98846078b0b7c09ca5cbe",
+    "scripts/direct_html_report.py": "532ab2af09f7ec7fedf6b0aa44c08597018f9b2b1b78bd7cf655d37dca210361",
+    "scripts/fill_report_template.py": "180d239a676c30d861f400bd988b183cfd8c4b9ef830e5ca334308fcb792c866",
+    "scripts/generate_report.py": "05b6954366afa0b4bfb2c3386b547dcbb86782323b8bbfc5af3d5c9d29038bd0",
+    "scripts/report_html.py": "e193275f30f07cc93860761b0db219fd634a41e0e315ceb4926f701f4bfd2fe4",
+    "scripts/select_report_template.py": "1ddb5fb2a5c534468c4c802eddd7b3a16980ebb775d0793bcb98ccb3fe6e00db",
+    "scripts/sme_action_report.py": "1f53102023ee0df359b7131b74f4e31564d8b74ff2f29e1946b55733056ef38c",
+    "scripts/validate_grant_deliverable.py": "522dbc07d071ec5c4ceee0995246ba46c5fecdd08bbbfff5fd5cd51b88680be2"
+  },
+  "integrity_excludes": [
+    "publisher-ed25519.pub",
+    "release-manifest.json",
+    "release-manifest.json.sig",
+    "release-signature.json"
+  ]
+}

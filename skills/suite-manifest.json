@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "product_name": "共创研究院企业全生命周期助手",
+  "product_slug": "gongchuang-research-institute-skills",
+  "public_brand": {
+    "display_name": "共创研究院",
+    "plugin_name": "gongchuang-research-institute-skills",
+    "marketplace_name": "gongchuang-research-institute"
+  },
+  "install_mode": "bundle-or-standalone",
+  "release": {
+    "tag": "V3.0.0",
+    "version": "3.0.0",
+    "summary": "V3 第一性原理重构：10 大 A 级核心技能 + 统一 _core 硬核底座（零 MCP 依赖直连本地知识库）",
+    "changes": [
+      "将 51 项碎片化历史技能按第一性原理精简收敛为 10 项 A 级独立核心技能（2 免费 + 8 付费）。",
+      "建立统一 skills/_core 底座（kb_local / fact_ledger / doc_io / quality_gate / v3-delivery-constitution）。",
+      "对齐 2026 现行政策口径（工信部企业〔2026〕2号、浙经信高新〔2025〕169号、浙经信大企〔2025〕179号、新《公司法》国令第784号）。",
+      "所有 10 项技能统一嵌入 Ed25519 发布清单与签名，支持整套验签与单包独立安装及回滚。"
+    ],
+    "rollback": [
+      "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行 Ed25519 签名与逐文件哈希校验。",
+      "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
+    ]
+  },
+  "skills": [
+    "application-reviewer",
+    "enterprise-due-diligence",
+    "general-grant-writer",
+    "gov-project-checkup",
+    "hightech-application-writer",
+    "manufacturing-tax-risk",
+    "patent-docx-reviewer",
+    "patent-strategy-assistant",
+    "sme-giant-writer",
+    "standard-drafting"
+  ],
+  "shared_paths": [
+    "_core",
+    "_runtime/enterprise-source-fallback.md",
+    "_runtime/gongchuang-branding",
+    "_runtime/grounded-citations",
+    "_runtime/policy_original_text.py",
+    "_runtime/result_digest.py",
+    "_runtime/template-fidelity"
+  ],
+  "allowed_external_skills": [],
+  "external_services": []
+}

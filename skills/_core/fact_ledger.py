@@ -11,14 +11,21 @@ Backward-compatible with workbuddy-facts-blackboard/v1 while adding:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
+import os
 import re
 import sys
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows fallback
+    fcntl = None  # type: ignore[assignment]
 
 SCHEMA_VERSION = "workbuddy-facts-blackboard/v1"
 VALID_ORIGINS = {"enterprise_source", "ai_design_target", "public_registry", "mcp_verified", "local_kb_verified"}
@@ -177,7 +184,12 @@ def validate_patent_item(item: dict[str, Any], as_of: date | None = None, *, req
 
 
 def normalize_patent_key(item: dict[str, Any]) -> str:
-    raw = re.sub(r"[^A-Za-z0-9]", "", str(item.get("patent_no") or item.get("no") or "")).upper()
+    """Canonicalize Chinese patent/application number by stripping ZL/CN prefix and trailing check digit (.X / 13th char)."""
+    raw_str = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
+    m = re.search(r"(?:ZL|CN)?((?:19|20)\d{10})(?:\.?[\dX])?", raw_str)
+    if m:
+        return m.group(1)
+    raw = re.sub(r"[^A-Za-z0-9]", "", raw_str)
     return re.sub(r"^(?:ZL|CN)", "", raw)
 
 
@@ -236,7 +248,10 @@ def _subject_matches(payload: dict[str, Any], company_name: str, credit_code: st
     )
 
 
-SENSITIVE_KEY_RE = re.compile(r"(?:password|passwd|secret|api[_-]?key|access[_-]?token|private[_-]?key)", re.I)
+SENSITIVE_KEY_RE = re.compile(
+    r"(?:password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|id[_-]?token|session[_-]?token|bearer[_-]?token|private[_-]?key|client[_-]?secret)",
+    re.I,
+)
 
 
 def detect_sensitive_obj(obj: Any, path: str = "$") -> list[dict[str, str]]:
@@ -273,33 +288,44 @@ def validate_blackboard(payload: dict[str, Any], *, check_uscc: bool = False) ->
         ok, msg = validate_uscc(str(payload["credit_code"]))
         if not ok:
             errors.append(f"credit_code 无效：{msg}")
-    # Deep nested schema validation
+    # Deep nested schema validation (reject null and wrong nested field types on BOTH read & write)
     lp = payload.get("lockedProduct")
-    if lp is not None and not isinstance(lp, dict):
-        errors.append("lockedProduct 必须为 JSON 对象")
-    elif isinstance(lp, dict):
+    if not isinstance(lp, dict):
+        errors.append("lockedProduct 必须为非空 JSON 对象")
+    else:
         bt = lp.get("businessType", "ambiguous")
         if bt not in VALID_BUSINESS_TYPES:
             errors.append(f"lockedProduct.businessType 无效：{bt}")
+        if "revision" in lp:
+            rev = lp["revision"]
+            if isinstance(rev, bool) or not isinstance(rev, int) or rev < 0:
+                errors.append(f"lockedProduct.revision 必须为非负整数：{rev!r}")
+        for str_key in ("rawAnchor", "formalDeclarationName", "sixBasesAlignment"):
+            if str_key in lp and not isinstance(lp[str_key], str):
+                errors.append(f"lockedProduct.{str_key} 必须为字符串")
+        if "unpatentedProcessTags" in lp:
+            tags = lp["unpatentedProcessTags"]
+            if not isinstance(tags, list) or any(not isinstance(t, str) for t in tags):
+                errors.append("lockedProduct.unpatentedProcessTags 必须为字符串数组")
     pt = payload.get("patentTierReport")
-    if pt is not None and not isinstance(pt, dict):
-        errors.append("patentTierReport 必须为 JSON 对象")
-    elif isinstance(pt, dict):
+    if not isinstance(pt, dict):
+        errors.append("patentTierReport 必须为非空 JSON 对象")
+    else:
         for tk in ("direct_support", "production_support", "weak_or_unrelated"):
             if tk in pt and not isinstance(pt[tk], list):
                 errors.append(f"patentTierReport.{tk} 必须为数组")
     em = payload.get("estimatedMetrics")
-    if em is not None and not isinstance(em, list):
-        errors.append("estimatedMetrics 必须为数组")
-    elif isinstance(em, list):
+    if not isinstance(em, list):
+        errors.append("estimatedMetrics 必须为非空数组（不可为 null）")
+    else:
         for idx, m_item in enumerate(em):
             if not isinstance(m_item, dict):
                 errors.append(f"estimatedMetrics[{idx}] 必须为对象")
             elif m_item.get("origin", "ai_design_target") not in VALID_ORIGINS:
                 errors.append(f"estimatedMetrics[{idx}].origin 无效：{m_item.get('origin')}")
     for dkey in ("financialFacts", "checkupSnapshots"):
-        if payload.get(dkey) is not None and not isinstance(payload.get(dkey), dict):
-            errors.append(f"{dkey} 必须为 JSON 对象")
+        if not isinstance(payload.get(dkey), dict):
+            errors.append(f"{dkey} 必须为非空 JSON 对象")
     # Recursive sensitive key & value guard
     sens = detect_sensitive_obj(payload)
     if sens:
@@ -320,6 +346,24 @@ def _assert_inside_workspace(workspace: Path, target: Path) -> None:
         raise ValueError(f"安全拦截：黑板路径越出工作区边界：{target}") from exc
 
 
+@contextmanager
+def blackboard_lock(workspace: Path, company_name: str, credit_code: str = ""):
+    """Exclusive per-subject advisory file lock protecting read-modify-write cycles against concurrent clobber."""
+    target = blackboard_path(workspace, company_name, credit_code)
+    _assert_inside_workspace(workspace, target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = target.with_name(target.name + ".lock")
+    _assert_inside_workspace(workspace, lock_path)
+    with lock_path.open("a+", encoding="utf-8") as fh:
+        if fcntl is not None:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            yield target
+        finally:
+            if fcntl is not None:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+
+
 def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *, strict: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
     warnings: list[str] = []
     target = blackboard_path(workspace, company_name, credit_code)
@@ -332,9 +376,15 @@ def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *
         try:
             payload = json.loads(c.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
+            if strict and c == target:
+                raise ValueError(f"黑板文件损坏或无法解析：{c.name}: {exc}") from exc
             warnings.append(f"跳过无效黑板 {c.name}: {exc}")
             continue
         if isinstance(payload, dict) and _subject_matches(payload, company_name, credit_code):
+            if strict:
+                errs = validate_blackboard(payload, check_uscc=bool(payload.get("credit_code")))
+                if errs:
+                    raise ValueError("严格模式读取黑板校验失败：" + "；".join(errs))
             return payload, warnings
         if c == target:
             msg = f"主体不匹配防串户：期望「{company_name}」，文件为「{payload.get('company_name', '')}」"
@@ -344,9 +394,25 @@ def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *
     return None, warnings
 
 
-def save_blackboard(workspace: Path, payload: dict[str, Any], *, strict: bool = True, allow_sensitive: bool = False) -> Path:
+def _atomic_write_blackboard(target: Path, payload: dict[str, Any]) -> None:
     import tempfile
 
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile("w", dir=target.parent, prefix=".facts_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
+            tmp = Path(fh.name)
+            fh.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        tmp.replace(target)
+    except Exception:
+        if tmp is not None and tmp.exists():
+            tmp.unlink(missing_ok=True)
+        raise
+
+
+def save_blackboard(workspace: Path, payload: dict[str, Any], *, strict: bool = True, allow_sensitive: bool = False) -> Path:
     company_name = str(payload.get("company_name", "")).strip()
     if not company_name:
         raise ValueError("company_name 不能为空")
@@ -365,12 +431,24 @@ def save_blackboard(workspace: Path, payload: dict[str, Any], *, strict: bool = 
             raise ValueError("严格模式黑板校验失败：" + "；".join(errs))
     target = blackboard_path(workspace, company_name, credit_code)
     _assert_inside_workspace(workspace, target)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", dir=target.parent, prefix=".facts_", suffix=".tmp", delete=False, encoding="utf-8") as fh:
-        tmp = Path(fh.name)
-        fh.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
-    tmp.replace(target)
+    _atomic_write_blackboard(target, payload)
     return target
+
+
+def update_blackboard(
+    workspace: Path,
+    company_name: str,
+    credit_code: str,
+    mutator: Callable[[dict[str, Any]], None],
+    *,
+    strict: bool = True,
+) -> Path:
+    """Atomic locked read-modify-write for a subject blackboard."""
+    with blackboard_lock(workspace, company_name, credit_code):
+        existing, _ = load_blackboard(workspace, company_name, credit_code, strict=strict)
+        bb = existing if existing is not None else empty_blackboard(company_name, credit_code)
+        mutator(bb)
+        return save_blackboard(workspace, bb, strict=strict)
 
 
 def reconcile_text_against_estimates(blackboard: dict[str, Any], latest_text: str) -> dict[str, Any]:
@@ -425,19 +503,19 @@ def main() -> int:
 
     args = parser.parse_args()
     if args.cmd == "upsert":
-        existing, _ = load_blackboard(args.workspace, args.company, args.credit_code, strict=True)
-        bb = existing if existing is not None else empty_blackboard(args.company, args.credit_code)
-        if args.financials_json:
-            bb.setdefault("financialFacts", {}).update(json.loads(args.financials_json))
-        if args.product_json:
-            bb.setdefault("lockedProduct", {}).update(json.loads(args.product_json))
-        if args.patents_json:
-            bb.setdefault("patentTierReport", {}).update(json.loads(args.patents_json))
-        if args.estimated_metrics_json:
-            bb.setdefault("estimatedMetrics", []).extend(json.loads(args.estimated_metrics_json))
-        if args.snapshot_key and args.snapshot_json:
-            bb.setdefault("checkupSnapshots", {})[args.snapshot_key] = json.loads(args.snapshot_json)
-        path = save_blackboard(args.workspace, bb, strict=True)
+        def _apply(bb: dict[str, Any]) -> None:
+            if args.financials_json:
+                bb.setdefault("financialFacts", {}).update(json.loads(args.financials_json))
+            if args.product_json:
+                bb.setdefault("lockedProduct", {}).update(json.loads(args.product_json))
+            if args.patents_json:
+                bb.setdefault("patentTierReport", {}).update(json.loads(args.patents_json))
+            if args.estimated_metrics_json:
+                bb.setdefault("estimatedMetrics", []).extend(json.loads(args.estimated_metrics_json))
+            if args.snapshot_key and args.snapshot_json:
+                bb.setdefault("checkupSnapshots", {})[args.snapshot_key] = json.loads(args.snapshot_json)
+
+        path = update_blackboard(args.workspace, args.company, args.credit_code, _apply, strict=True)
         print(json.dumps({"status": "ok", "path": str(path), "schema_version": SCHEMA_VERSION}, ensure_ascii=False))
         return 0
     if args.cmd == "read":

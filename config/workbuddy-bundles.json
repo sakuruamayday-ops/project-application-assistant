@@ -265,6 +265,10 @@
       ],
       "vendorFiles": [
         {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
           "from": "skills/_core/v3-delivery-constitution.md",
           "to": "references/v3-delivery-constitution.md"
         }
@@ -342,6 +346,10 @@
         "tests/**"
       ],
       "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
         {
           "from": "skills/_core/quality_gate.py",
           "to": "scripts/_core/quality_gate.py"

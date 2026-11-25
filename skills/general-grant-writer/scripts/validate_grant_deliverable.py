@@ -54,11 +54,13 @@ def _finite_float(val: Any) -> float | None:
 
 
 def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[str]:
-    """浙经信高新〔2025〕169号: 省级重点企业研究院 / 省级企业研究院 / 高企研发中心."""
+    """浙经信高新〔2025〕169号: exact official tiers & unrounded precision for 省重点企业研究院 / 省企业研究院 / 高企研发中心."""
     errs: list[str] = []
     if not isinstance(data, dict) or not data:
         return ["输入数据为空，缺少169号文省级企业研究院核验字段"]
     tier = str(data.get("tier") or "provincial_institute").strip()
+    is_agri = bool(data.get("is_agriculture"))
+    is_mountain = bool(data.get("is_mountain_island_county"))
     rd_rev = _finite_float(data.get("latest_revenue"))
     rd_exp = _finite_float(data.get("latest_rd_expense"))
     rd_staff = _finite_float(data.get("rd_staff_count"))
@@ -73,21 +75,53 @@ def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[
             errs.append(f"[{tier}] 缺少必需核验字段：{fname}")
 
     thresholds = {
-        "provincial_key_institute": {"rd_exp": 1000, "rd_ratio": 3.0, "rd_staff": 50, "equip": 1000, "venue": 1000},
-        "provincial_institute": {"rd_exp": 500, "rd_ratio": 3.0, "rd_staff": 30, "equip": 500, "venue": 500},
+        "provincial_key_institute": {"rd_staff": 50, "equip": 1000, "venue": 1000},
+        "provincial_institute": {"rd_staff": 30, "equip": 500, "venue": 500},
         "rd_center": {"rd_exp": 200, "rd_ratio": 3.0, "rd_staff": 15, "equip": 200, "venue": 200},
     }
     th = thresholds.get(tier, thresholds["provincial_institute"])
     if rd_rev is not None and rd_exp is not None:
-        calc = fact_ledger.calc_rd_ratio(rd_exp, rd_rev)
-        if not calc.get("ok"):
-            errs.append(calc.get("error", "研发费用率无法复算"))
-        elif tier == "provincial_institute" and rd_rev < 5000:
-            # 浙经信高新〔2025〕169号: 营收<5000万元企业申报省级企业研究院须满足占比>=5%且研发费>=100万元
-            if calc["ratio_pct"] < 5.0 or rd_exp < 100.0:
-                errs.append(f"[provincial_institute] 营收({rd_rev}万元)<5000万元档位须满足研发占比≥5%且研发费≥100万元（当前{calc['ratio_pct']}% / {rd_exp}万元）")
-        elif rd_exp < th["rd_exp"] and calc["ratio_pct"] < th["rd_ratio"]:
-            errs.append(f"[{tier}] 研发费用({rd_exp}万元)与占比({calc['ratio_pct']}%)均低于169号文门槛({th['rd_exp']}万元或{th['rd_ratio']}%)")
+        if rd_rev <= 0 or rd_exp < 0:
+            errs.append(f"[{tier}] 营业收入({rd_rev})须大于0且研发费用({rd_exp})不得为负")
+        else:
+            # Compare using raw unrounded precision (prevent 149.9/3000 = 4.9967% rounding to 5.0%!)
+            raw_ratio = (rd_exp / rd_rev) * 100.0
+            if tier == "provincial_key_institute":
+                # 浙经信高新〔2025〕169号 第（九）1条：
+                # 营收>=2亿元（农业>=5000万元）；研发占比>=4% 或 研发费>=5000万元（农业>=800万元）
+                rev_floor = 5000.0 if is_agri else 20000.0
+                rd_amt_floor = 800.0 if is_agri else 5000.0
+                if not is_mountain and rd_rev < rev_floor:
+                    errs.append(
+                        f"[provincial_key_institute] 上一年度营业收入 {rd_rev} 万元低于169号文省重点企业研究院门槛 {rev_floor:.0f} 万元"
+                    )
+                if not is_mountain and not (raw_ratio >= 4.0 or rd_exp >= rd_amt_floor):
+                    errs.append(
+                        f"[provincial_key_institute] 研发强度({raw_ratio:.4f}%)低于4%且研发费用({rd_exp}万元)低于{rd_amt_floor:.0f}万元（不符合169号文）"
+                    )
+            elif tier == "provincial_institute":
+                # 浙经信高新〔2025〕169号 第（九）2条：
+                # ① <5000万: 占比>=5% 且 >=100万
+                # ② 5000万~2亿(含): 占比>=4% 或 >=250万
+                # ③ >2亿: 占比>=3% 或 >=800万
+                if rd_rev < 5000.0:
+                    if not (raw_ratio >= 5.0 and rd_exp >= 100.0):
+                        errs.append(
+                            f"[provincial_institute] 营收({rd_rev}万元)<5000万元档位须同时满足研发占比≥5%且研发费≥100万元（当前{raw_ratio:.4f}% / {rd_exp}万元）"
+                        )
+                elif rd_rev <= 20000.0:
+                    if not (raw_ratio >= 4.0 or rd_exp >= 250.0):
+                        errs.append(
+                            f"[provincial_institute] 营收({rd_rev}万元)在5000万元—2亿元档位须满足研发占比≥4%或研发费≥250万元（当前{raw_ratio:.4f}% / {rd_exp}万元）"
+                        )
+                else:
+                    if not (raw_ratio >= 3.0 or rd_exp >= 800.0):
+                        errs.append(
+                            f"[provincial_institute] 营收({rd_rev}万元)>2亿元档位须满足研发占比≥3%或研发费≥800万元（当前{raw_ratio:.4f}% / {rd_exp}万元）"
+                        )
+            else:
+                if rd_exp < th["rd_exp"] and raw_ratio < th["rd_ratio"]:
+                    errs.append(f"[{tier}] 研发费用({rd_exp}万元)与占比({raw_ratio:.4f}%)均低于门槛({th['rd_exp']}万元或{th['rd_ratio']}%)")
     if rd_staff is not None and rd_staff < th["rd_staff"]:
         errs.append(f"[{tier}] 专职研发人员 {int(rd_staff)} 人低于门槛 {th['rd_staff']} 人")
     if equip_val is not None and equip_val < th["equip"]:
@@ -133,15 +167,31 @@ def validate_three_first(data: dict[str, Any], as_of: date | None = None) -> lis
 
 
 def validate_subsidy(data: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
-    """技改/设备更新/固投补助: allow 5-10% retention proration, require valid invoice_date, block 0-yuan & duplicate rows."""
+    """技改/设备更新/固投补助: enforce valid construction window, prevent cross-card invoice doubling, allow 5-10% retention."""
     errs: list[str] = []
-    win_start = _parse_date(data.get("construction_start"))
-    win_end = _parse_date(data.get("construction_end"))
+    raw_start = str(data.get("construction_start") or "").strip()
+    raw_end = str(data.get("construction_end") or "").strip()
+    win_start = _parse_date(raw_start)
+    win_end = _parse_date(raw_end)
+    if not raw_start:
+        errs.append("缺少备案建设起始日 construction_start")
+    elif win_start is None:
+        errs.append(f"备案建设起始日 construction_start 格式无效：{raw_start}")
+    if not raw_end:
+        errs.append("缺少备案建设截止日 construction_end")
+    elif win_end is None:
+        errs.append(f"备案建设截止日 construction_end 格式无效：{raw_end}")
+    if win_start and win_end and win_end < win_start:
+        errs.append(f"备案建设起止窗口倒挂：{win_start} > {win_end}")
+
     items = data.get("investments") or []
     if not items:
         errs.append("缺少 investments 投资明细台账")
     eligible_total = 0.0
     seen_pairs: set[tuple[str, str]] = set()
+    invoice_alloc_totals: dict[str, float] = {}
+    invoice_caps: dict[str, float] = {}
+
     for idx, row in enumerate(items):
         if not isinstance(row, dict):
             errs.append(f"investments[{idx}] 必须为对象")
@@ -149,6 +199,8 @@ def validate_subsidy(data: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
         name = str(row.get("asset_name") or f"row#{idx}")
         contract = _finite_float(row.get("contract_amount")) or 0.0
         invoice = _finite_float(row.get("invoice_amount")) or 0.0
+        invoice_total_cap = _finite_float(row.get("invoice_total_amount")) or invoice
+        allocated = _finite_float(row.get("allocated_amount"))
         paid = _finite_float(row.get("paid_amount")) or 0.0
         if contract <= 0 or invoice <= 0 or paid <= 0:
             errs.append(f"投资明细[{name}]存在0元或负数虚假行：contract={contract}, invoice={invoice}, paid={paid}")
@@ -161,7 +213,8 @@ def validate_subsidy(data: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
         if not card_no:
             errs.append(f"投资明细[{name}]缺少固定资产卡片号 asset_card_no")
             continue
-        pair = (inv_no.upper(), card_no.upper())
+        inv_key = inv_no.upper()
+        pair = (inv_key, card_no.upper())
         if pair in seen_pairs:
             errs.append(f"投资明细[{name}]重复计入同一发票与固定资产卡片（invoice_no={inv_no}, asset_card_no={card_no}）")
             continue
@@ -189,10 +242,25 @@ def validate_subsidy(data: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
         has_retention = bool(row.get("retention_note")) or (0.01 <= retention <= 0.10)
         if ratio < 0.90:
             errs.append(f"投资明细[{name}]实际付款比例仅 {ratio*100:.1f}%，低于90%（超出常规5%-10%质保金范围）")
-        elif ratio < 0.999 and not has_retention:
+            continue
+        if ratio < 0.999 and not has_retention:
             errs.append(f"投资明细[{name}]付款比例为 {ratio*100:.1f}%（存在尾款差额），请注明质保金比例(retention_ratio)或质保金条款说明(retention_note)")
-        else:
-            eligible_total += min(paid, invoice, contract)
+            continue
+        row_amt = min(allocated if allocated is not None else invoice, paid, invoice, contract)
+        if row_amt <= 0:
+            errs.append(f"投资明细[{name}]分摊适格金额无效：{row_amt}")
+            continue
+        invoice_alloc_totals[inv_key] = invoice_alloc_totals.get(inv_key, 0.0) + row_amt
+        invoice_caps[inv_key] = min(invoice_caps.get(inv_key, invoice_total_cap), invoice_total_cap)
+        eligible_total += row_amt
+
+    # Enforce invoice-level cap across all asset cards so splitting 1 invoice onto 2 cards NEVER doubles eligible total!
+    for inv_key, sum_alloc in invoice_alloc_totals.items():
+        cap = invoice_caps[inv_key]
+        if sum_alloc > cap * 1.005:
+            errs.append(
+                f"同一发票({inv_key})跨资产卡累计申报金额({sum_alloc:.2f})超过发票总金额({cap:.2f})，禁止重复/翻倍计入"
+            )
     return errs, {"eligible_investment_total": round(eligible_total, 2), "item_count": len(items)}
 
 
@@ -336,30 +404,63 @@ def validate_ip_project(data: dict[str, Any], as_of: date | None = None) -> list
     return errs
 
 
+GENERIC_FEASIBILITY_TOKENS = {"不低于", "不超过", "不少于", "不高于", "以上", "以下", "符合", "满足", "应当", "要求", "条件", "具备"}
+
+
 def validate_feasibility(data: dict[str, Any]) -> list[str]:
-    """Ensure bidirectional template_requirements <-> conditions coverage and zero '客户填写'."""
+    """Ensure unambiguous bidirectional template_requirements <-> conditions coverage (blocks generic substring collapse)."""
     errs: list[str] = []
     if not isinstance(data, dict) or not data:
         return ["可行性配置为空"]
     raw_json = json.dumps(data, ensure_ascii=False)
     if "客户填写" in raw_json:
         errs.append("可行性配置中残留「客户填写」占位词")
-    tpl_reqs = [str(r) for r in (data.get("template_requirements") or [])]
+    raw_reqs = data.get("template_requirements") or []
     conds = data.get("conditions") or []
-    if not tpl_reqs:
+    if not raw_reqs:
         errs.append("缺少模板条款清单 template_requirements")
     if not conds:
         errs.append("缺少条件映射清单 conditions")
-    if tpl_reqs and conds:
-        norm_reqs = [re.sub(r"\s+", "", r) for r in tpl_reqs]
-        norm_conds = [re.sub(r"\s+", "", str(c.get("match") or "")) for c in conds if isinstance(c, dict)]
+    if raw_reqs and conds:
+        reqs: list[tuple[str, str, str]] = []
+        for idx, r in enumerate(raw_reqs):
+            if isinstance(r, dict):
+                rid = str(r.get("id") or r.get("clause_id") or "").strip()
+                rtxt = str(r.get("text") or r.get("requirement") or "")
+            else:
+                rid = ""
+                rtxt = str(r)
+            reqs.append((rid, rtxt, re.sub(r"\s+", "", rtxt)))
+
+        covered_req_indices: set[int] = set()
         for idx, c in enumerate(conds):
-            key = re.sub(r"\s+", "", str(c.get("match") or "")) if isinstance(c, dict) else ""
-            if not key or not any(key in nr or nr in key for nr in norm_reqs):
-                errs.append(f"conditions[{idx}]（「{c.get('match') if isinstance(c, dict) else c}」）未命中任何模板条款行，禁止静默丢弃")
-        for r_idx, nr in enumerate(norm_reqs):
-            if not any(ck and (ck in nr or nr in ck) for ck in norm_conds):
-                errs.append(f"模板必备条款「{tpl_reqs[r_idx]}」缺少对应 conditions 核验项，禁止缺项通过")
+            if not isinstance(c, dict):
+                errs.append(f"conditions[{idx}] 必须为对象")
+                continue
+            cid = str(c.get("clause_id") or c.get("requirement_id") or "").strip()
+            raw_match = str(c.get("match") or "").strip()
+            key = re.sub(r"\s+", "", raw_match)
+            if cid:
+                matched_indices = [ri for ri, (rid, _, _) in enumerate(reqs) if rid and rid == cid]
+                if not matched_indices:
+                    errs.append(f"conditions[{idx}] 指定条款编号「{cid}」未命中任何模板条款")
+                else:
+                    covered_req_indices.update(matched_indices)
+                continue
+            if not key or key in GENERIC_FEASIBILITY_TOKENS or len(key) < 4:
+                errs.append(f"conditions[{idx}] 匹配词「{raw_match}」过短或为泛化虚词，须指定具体条款标识或唯一关键短语")
+                continue
+            matched_indices = [ri for ri, (_, _, nr) in enumerate(reqs) if key in nr or nr in key]
+            if not matched_indices:
+                errs.append(f"conditions[{idx}]（「{raw_match}」）未命中任何模板条款行，禁止静默丢弃")
+            elif len(matched_indices) > 1:
+                errs.append(f"conditions[{idx}]（「{raw_match}」）同时宽泛命中 {len(matched_indices)} 条不同模板条款，存在歧义虚过风险，请逐条拆分或绑定 clause_id")
+            else:
+                covered_req_indices.add(matched_indices[0])
+
+        for ri, (_, rtxt, _) in enumerate(reqs):
+            if ri not in covered_req_indices:
+                errs.append(f"模板必备条款「{rtxt}」缺少唯一对应的 conditions 核验项，禁止缺项通过")
     return errs
 
 
@@ -423,9 +524,11 @@ def main() -> int:
                 kept_errs.append(e)
         errs = kept_errs
 
+    status = "fail" if errs else ("partial_pass" if missing_fields else "pass")
     out = {
         "track": args.track,
         "mode": args.mode,
+        "status": status,
         "ok": len(errs) == 0,
         "error_count": len(errs),
         "errors": errs,
