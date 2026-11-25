@@ -42,6 +42,7 @@ V3_CORE_SKILLS = (
 
 CORE_ENGINE_REQUIRED = [
     "skills/_core/kb_local.py",
+    "skills/_core/timeline_cache.py",
     "skills/_core/fact_ledger.py",
     "skills/_core/doc_io.py",
     "skills/_core/quality_gate.py",

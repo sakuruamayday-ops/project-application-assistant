@@ -9,13 +9,14 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "77dd4ea51537550b61cd1cdba2a61753ac627b6b9286879456738e4b9bd52895",
+    "SKILL.md": "a8e236e0c7afa760d6f76ac65b791ccf0ef1fc200c00b366091353d8f29bcebe",
     "references/canonical-project-index.jsonl": "121bdfa0b277954f2bbd31a54b9a4b19c0d4b7ebb66e7e85eb596bffb79ea575",
     "references/classification-rules.md": "cb7f7d6a522e6767ba5f3e9d41b6cc7b0a8df713ebe3b7a01dc4d17e0263dfae",
     "references/high-frequency-project-rules.jsonl": "d070024d2b4cefad8f438a0957543d57a1b1abd67f71e5910de5e30b86d55fba",
     "references/hightech-policy-baseline-2026.json": "3aa5c1aa445f158a6d35d97ac7487bcd7032bf87742eb0da117df6ba72048af6",
     "references/industry-chain-index.jsonl": "0c9330ba5a04ab77f1c63047760213aff02ded921a591e1325d818c214b7739d",
     "references/industry-foundation-index.jsonl": "fdce232f16e5ec79811c625b3d4fd06976ca5aea4e667f15efbd07b36a57c640",
+    "references/peer-point-in-time-rules.md": "ada11b2a93ba68d1226361973bcc03fda25db9a4c3bbf64dbfbfbe6ce479d48d",
     "references/policies/国科发火〔2016〕195号-高新技术企业认定管理工作指引-2016.md": "fb6308246c8186fb6043e106ee29abc3790cd073e1592e74ea89efef526fb81e",
     "references/policies/国科发火〔2016〕32号-高新技术企业认定管理办法-2016.md": "8746d88cb87d395b6d493bb92f2fdc0f4a0b6af24c49bcda23e4cf32b354513a",
     "references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md": "a04cef13d4d60ce53cb4a86cbba63578129162f6ee6e0ddf7ce153615d9c41ed",
@@ -32,7 +33,7 @@
     "scripts/compare_scenarios.py": "33a6b364f22cb593935eb6047bb99406f4b787ec2db29a61fd6d888367425117",
     "scripts/filter_project_map.py": "c4b08c0cf779894dcff664d9b82c01b77aa9dfd5e1a6f1383eb7ac8a616e2404",
     "scripts/preflight.py": "062f76228c9d9913e67f2cbea416c79df0144c517795d946631d3d0d2d2ff621",
-    "scripts/run_checkup.py": "a30551341e40da7d9e3bd8f54373d7c470e1a22d3933160a65ba7a8a47ad2be0",
+    "scripts/run_checkup.py": "48123078fe895f41f98d3c406d6e2a22d47fddd01cb508b29099bc2810ba34e0",
     "scripts/search_catalogs.py": "e7a1b45e400c8e2552d9f91c2378acf363b43840f62b0b71820120070dabeea3"
   },
   "integrity_excludes": [

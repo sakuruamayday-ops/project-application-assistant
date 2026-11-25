@@ -480,38 +480,277 @@ def search_local_rag(
     }
 
 
+def _table_columns(con: sqlite3.Connection, table_name: str) -> set[str]:
+    try:
+        return {str(r[1]) for r in con.execute(f"PRAGMA table_info({table_name})").fetchall()}
+    except sqlite3.Error:
+        return set()
+
+
+def _quantiles_summary(vals: list[float]) -> dict[str, Any]:
+    cleaned = sorted(float(v) for v in vals if v is not None)
+    n = len(cleaned)
+    if n == 0:
+        return {"n": 0}
+
+    def _pct(p: float) -> float:
+        idx = (n - 1) * p
+        lo = int(idx)
+        hi = min(lo + 1, n - 1)
+        frac = idx - lo
+        return round(cleaned[lo] * (1.0 - frac) + cleaned[hi] * frac, 1)
+
+    return {
+        "n": n,
+        "min": round(cleaned[0], 1),
+        "p25": _pct(0.25),
+        "median": _pct(0.50),
+        "p75": _pct(0.75),
+        "mean": round(sum(cleaned) / n, 1),
+        "max": round(cleaned[-1], 1),
+    }
+
+
+def _infer_apply_date(recognition_year: int | None, published_date: str | None, override_apply_date: str = "") -> tuple[str, int | None]:
+    if override_apply_date:
+        m = re.search(r"(\d{4})-(\d{2})-(\d{2})", override_apply_date)
+        if m:
+            return m.group(0), int(m.group(1))
+        m_y = re.search(r"((?:19|20)\d{2})", override_apply_date)
+        if m_y:
+            yr = int(m_y.group(1))
+            return f"{yr:04d}-12-31", yr
+    if recognition_year:
+        pub = str(published_date or "").strip()
+        m_pub = re.search(r"(\d{4})-(\d{2})-(\d{2})", pub)
+        if m_pub and int(m_pub.group(1)) == recognition_year and int(m_pub.group(2)) <= 3:
+            yr = recognition_year - 1
+            return f"{yr:04d}-12-31", yr
+        return f"{recognition_year:04d}-12-31", recognition_year
+    return "", None
+
+
+def _calc_age_at_date(founded_date: str | None, as_of_date: str) -> float | None:
+    if not founded_date or not as_of_date:
+        return None
+    m_f = re.match(r"(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?", str(founded_date).strip())
+    m_t = re.match(r"(\d{4})-(\d{2})-(\d{2})", as_of_date.strip())
+    if not m_f or not m_t:
+        return None
+    fy = int(m_f.group(1))
+    fm = int(m_f.group(2) or 6)
+    ty = int(m_t.group(1))
+    tm = int(m_t.group(2))
+    age = (ty - fy) + (tm - fm) / 12.0
+    if age < 0 or age > 120:
+        return None
+    return round(age, 1)
+
+
 def query_peers(
     project_keyword: str,
     region: str = "",
     industry_keyword: str = "",
     limit: int = 20,
     db_path: Path = PROJECT_DB,
+    *,
+    year: int | None = None,
+    exclude_review: bool = False,
+    apply_date: str = "",
+    benchmark: bool = False,
+    cache_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Query deduplicated comparable peers directly from local enterprise database recognition table."""
+    """Query deduplicated comparable peers directly from local enterprise database recognition table.
+    Supports point-in-time cohort benchmarking (age_at_apply, pre-existing vs post-hoc companion projects,
+    and sidecar timeline_cache.db patent/honor lookup) while remaining 100% backward compatible.
+    """
     if not db_path.is_file():
         return {"count": 0, "error": f"local database not found: {db_path}", "peers": []}
-    clauses = ["r.project_name LIKE ?"]
-    params: list[Any] = [f"%{project_keyword}%"]
-    if region:
-        clauses.append("(e.province LIKE ? OR e.city LIKE ? OR e.county LIKE ?)")
-        params.extend([f"%{region}%"] * 3)
-    if industry_keyword:
-        clauses.append("(e.industry_l2 LIKE ? OR e.industry_l3 LIKE ? OR e.company_intro LIKE ? OR r.product_name LIKE ?)")
-        params.extend([f"%{industry_keyword}%"] * 4)
-    sql = f"""
-        SELECT e.name AS enterprise_name, e.unified_social_credit_code AS credit_code,
-               e.province, e.city, e.county, e.industry_l2, e.industry_l3,
-               r.project_name, r.recognition_year, r.batch, r.result, r.product_name, r.primary_source_title
-        FROM recognition r JOIN enterprise e ON r.enterprise_id = e.id
-        WHERE {' AND '.join(clauses)}
-        ORDER BY r.recognition_year DESC
-        LIMIT ?
-    """
-    params.append(limit * 3)
+
     with _ro_conn(db_path) as con:
+        rec_cols = _table_columns(con, "recognition")
+        ent_cols = _table_columns(con, "enterprise")
+        has_rec_status = "recognition_status" in rec_cols
+        has_pub_date = "published_date" in rec_cols
+        has_founded = "founded_date" in ent_cols
+        has_cap = "registered_capital" in ent_cols
+
+        clauses = ["r.project_name LIKE ?"]
+        params: list[Any] = [f"%{project_keyword}%"]
+        if has_rec_status:
+            clauses.append("r.recognition_status = 'recognized'")
+        if year is not None:
+            clauses.append("r.recognition_year = ?")
+            params.append(int(year))
+        if exclude_review:
+            clauses.append("r.result NOT LIKE '%复核%'")
+        if region:
+            clauses.append("(e.province LIKE ? OR e.city LIKE ? OR e.county LIKE ?)")
+            params.extend([f"%{region}%"] * 3)
+        if industry_keyword:
+            clauses.append("(e.industry_l2 LIKE ? OR e.industry_l3 LIKE ? OR e.company_intro LIKE ? OR r.product_name LIKE ?)")
+            params.extend([f"%{industry_keyword}%"] * 4)
+
+        select_parts = [
+            "e.id AS enterprise_id",
+            "e.name AS enterprise_name",
+            "e.unified_social_credit_code AS credit_code",
+            "e.province",
+            "e.city",
+            "e.county",
+            "e.industry_l2",
+            "e.industry_l3",
+            "e.founded_date" if has_founded else "'' AS founded_date",
+            "e.registered_capital" if has_cap else "'' AS registered_capital",
+            "r.project_name",
+            "r.recognition_year",
+            "r.batch",
+            "r.result",
+            "r.product_name",
+            "r.primary_source_title",
+            "r.published_date" if has_pub_date else "'' AS published_date",
+        ]
+        sql = f"""
+            SELECT {', '.join(select_parts)}
+            FROM recognition r JOIN enterprise e ON r.enterprise_id = e.id
+            WHERE {' AND '.join(clauses)}
+            ORDER BY r.recognition_year DESC, e.name ASC
+            LIMIT ?
+        """
+        fetch_limit = max(limit * 3, 200) if benchmark else limit * 3
+        params.append(fetch_limit)
         raw = [dict(r) for r in con.execute(sql, params).fetchall()]
-    deduped = deduplicate_recognitions(raw)[:limit]
-    return {"raw_count": len(raw), "deduped_count": len(deduped), "peers": deduped}
+        deduped = deduplicate_recognitions(raw)[:limit]
+
+        # Point-in-time companion recognition lookup (L1 exact backtest)
+        eids = sorted({int(p["enterprise_id"]) for p in deduped if p.get("enterprise_id") is not None})
+        companion_first: dict[int, dict[str, int]] = {}
+        if eids:
+            placeholders = ",".join("?" for _ in eids)
+            status_filter = "AND recognition_status = 'recognized'" if has_rec_status else ""
+            c_rows = con.execute(
+                f"""
+                SELECT enterprise_id, project_name, MIN(recognition_year) AS first_year
+                FROM recognition
+                WHERE enterprise_id IN ({placeholders}) {status_filter}
+                GROUP BY enterprise_id, project_name
+                """,
+                tuple(eids),
+            ).fetchall()
+            for cr in c_rows:
+                companion_first.setdefault(int(cr["enterprise_id"]), {})[str(cr["project_name"])] = int(cr["first_year"])
+
+    # Sidecar timeline cache batch lookup (L3 exact backtest where cached)
+    uscc_dates: dict[str, str] = {}
+    for p in deduped:
+        eff_date, eff_year = _infer_apply_date(p.get("recognition_year"), p.get("published_date"), apply_date)
+        p["apply_date"] = eff_date
+        p["apply_year"] = eff_year
+        p["is_review"] = "复核" in str(p.get("result") or "")
+        p["age_at_apply"] = _calc_age_at_date(p.get("founded_date"), eff_date)
+        eid = p.get("enterprise_id")
+        pre_proj: list[str] = []
+        post_proj: list[str] = []
+        if eid is not None and eff_year is not None:
+            for pname, fyr in sorted(companion_first.get(int(eid), {}).items()):
+                if pname == p.get("project_name"):
+                    continue
+                if fyr <= eff_year:
+                    pre_proj.append(f"{pname}({fyr})")
+                else:
+                    post_proj.append(f"{pname}({fyr})")
+        p["pre_existing_projects"] = pre_proj
+        p["post_hoc_projects"] = post_proj
+        uscc = str(p.get("credit_code") or "").strip().upper()
+        if uscc and eff_date:
+            uscc_dates[uscc] = eff_date
+
+    cache_hits: dict[str, dict[str, Any]] = {}
+    try:
+        import timeline_cache
+
+        resolved_cache = cache_path or timeline_cache.resolve_cache_db_path(db_path)
+        cache_hits = timeline_cache.batch_query_at_date(uscc_dates, cache_path=resolved_cache)
+    except Exception:
+        cache_hits = {}
+
+    for p in deduped:
+        uscc = str(p.get("credit_code") or "").strip().upper()
+        hit = cache_hits.get(uscc)
+        if hit and hit.get("cache_hit"):
+            p["timeline_cache"] = hit
+
+    res: dict[str, Any] = {
+        "raw_count": len(raw),
+        "deduped_count": len(deduped),
+        "peers": deduped,
+    }
+
+    if benchmark:
+        warnings: list[str] = []
+        cohorts_map: dict[tuple[Any, bool], list[dict[str, Any]]] = {}
+        for p in deduped:
+            key = (p.get("recognition_year"), bool(p.get("is_review")))
+            cohorts_map.setdefault(key, []).append(p)
+        if len(cohorts_map) > 1:
+            warnings.append(
+                f"检索结果跨越 {len(cohorts_map)} 个不同年度/类别批次，已自动按 (recognition_year, is_review) 拆组统计；严禁跨届或混同复核直接求中位数"
+            )
+        cohorts_out: list[dict[str, Any]] = []
+        for (ryear, is_rev), items in sorted(cohorts_map.items(), key=lambda kv: (kv[0][0] or 0, kv[0][1]), reverse=True):
+            n = len(items)
+            ages = [x["age_at_apply"] for x in items if x.get("age_at_apply") is not None]
+            pre_counts: dict[str, int] = {}
+            post_counts: dict[str, int] = {}
+            inv_at_t: list[float] = []
+            inv_curr: list[float] = []
+            cached_pat_n = 0
+            pending_usccs: list[dict[str, str]] = []
+            for x in items:
+                for tag in x.get("pre_existing_projects", []):
+                    base = tag.split("(")[0]
+                    pre_counts[base] = pre_counts.get(base, 0) + 1
+                for tag in x.get("post_hoc_projects", []):
+                    base = tag.split("(")[0]
+                    post_counts[base] = post_counts.get(base, 0) + 1
+                tc = x.get("timeline_cache") or {}
+                if tc.get("patent_cache_hit") and tc.get("valid_granted_inv_at_t") is not None:
+                    cached_pat_n += 1
+                    inv_at_t.append(float(tc["valid_granted_inv_at_t"]))
+                    if tc.get("current_granted_inv") is not None:
+                        inv_curr.append(float(tc["current_granted_inv"]))
+                else:
+                    u = str(x.get("credit_code") or "").strip().upper()
+                    if u and len(pending_usccs) < 15:
+                        pending_usccs.append({"uscc": u, "name": str(x.get("enterprise_name") or ""), "apply_date": str(x.get("apply_date") or "")})
+
+            inflation_pct = None
+            if inv_at_t and inv_curr and sum(inv_at_t) > 0:
+                inflation_pct = round(100.0 * (sum(inv_curr) - sum(inv_at_t)) / sum(inv_at_t), 1)
+
+            cohorts_out.append({
+                "recognition_year": ryear,
+                "category": "review" if is_rev else "new_recognition",
+                "count": n,
+                "age_at_apply": _quantiles_summary(ages),
+                "pre_existing_project_rates_pct": {k: round(100.0 * v / n, 1) for k, v in sorted(pre_counts.items(), key=lambda kv: -kv[1])},
+                "post_hoc_project_rates_pct": {k: round(100.0 * v / n, 1) for k, v in sorted(post_counts.items(), key=lambda kv: -kv[1])},
+                "timeline_cache_patents": {
+                    "cached_count": cached_pat_n,
+                    "coverage_pct": round(100.0 * cached_pat_n / n, 1) if n else 0.0,
+                    "valid_granted_inv_at_apply": _quantiles_summary(inv_at_t),
+                    "current_granted_inv": _quantiles_summary(inv_curr),
+                    "post_hoc_inflation_pct": inflation_pct,
+                },
+                "pending_cache_sample": pending_usccs,
+            })
+
+        res["benchmark_summary"] = {
+            "cohort_count": len(cohorts_out),
+            "cohorts": cohorts_out,
+            "warnings": warnings,
+        }
+    return res
 
 
 def main() -> int:

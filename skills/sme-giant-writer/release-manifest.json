@@ -9,7 +9,7 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "de512a39124f7e8716f10005774b468cb96323e5891a09167d133c06dd431e38",
+    "SKILL.md": "fbe6b5ddb2dde0794c608c3788aad1495478ed95feea187e02d752110eaf58a6",
     "assets/enterprise-technical-product-revenue-matrix.template.json": "7b8e35cabedc6afca049aa806970e57b6b3c607ed2d5240b72fc02290f63864e",
     "assets/专精特新小巨人前期培育方向卡模板.docx": "cc3d1333969b10cf2d461f97f1a1f9af147e34eedfb71663ba7960be67706be8",
     "references/application-version-gate.md": "533136969e15c3782d29ad072d08de5bce2f62451f6feff19084a0b46038462a",
@@ -18,9 +18,10 @@
     "references/direction-card-first-template.md": "524acb946ac69eebc7f3d5128b19d0f2883cb027f9e6b1ea8d1ec6357b0250ef",
     "references/direction-card-six-questions-guide.md": "86f5697f0c9c06959014052007370532e5adf4beaaffd420eba006ff987a11a5",
     "references/direction-card-to-six-questions.md": "87c7bba587d2124712d54cca50e1e5874a7cdfb0206c51c0719259d89de8831c",
-    "references/enterprise-introduction-method.md": "dc0c43d0dcf1ce2df75d717787a36219a0ca05208661a049e735dd3885148999",
+    "references/enterprise-introduction-method.md": "0a928e9c1cf68bcb74ad69491eaaaeb8684882609ee0d19953a65e6fdcd959e5",
     "references/evaluation-workflow.md": "5ab806fc15f11933af325d6410515b347428d53a4aca7835fccb773fe05f485b",
     "references/four-judgment-decision-table.md": "740dcdf62372ee469e73a49c9e5789b707661a29abb34730184bdbe7d9ea43bc",
+    "references/hidden-champion-and-quality-brand-templates.md": "4938caebbf2d7d33cb75de7465102ad28fb1f3f7e786ed0f1d6b604af554c26d",
     "references/key-technology-first-innovation-method.md": "8b78126d466a278a31eddaec3caaebad6a1dd9e28b3165fbe6edc48a74b728ca",
     "references/main-product-naming-and-boundary-gate.md": "f0afc6df54f4f0252e1291b88cc94f3384a1369c6da1f405707a9d4bba7dac44",
     "references/market-boundary-and-substitution-gate.md": "9bc541719eb3697eff917e944df8fc19e7a7d8d70cadac9034690b24ae7da27e",

@@ -29,12 +29,18 @@ python3 scripts/run_checkup.py sme --input company_sme.json --strict
 # 4. 洁净检索政策并核验有效期与省市区县层级
 python3 scripts/run_checkup.py policy --query "高新技术企业认定管理工作指引" --region "宁波市鄞州区" --strict
 
-# 5. 查询同项目、同地区去重可比同行
-python3 scripts/run_checkup.py peers --project "专精特新" --region "杭州" --limit 15
+# 5. 查询同项目、同地区去重可比同行（支持按申报当年回溯统计）
+python3 scripts/run_checkup.py peers --project "隐形冠军" --region "杭州" --year 2025 --exclude-review --apply-date 2025-10-31 --benchmark --limit 50
+
+# 5b. 写入/查询侧挂懒加载时间轴缓存库（与只读主库物理隔离，按统一社会信用代码关联）
+python3 scripts/run_checkup.py cache-ingest --type patent --uscc 913301097345191192 --input qcc_patent.json
+python3 scripts/run_checkup.py cache-query --uscc 913301097345191192 --as-of 2025-12-28
 
 # 6. 叶节点加权检索《产业链架构》与《产业基础创新发展目录（2021）》
 python3 scripts/run_checkup.py catalog "高阻隔复合膜"
 ```
+
+> 同行对标与通过率分析须遵守 [references/peer-point-in-time-rules.md](references/peer-point-in-time-rules.md)：严禁跨届/复核混算，严禁把获批后新增的专利与资质算作当年申报门槛。
 
 ## 交付结构
 

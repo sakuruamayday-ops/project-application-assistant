@@ -24,11 +24,15 @@ description: 国家高新技术企业认定申请书撰写与严格审计工具�
      --strict
    ```
    （分段写稿自检时可仅传 `--include-domain-in-limit --strict`。）任何退出码非 `0`（含占位符、超 400 字、低于 180 字、缺少双段结构、字体非宋体小四、跨年经费勾稽不一致）一律打回重写。
-4. **交付前 Critic Pass 自检**：输出前以高企评审专家视角复核：① 技术指标是否与测试报告/专利一致；② 企业名称是否零串户；③ 文本是否像资深工程师亲手撰写而非套话堆砌。
+4. **交付前 Critic Pass 自检与洪老师实务红线**：
+   - 写稿与核稿前先参照 `references/hightech-hong-skeleton-and-pitfalls.md` 核对全套实务骨架（RD ≤12 且年均 ≥5、IP 申请日晚于 RD 立项日、PS 名称与开票信息对齐、RD/PS/检测/发票/查新均不直接算“科技成果”、研发组织管理 4 项 20 分证据闭环）；
+   - 输出前以高企评审专家视角复核：① 技术指标是否与测试报告/专利一致；② 企业名称是否零串户；③ 文本是否像资深工程师亲手撰写、无“XX方面，”机械套话与分号报菜名。
 
 ## 资产与脚本清单
 
 - `assets/高新技术企业认定申请书空白模板.docx`
+- `references/hightech-hong-skeleton-and-pitfalls.md` — 洪老师 55 页高企实务骨架、财务/人员/RD/PS/成果转化/组织管理全套避坑铁律
+- `references/section-writing-templates.md` — RD 与 PS 逐段标准句法模板
 - `scripts/expand_rd_ps_tables.py` — 按 RD/PS 数量安全扩缩母版表并编号
 - `scripts/fill_rd_core_innovation.py` — 批量回填 RD 基本字段、核心技术及创新点、阶段性成果（无匹配 RD 表时硬报错，不再静默 `rd_count=0`）
 - `scripts/fill_application_fields.py` — 批量回填企业注册、财务摘要、PS 表、创新能力四栏

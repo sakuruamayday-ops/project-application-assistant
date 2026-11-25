@@ -41,6 +41,10 @@
           "to": "scripts/_core/kb_local.py"
         },
         {
+          "from": "skills/_core/timeline_cache.py",
+          "to": "scripts/_core/timeline_cache.py"
+        },
+        {
           "from": "skills/_core/fact_ledger.py",
           "to": "scripts/_core/fact_ledger.py"
         },
@@ -393,6 +397,10 @@
         {
           "from": "skills/_core/kb_local.py",
           "to": "scripts/_core/kb_local.py"
+        },
+        {
+          "from": "skills/_core/timeline_cache.py",
+          "to": "scripts/_core/timeline_cache.py"
         },
         {
           "from": "skills/_core/fact_ledger.py",

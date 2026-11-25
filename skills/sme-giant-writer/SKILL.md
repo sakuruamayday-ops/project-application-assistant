@@ -19,8 +19,10 @@ description: 专精特新中小企业、国家级专精特新“小巨人”、�
 3. **四项独立判断与市占率分级**：
    - 独立输出「主导产品 / 补短板 / 填空白 / 进口替代」四项判断，进口替代不设国外型号检测报告或客户盖章证明为成立前提。
    - 严格按 `references/market-share-grading.md`（A—D 级）构建细分市场占有率测算底稿。
-4. **方向卡与六大核心问题高密度写作**：
-   - 按 `references/direction-card-six-questions-guide.md` 逐项撰稿（单题 ≥ 250 字、目标填充至字数上限的 75%—95%），配套 `assets/专精特新小巨人前期培育方向卡模板.docx`。
+4. **实战模板与多赛道高密度写作**：
+   - **专精特新“小巨人”五大栏位**：按 `references/enterprise-introduction-method.md` 执行主导产品定名（+10 位代码）、细分市场占有率 1000 字三段式、产学研合作 300 字、补短板填空白 300 字双体例（**零企业名/简称**）及企业总体介绍 2000 字（**零企业名/简称**），全篇遵循自然工程因果叙事，杜绝“XX方面，”套话与分号报菜名；
+   - **方向卡转六大核心问题**：按 `references/direction-card-six-questions-guide.md` 逐项撰稿（单题 ≥ 250 字、目标填充至字数上限的 75%—95%），配套 `assets/专精特新小巨人前期培育方向卡模板.docx`；
+   - **隐形冠军 / 单项冠军培育 / 浙江制造精品 / 品字标 / 政府质量奖**：按 `references/hidden-champion-and-quality-brand-templates.md` 标准章节骨架与材料闭环撰写。
 5. **真严格硬门禁验收**：
    ```bash
    python3 scripts/validate_sme_assessment.py <assessment.json> \

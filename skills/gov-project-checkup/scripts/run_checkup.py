@@ -29,6 +29,7 @@ for candidate in (SCRIPT_DIR, SKILL_ROOT.parent / "_core", SKILL_ROOT / "scripts
 import fact_ledger  # noqa: E402
 import kb_local  # noqa: E402
 import search_catalogs  # noqa: E402
+import timeline_cache  # noqa: E402
 
 
 def _finite_float(val: Any) -> float | None:
@@ -590,11 +591,31 @@ def main() -> int:
     p_pol.add_argument("--limit", type=int, default=6)
     p_pol.add_argument("--strict", action="store_true")
 
-    p_peer = sub.add_parser("peers", help="查询去重可比同行名单")
+    p_peer = sub.add_parser("peers", help="查询去重可比同行名单，支持按申报当年回溯统计与侧挂时间轴缓存关联")
     p_peer.add_argument("--project", required=True)
     p_peer.add_argument("--region", default="")
     p_peer.add_argument("--industry", default="")
+    p_peer.add_argument("--year", type=int, default=None, help="可选：按认定年度过滤（防止跨届混算）")
+    p_peer.add_argument("--exclude-review", action="store_true", help="可选：剔除到期复核，仅保留新认定")
+    p_peer.add_argument("--apply-date", default="", help="可选：显式指定申报基准日（如 2025-12-28）")
+    p_peer.add_argument("--benchmark", action="store_true", help="可选：输出按批次拆分的事前/事后时点对齐汇总")
+    p_peer.add_argument("--cache-db", type=Path, default=None, help="可选：指定侧挂时间轴缓存库路径")
     p_peer.add_argument("--limit", type=int, default=15)
+
+    p_ci = sub.add_parser("cache-ingest", help="将外部接口拉取的专利/荣誉明细写入侧挂懒加载时间轴缓存库")
+    p_ci.add_argument("--type", choices=["patent", "honor"], required=True)
+    p_ci.add_argument("--uscc", required=True, help="18位统一社会信用代码")
+    p_ci.add_argument("--company", default="", help="可选：企业全称")
+    p_ci.add_argument("--dimension", default="patent_granted_inv", help="专利缓存维度（默认 patent_granted_inv）")
+    p_ci.add_argument("--source", default="qcc", help="数据来源标记（默认 qcc）")
+    p_ci.add_argument("--fetched-at", default="", help="可选：拉取时间 ISO8601（默认当前时间）")
+    p_ci.add_argument("--input", required=True, help="JSON 文件路径，或传 - 从标准输入读取")
+    p_ci.add_argument("--cache-db", type=Path, default=None)
+
+    p_cq = sub.add_parser("cache-query", help="按指定申报基准日从侧挂缓存库回溯单家企业当年有效专利与荣誉")
+    p_cq.add_argument("--uscc", required=True)
+    p_cq.add_argument("--as-of", required=True, help="回溯基准日 YYYY-MM-DD")
+    p_cq.add_argument("--cache-db", type=Path, default=None)
 
     p_cat = sub.add_parser("catalog", help="叶节点加权检索《产业链架构》与《产业基础目录(2021)》")
     p_cat.add_argument("query")
@@ -701,9 +722,49 @@ def main() -> int:
         return 0 if (out["ok"] or not args.strict) else 2
 
     if args.cmd == "peers":
-        res = kb_local.query_peers(args.project, args.region, args.industry, args.limit)
+        res = kb_local.query_peers(
+            args.project,
+            args.region,
+            args.industry,
+            args.limit,
+            year=args.year,
+            exclude_review=args.exclude_review,
+            apply_date=args.apply_date,
+            benchmark=args.benchmark,
+            cache_path=args.cache_db,
+        )
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0 if not res.get("error") else 2
+
+    if args.cmd == "cache-ingest":
+        raw_text = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
+        payload = json.loads(raw_text)
+        if args.type == "patent":
+            res = timeline_cache.ingest_patents(
+                args.uscc,
+                payload,
+                enterprise_name=args.company,
+                dimension=args.dimension,
+                source=args.source,
+                fetched_at=args.fetched_at or None,
+                cache_path=args.cache_db,
+            )
+        else:
+            res = timeline_cache.ingest_honors(
+                args.uscc,
+                payload,
+                enterprise_name=args.company,
+                source=args.source,
+                fetched_at=args.fetched_at or None,
+                cache_path=args.cache_db,
+            )
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0 if res.get("ok") else 2
+
+    if args.cmd == "cache-query":
+        res = timeline_cache.query_at_date(args.uscc, args.as_of, cache_path=args.cache_db)
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return 0
 
     if args.cmd == "catalog":
         res = search_catalogs.search_catalogs(args.query, SKILL_ROOT / "references", args.limit)
