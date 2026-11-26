@@ -196,11 +196,11 @@ def audit_formal_text(
         if foreign_block:
             errors.append({"rule": "cross_enterprise_contamination", "issue": f"检测到跨企业名称混入（期望「{expected_company}」）：{sorted(foreign_block)}"})
 
-    # Smart suspicious-parentheses check (only flags bracketed editorial notes, never legal units/doc codes)
+    # Smart suspicious-parentheses check (only flags bracketed editorial notes, never legal units/doc codes/official publicity statuses like 拟认定/拟复核通过)
     suspicious_parens = []
     for m in re.finditer(r"[\(（]([^\)）]{1,40})[\)）]", text or ""):
         inner = m.group(1).strip()
-        if any(bad in inner for bad in ("待", "请", "拟", "暂", "估", "注：", "备注", "核实", "补充", "替换", "此处")):
+        if any(bad in inner for bad in ("待", "请", "拟填", "拟写", "拟改", "拟补", "暂填", "暂定", "暂估", "估测", "注：", "备注", "核实", "补充", "替换", "此处")):
             suspicious_parens.append(m.group(0))
     if suspicious_parens:
         errors.append({"rule": "suspicious_parentheses", "issue": f"正文中存在疑似编辑批注/兜底括号：{suspicious_parens[:8]}"})
