@@ -35,7 +35,7 @@ RD_YEAR_FIELDS = ("第一年", "第二年", "第三年")
 EXPENSE_SUBTOTAL = "研究开发费用（内、外部）小计"
 PS_INCOME = "上年度销售收入"
 RD_TECH_PATTERN = re.compile(
-    r"^[12]、.+技术[：:].*\d"
+    r"^[12]、[^：:\n]{2,40}[：:].*\d"
 )
 UNIT_OR_BOUNDARY = re.compile(
     r"(%|％|秒|分钟|小时|天|毫米|厘米|微米|纳米|千米|米|赫兹|分贝|摄氏度|℃|°C|兆帕|千帕|帕|MPa|kPa|GPa|Pa|"
@@ -929,26 +929,34 @@ def main():
         required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
     if args.require_complete_form:
         all_rd_ids = [rid for rid, _, _ in rd_tables(document)]
-        if not all_rd_ids:
+        unique_rd_ids = sorted(set(all_rd_ids))
+        if not unique_rd_ids:
             required_issues.append({"section": "研究开发活动", "issue": "整本终审未识别到任何已编号的 RD 研发活动表"})
-        elif len(all_rd_ids) < 15:
-            required_issues.append({
-                "section": "研究开发活动",
-                "issue": f"整本终审仅识别到 {len(all_rd_ids)} 个 RD 研发活动表，低于近三年 15 个以上（每年 5 个以上）的高企成稿目标要求",
-            })
+        else:
+            if len(unique_rd_ids) != len(all_rd_ids):
+                required_issues.append({"section": "研究开发活动", "issue": f"存在重复 RD 编号（共 {len(all_rd_ids)} 表，去重后仅 {len(unique_rd_ids)} 个唯一 RD）"})
+            if len(unique_rd_ids) < 15:
+                required_issues.append({
+                    "section": "研究开发活动",
+                    "issue": f"整本终审去重后仅识别到 {len(unique_rd_ids)} 个 RD 研发活动表，低于近三年 15 个以上（每年 5 个以上）的高企成稿目标要求",
+                })
         if not ps_quality:
             required_issues.append({"section": "高新技术产品", "issue": "整本终审未识别到任何已编号的 PS 高新技术产品表"})
         if not innovation_detail or len(innovation_detail) < 4:
             required_issues.append({"section": "企业创新能力", "issue": f"整本终审企业创新能力四栏不完整（当前识别 {len(innovation_detail)}/4 栏）"})
-        has_transform_table = any(
-            "成果转化" in normalized(" ".join(xml_cell_text(c) for r in tbl.rows[:3] for c in physical_cells(r)))
-            for tbl in document.tables
-        )
+        transform_data_rows = 0
+        for tbl in document.tables:
+            hdr = normalized(" ".join(xml_cell_text(c) for r in tbl.rows[:2] for c in physical_cells(r)))
+            if "成果转化" in hdr:
+                for row in tbl.rows[1:]:
+                    row_txt = normalized(" ".join(xml_cell_text(c) for c in physical_cells(row)))
+                    if len(row_txt) >= 8 and "成果名称" not in row_txt and "序号" not in row_txt:
+                        transform_data_rows += 1
         transform_codes = sorted(set(re.findall(r"(?:CG|ZH|KJCG)\s*0*\d+", body_text, re.I)))
-        if not has_transform_table and len(transform_codes) < 15:
+        if transform_data_rows < 5 and len(transform_codes) < 15:
             required_issues.append({
                 "section": "科技成果转化",
-                "issue": "整本终审未识别到科技成果转化汇总表且未见年均 5 项以上（近三年 15 项以上）成果转化编号记录",
+                "issue": "整本终审未识别到含实质转化记录的科技成果转化表（需近三年年均 5 项以上有效转化记录）",
             })
 
     for name, issues in (

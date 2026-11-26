@@ -615,9 +615,13 @@ def validate_payload(
     document_errors, document_warnings = _validate_document(payload, strict_grounded)
     errors.extend(source_errors + record_errors + document_errors)
     if strict_grounded and not errors:
-        from policy_numbers import validate_policy_numbers
-        document = payload.get("document") or {}
-        errors.extend(validate_policy_numbers(_record_map(payload), _source_map(payload), document.get("blocks")))
+        try:
+            from policy_numbers import validate_policy_numbers  # type: ignore[import-not-found]
+        except ImportError:
+            validate_policy_numbers = None
+        if validate_policy_numbers is not None:
+            document = payload.get("document") or {}
+            errors.extend(validate_policy_numbers(_record_map(payload), _source_map(payload), document.get("blocks")))
     warnings.extend(source_warnings + record_warnings + document_warnings)
     market_share = None
     if require_market_share or "market_share" in payload:

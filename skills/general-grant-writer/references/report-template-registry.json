@@ -93,22 +93,18 @@
       "core_object": "高企四关联、研发费用、高品收入和创新能力",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       },
       "html_templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.html",
-          "sha256": "54a1519aaeda705f86043df9d1cc13e664f67c79512a46a3401da8f5a78c219b"
+          "path": "assets/templates/generic-preassessment-master.html"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.html",
-          "sha256": "8cf3a99e83b68e3dcafd89def01463ba45c484843e47bd3f46064ae5d59c556d"
+          "path": "assets/templates/generic-feasibility-master.html"
         }
       }
     },
@@ -123,22 +119,18 @@
       "core_object": "专业化、精细化、特色化、创新能力及基础条件",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       },
       "html_templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.html",
-          "sha256": "54a1519aaeda705f86043df9d1cc13e664f67c79512a46a3401da8f5a78c219b"
+          "path": "assets/templates/generic-preassessment-master.html"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.html",
-          "sha256": "8cf3a99e83b68e3dcafd89def01463ba45c484843e47bd3f46064ae5d59c556d"
+          "path": "assets/templates/generic-feasibility-master.html"
         }
       }
     },
@@ -153,22 +145,18 @@
       "core_object": "主导产品、细分市场、创新能力、产业链价值及质量提升项",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       },
       "html_templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.html",
-          "sha256": "54a1519aaeda705f86043df9d1cc13e664f67c79512a46a3401da8f5a78c219b"
+          "path": "assets/templates/generic-preassessment-master.html"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.html",
-          "sha256": "8cf3a99e83b68e3dcafd89def01463ba45c484843e47bd3f46064ae5d59c556d"
+          "path": "assets/templates/generic-feasibility-master.html"
         }
       }
     },
@@ -183,12 +171,10 @@
       "core_object": "装备产品分类、创新性、成熟度、销售应用及自主知识产权",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -202,12 +188,10 @@
       "core_object": "新材料产品边界、关键性能、批次稳定性、首次应用及自主知识产权",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -221,12 +205,10 @@
       "core_object": "软件产品边界、核心功能、技术创新、成熟度、知识产权和首次市场应用",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -242,12 +224,10 @@
       "core_object": "独立研发组织、稳定人员、研发投入、场地设备、项目成果和制度运行",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -261,12 +241,10 @@
       "core_object": "产品技术质量、市场表现、品牌、标准、知识产权和制造能力",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -281,12 +259,10 @@
       "core_object": "长期专注的细分产品、市场地位、创新能力、质量效益和全球化经营",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -301,12 +277,10 @@
       "core_object": "基础设施、管理体系、能源资源投入、产品、环境排放及绩效改进",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -322,12 +296,10 @@
       "core_object": "设备联网、系统集成、数据贯通、业务场景、数字化绩效和安全治理",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     },
@@ -343,12 +315,10 @@
       "core_object": "指南方向、技术问题、研发基础、任务指标、预算和成果产业化",
       "templates": {
         "preassessment": {
-          "path": "assets/templates/generic-preassessment-master.docx",
-          "sha256": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d"
+          "path": "assets/templates/generic-preassessment-master.docx"
         },
         "feasibility": {
-          "path": "assets/templates/generic-feasibility-master.docx",
-          "sha256": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5"
+          "path": "assets/templates/generic-feasibility-master.docx"
         }
       }
     }

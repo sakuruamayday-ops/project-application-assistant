@@ -24,7 +24,8 @@ def run_checked(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 
 def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
-    tax_root = skills_root / "manufacturing-tax-risk"
+    self_root = Path(__file__).resolve().parents[1]
+    tax_root = self_root if (self_root / "scripts" / "generate_report_html.py").is_file() else (skills_root / "manufacturing-tax-risk")
 
     required = [
         tax_root / "scripts" / "generate_report_html.py",

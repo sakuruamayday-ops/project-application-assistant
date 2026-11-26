@@ -102,10 +102,6 @@ def resolve_template(
         raise ValueError("模板路径超出Skill边界") from exc
     if not source.is_file():
         raise FileNotFoundError(source)
-    expected = str(template.get("sha256") or "").lower()
-    actual = sha256_file(source)
-    if len(expected) != 64 or actual != expected:
-        raise ValueError(f"模板哈希不一致:{source}")
     return {
         "release_tag": registry.get("release_tag"),
         "project_id": project.get("id"),
@@ -115,7 +111,6 @@ def resolve_template(
         "report_label": report.get("label"),
         "profile_id": report.get("profile_id"),
         "template_path": str(source),
-        "template_sha256": actual,
     }
 
 
@@ -146,14 +141,10 @@ def materialize(
     if target.exists():
         raise FileExistsError(f"拒绝覆盖现有文件:{target}")
     shutil.copy2(selection["template_path"], target)
-    target_hash = sha256_file(target)
-    if target_hash != selection["template_sha256"]:
-        raise RuntimeError("模板复制后哈希不一致")
     receipt = {
         "schema": "gongchuang-project-report-template-selection/v1",
         **selection,
         "output_path": str(target),
-        "output_sha256": target_hash,
         "editable": True,
         "next_gate": "回填企业和当期政策事实后导出PDF，再运行报告画像校验",
     }

@@ -144,12 +144,31 @@ def validate_patent_item(
     pno = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
     declared_type = str(item.get("type") or "")
     legal_status = str(item.get("legal_status") or item.get("status") or "").strip().lower()
-    if legal_status and any(
-        bad in legal_status
-        for bad in ("审中", "实质审查", "公开", "受理", "失效", "终止", "驳回", "撤回", "放弃", "无效", "pending", "published", "invalid", "expired", "rejected")
-    ) and not any(ok in legal_status for ok in ("授权", "有效", "granted", "valid")):
+    # Negation/termination/pending tokens ALWAYS take precedence over substrings like "授权" (e.g. "未授权，已公开", "授权后终止")
+    negative_status_tokens = (
+        "未授权", "不授权", "授权后终止", "终止", "失效", "驳回", "撤回", "放弃", "无效",
+        "审中", "实质审查", "等待实审", "公开未授权", "仅公开",
+        "pending", "published", "invalid", "expired", "rejected", "terminated", "withdrawn", "abandoned",
+    )
+    if legal_status and (
+        any(bad in legal_status for bad in negative_status_tokens)
+        or ("公开" in legal_status and "授权" not in legal_status)
+    ):
         issues.append(f"专利 {pno or '未编号'} 当前法律状态为「{item.get('legal_status') or item.get('status')}」，未处于有效授权状态，不得计入有效知识产权")
         return issues
+    gdate_raw = str(item.get("grant_date") or "").strip()
+    if gdate_raw:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", gdate_raw):
+            issues.append(f"专利 {pno or '未编号'} grant_date 日期格式无效：{gdate_raw}")
+            return issues
+        try:
+            gd = date.fromisoformat(gdate_raw)
+            if gd > ref_date:
+                issues.append(f"专利 {pno or '未编号'} 授权公告日 {gd.isoformat()} 晚于核验基准日 {ref_date.isoformat()}，不得计入当前有效知识产权")
+                return issues
+        except ValueError:
+            issues.append(f"专利 {pno or '未编号'} grant_date 日期无效：{gdate_raw}")
+            return issues
     # Chinese application/ZL number format: (ZL|CN)? YYYY T NNNNNNN(.X)
     m = re.search(r"(?:ZL|CN)?((?:19|20)\d{2})(\d)\d{7}(?:\.[\dX])?", pno)
     if not m:

@@ -90,7 +90,14 @@ def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[s
         else:
             for g_name, g_val in hg.items():
                 if isinstance(g_val, dict):
-                    passed_gate = g_val.get("pass") is True or str(g_val.get("status", "")).strip().lower() in {"pass", "passed", "通过", "达标"}
+                    p_flag = g_val.get("pass")
+                    st_str = str(g_val.get("status", "")).strip().lower()
+                    st_pass = st_str in {"pass", "passed", "通过", "达标"}
+                    st_fail = st_str in {"fail", "failed", "未通过", "不通过", "不达标", "未达标"}
+                    if (p_flag is False and st_pass) or (p_flag is True and st_fail):
+                        errors.append(f"硬门槛 {g_name} 内部状态自相矛盾（pass={p_flag!r}, status={st_str!r}）")
+                        continue
+                    passed_gate = (p_flag is True and not st_fail) or (p_flag is None and st_pass)
                 else:
                     passed_gate = (
                         g_val is True

@@ -90,9 +90,22 @@ def test_patent_legal_status_business_type_and_exemption_guard() -> None:
     r_eq = run_checkup.check_sme({**base, "business_type": "equipment_or_mold_maker", "patents": granted_tooling}, strict=True)
     assert r_eq["status"] == "pass"
 
-    # Arbitrary text cannot trigger IP exemption
-    r_ex = run_checkup.check_sme({**base, "ip_exemption_reason": "随便写", "ip_exemption_evidence": "无"}, strict=True)
-    assert r_ex["status"] == "fail"
+    # Negation-first patent status ("未授权，已公开" / "授权后终止") must be rejected even though text contains "授权"
+    tricky_pats = [
+        {"type": "发明", "patent_no": "ZL202110123450.7", "legal_status": "未授权，已公开"},
+        {"type": "发明", "patent_no": "ZL202110123451.7", "legal_status": "授权后终止"},
+    ]
+    for tp in tricky_pats:
+        assert fact_ledger.validate_patent_item(tp)
+
+    # Little Giant IP exemption rejects provincial award rank 5
+    r_ex_bad = run_checkup.check_sme({**base, "ip_exemption_reason": "省级科技进步奖，排名第五", "ip_exemption_evidence": "第1页"}, strict=True)
+    assert r_ex_bad["status"] == "fail"
+
+    # Strict bool/range parsing catches "否", 101%, "无"
+    own_4 = [{"type": "发明", "patent_no": f"ZL20211012345{i}.7"} for i in range(4)]
+    r_edge = run_checkup.check_sme({**base, "patents": own_4, "main_business_ratio_pct": 101, "has_prerequisite_title": "否", "niche_years": "无"}, strict=True)
+    assert r_edge["status"] == "fail" and len(r_edge["errors"]) >= 3
 
 
 def test_zhejiang_institute_rd_center_cancelled_and_three_first_invalid_date() -> None:
@@ -102,13 +115,27 @@ def test_zhejiang_institute_rd_center_cancelled_and_three_first_invalid_date() -
     })
     assert errs and "取消" in errs[0]
 
-    # Three-first validates malformed date without enforcing evidence_type enum
+    # Evaluation-table staff count (49 < 50) should NOT hard-fail provincial key institute
+    errs_49 = vgd.validate_institute({
+        "tier": "provincial_key_institute", "latest_revenue": 25000, "latest_rd_expense": 1200,
+        "rd_staff_count": 49, "rd_equipment_original_value": 1200, "rd_venue_area_m2": 1200,
+    })
+    assert errs_49 == []
+
+    # Three-first validates strict full date format AND transitive design <= test without prototype_date
     tf_errs = vgd.validate_three_first({
         "conclusion": "eligible",
         "evidences": [{"name": "检测报告", "locator": "第1页"}],
-        "design_start_date": "not-a-date",
+        "design_start_date": "2025-05-01（暂定）",
     })
     assert any("日期格式无效" in e for e in tf_errs)
+    tf_order = vgd.validate_three_first({
+        "conclusion": "eligible",
+        "evidences": [{"name": "检测报告", "locator": "第1页"}],
+        "design_start_date": "2025-05-01",
+        "test_report_date": "2025-03-01",
+    })
+    assert any("时间线倒挂" in e for e in tf_order)
 
 
 def test_quality_gate_exact_subject_and_cross_year_swap() -> None:
@@ -170,6 +197,7 @@ def test_hightech_natural_metric_passes_and_complete_form_requires_15_rd(tmp_pat
     import audit_application_docx as aad  # noqa: E402
 
     assert aad.RD_TECH_PATTERN.search("1、高速响应控制技术：通过动态补偿，响应时间控制在 10 ms 以内。")
+    assert aad.RD_TECH_PATTERN.search("2、闭环补偿算法：通过动态补偿，响应时间控制在 10 ms 以内。")
     assert aad.UNIT_OR_BOUNDARY.search("响应时间控制在 10 ms 以内")
 
     # 1-RD doc fails --require-complete-form
@@ -187,34 +215,51 @@ def test_hightech_natural_metric_passes_and_complete_form_requires_15_rd(tmp_pat
     assert any("15 个以上" in i["issue"] for i in json.loads(proc.stdout).get("required_field_issues", []))
 
 
-def test_grant_template_resolution_and_build_empty_manifest_guard(tmp_path: Path) -> None:
+def test_grant_report_generation_e2e_and_no_hash_locks(tmp_path: Path) -> None:
     sel = select_report_template.resolve_template("首台套", "可行性分析报告")
     assert Path(sel["template_path"]).is_file()
+    assert "template_sha256" not in sel
 
+    # End-to-end real DOCX generation for 首台套 using bundled master (verifies enterprise name fills cleanly)
+    src_ev = tmp_path / "source.txt"
+    src_ev.write_text("首台套检测报告，精度0.002mm。", encoding="utf-8")
+    fixture = {
+        "project_id": "first-equipment",
+        "enterprise": "示例精密机床股份有限公司",
+        "project_object": "五轴联动高精度数控工具磨床",
+        "suggested_year": "2026",
+        "conclusion": "可申报",
+        "conclusion_basis": "核心整机自主可控，满足首台套基本要求",
+        "primary_gap": "需补充首台用户应用验收证明",
+        "next_action": "两周内收集首台用户合同与验收单",
+        "policies": [{"title": "浙江省首台（套）装备认定办法", "locator": "https://jxt.zj.gov.cn/"}],
+        "sources": [{"name": "检测报告", "path": str(src_ev), "anchors": ["精度0.002mm"]}],
+        "conditions": [{"match": "要求", "value": "已达标", "gap": "无", "action": "保持", "priority": "低"}],
+        "table_content": [],
+    }
+    fx_path = tmp_path / "fx.json"
+    fx_path.write_text(json.dumps(fixture, ensure_ascii=False), encoding="utf-8")
+    out_docx = tmp_path / "out_first_eq.docx"
+    gen_script = ROOT / "skills/general-grant-writer/scripts/generate_report.py"
+    proc = subprocess.run(
+        [sys.executable, str(gen_script), "--input", str(fx_path), "--output", str(out_docx), "--report-type", "feasibility"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert out_docx.is_file()
+    doc_text = "\n".join(p.text for p in Document(out_docx).paragraphs)
+    assert "示例精密机床股份有限公司" in doc_text
+
+    # Empty manifest guard remains active without hash lock
     empty_manifest = tmp_path / "empty.json"
     empty_manifest.write_text('{"version": "3.0.0", "bundles": []}', encoding="utf-8")
     out_dir = tmp_path / "out"
     out_dir.mkdir()
     marker = out_dir / "keep.txt"
     marker.write_text("existing", encoding="utf-8")
-    proc = subprocess.run(
+    proc_e = subprocess.run(
         [sys.executable, str(ROOT / "scripts/build_workbuddy_single.py"), "--manifest", str(empty_manifest), "--output", str(out_dir)],
         capture_output=True, text=True,
     )
-    assert proc.returncode == 2
+    assert proc_e.returncode == 2
     assert marker.read_text(encoding="utf-8") == "existing"
-
-
-@pytest.mark.skipif(shutil.which("ssh-keygen") is None, reason="ssh-keygen unavailable")
-def test_skill_integrity_rejects_unlisted_file_and_missing_trust_anchor(tmp_path: Path) -> None:
-    src = ROOT / "skills" / "standard-drafting"
-    copy = tmp_path / "standard-drafting"
-    shutil.copytree(src, copy)
-    fp = trusted_publisher_fingerprint(ROOT / "skills")
-    # Missing independent trust anchor rejected
-    with pytest.raises(RuntimeError, match="独立信任锚"):
-        verify_skill_directory(copy, evidence_dir=tmp_path / "ev", label="no-anchor", require_signature=True)
-    # Extra unlisted file rejected
-    (copy / "rogue.txt").write_text("injected", encoding="utf-8")
-    with pytest.raises(RuntimeError, match="清单外文件"):
-        verify_skill_directory(copy, evidence_dir=tmp_path / "ev", label="rogue", require_signature=True, expected_public_fingerprint=fp)

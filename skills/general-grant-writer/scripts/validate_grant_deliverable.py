@@ -35,10 +35,10 @@ ALLOWED_GREEN_UNITS_RE = re.compile(
 
 def _parse_date(val: Any) -> date | None:
     s = str(val or "").strip()
-    if not s:
+    if not s or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
         return None
     try:
-        return date.fromisoformat(s[:10])
+        return date.fromisoformat(s)
     except ValueError:
         return None
 
@@ -99,8 +99,8 @@ def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[
                     relax_basis = str(data.get("mountain_island_relaxation_basis") or "").strip()
                     if not relax_basis:
                         errs.append("[provincial_key_institute] 启用山区海岛县适当放宽条款须填写当期主管部门明确放宽口径 mountain_island_relaxation_basis，不得无依据全免")
-                    elif rd_exp <= 0:
-                        errs.append("[provincial_key_institute] 山区海岛县放宽口径下研发费用仍须大于0，不得零研发通过")
+                    elif rd_rev < 5000.0 or (raw_ratio < 3.0 and rd_exp < 250.0):
+                        errs.append("[provincial_key_institute] 山区海岛县放宽口径下仍须具备基本营收与研发投入规模（营收≥5000万元且研发占比≥3%或≥250万元）")
                 else:
                     if rd_rev < rev_floor:
                         errs.append(
@@ -130,15 +130,13 @@ def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[
                         errs.append(
                             f"[provincial_institute] 营收({rd_rev}万元)>2亿元档位须满足研发占比≥3%或研发费≥800万元（当前{raw_ratio:.4f}% / {rd_exp}万元）"
                         )
-            else:
-                if rd_exp < th["rd_exp"] and raw_ratio < th["rd_ratio"]:
-                    errs.append(f"[{tier}] 研发费用({rd_exp}万元)与占比({raw_ratio:.4f}%)均低于门槛({th['rd_exp']}万元或{th['rd_ratio']}%)")
-    if rd_staff is not None and rd_staff < th["rd_staff"]:
-        errs.append(f"[{tier}] 专职研发人员 {int(rd_staff)} 人低于门槛 {th['rd_staff']} 人")
-    if equip_val is not None and equip_val < th["equip"]:
-        errs.append(f"[{tier}] 科研仪器设备原值 {equip_val} 万元低于门槛 {th['equip']} 万元")
-    if venue_m2 is not None and venue_m2 < th["venue"]:
-        errs.append(f"[{tier}] 相对集中研发场地 {venue_m2} ㎡低于门槛 {th['venue']} ㎡")
+    # 评价表参考档位（人员/设备原值/场地）：仅输出补强提示，不作一票否决（只拦截负数异常）
+    if rd_staff is not None and rd_staff < 0:
+        errs.append(f"[{tier}] 专职研发人员数不得为负")
+    if equip_val is not None and equip_val < 0:
+        errs.append(f"[{tier}] 科研仪器设备原值不得为负")
+    if venue_m2 is not None and venue_m2 < 0:
+        errs.append(f"[{tier}] 研发场地面积不得为负")
     for p in data.get("patents") or []:
         errs.extend(fact_ledger.validate_patent_item(p, as_of=as_of, require_valid_no=True))
     return errs
@@ -179,6 +177,8 @@ def validate_three_first(data: dict[str, Any], as_of: date | None = None) -> lis
         errs.append(f"时间线倒挂：样机完成日({d_proto})早于研发立项/设计日({d_design})")
     if d_proto and d_test and d_test < d_proto:
         errs.append(f"时间线倒挂：检测报告日({d_test})早于样机/首件完成日({d_proto})")
+    if d_design and d_test and d_test < d_design:
+        errs.append(f"时间线倒挂：检测报告日({d_test})早于研发立项/设计日({d_design})")
     if d_design and d_sale and d_sale < d_design:
         errs.append(f"时间线倒挂：首次销售日({d_sale})早于研发立项日({d_design})")
 

@@ -42,6 +42,21 @@ def _finite_float(val: Any) -> float | None:
         return None
 
 
+def _parse_strict_bool(val: Any) -> bool | None:
+    """Parse boolean values strictly without Python's bool('否') == True pitfall."""
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)) and val in (0, 1):
+        return bool(val)
+    if isinstance(val, str):
+        s = val.strip().lower()
+        if s in {"true", "yes", "y", "1", "是", "有", "已取得", "已认定", "达标", "通过"}:
+            return True
+        if s in {"false", "no", "n", "0", "否", "无", "未", "未取得", "未认定", "不达标", "不通过"}:
+            return False
+    return None
+
+
 def _eval_patents(
     patents: list[dict[str, Any]],
     ref_date: date,
@@ -495,14 +510,24 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
     policy_min_i_class = 4 if is_little_giant else 1
     exempt_reason = str(data.get("ip_exemption_reason") or "").strip()
     exempt_evidence = str(data.get("ip_exemption_evidence") or "").strip()
-    valid_exempt_keywords = (
-        ("国家级", "科技奖", "科技进步奖", "技术发明奖", "自然科学奖")
-        if is_little_giant
-        else ("国家级", "省部级", "省级", "科技奖", "研发机构", "企业研究院", "重点实验室", "技术中心", "工程研究中心")
-    )
-    exemption_ok = bool(exempt_reason) and bool(exempt_evidence) and any(k in exempt_reason for k in valid_exempt_keywords)
+    bad_rank = bool(re.search(r"第[四五六七八九十4-9]|排名[第]?[四五六七八九十4-9]", exempt_reason))
+    if is_little_giant:
+        # Little Giant statutory exemption requires National-level S&T award top-3 within 3 years
+        reason_valid = (
+            ("国家级" in exempt_reason or "国家科技" in exempt_reason or "国家技术发明" in exempt_reason or "国家自然科学" in exempt_reason)
+            and any(k in exempt_reason for k in ("科技奖", "科技进步奖", "技术发明奖", "自然科学奖", "奖励"))
+            and not any(k in exempt_reason for k in ("省级", "市级", "县级", "区级"))
+            and not bad_rank
+        )
+    else:
+        reason_valid = (
+            any(k in exempt_reason for k in ("国家级", "省部级", "省级"))
+            and any(k in exempt_reason for k in ("科技奖", "科技进步奖", "研发机构", "企业研究院", "重点实验室", "技术中心", "工程研究中心"))
+            and not bad_rank
+        )
+    exemption_ok = bool(exempt_reason) and bool(exempt_evidence) and reason_valid
     if (exempt_reason or exempt_evidence) and not exemption_ok:
-        errors.append("ip_exemption_reason 须写明法定免除事由（如国家级/省部级科技奖排名前三或省级以上研发机构）并附证明材料，不得用任意文本触发豁免")
+        errors.append("ip_exemption_reason 不符合法定免除条件（小巨人仅认近三年国家级科技奖励排名前三，省专认省部级以上科技奖励前三或省级以上研发机构）")
     effective_min_ip = 0 if exemption_ok else policy_min_i_class
     business_type = str(
         data.get("business_type")
@@ -568,31 +593,48 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
     if data.get("quality_score") not in (None, ""):
         warnings.append("发展质量评价分属于主管平台/评审体系，本工具不测分、不保通过，仅围绕客观硬门槛与短板提供补强建议")
 
-    if "has_prerequisite_title" in data and data.get("has_prerequisite_title") is not None:
-        ok_pre = bool(data.get("has_prerequisite_title"))
-        gates["prerequisite_title"] = {"pass": ok_pre}
-        if not ok_pre:
-            need = "省级专精特新中小企业" if is_little_giant else "科技和创新型中小企业"
-            errors.append(f"未取得前置梯度称号（{need}），不满足申报条件")
+    if "has_prerequisite_title" in data and data.get("has_prerequisite_title") not in (None, ""):
+        parsed_pre = _parse_strict_bool(data.get("has_prerequisite_title"))
+        need = "省级专精特新中小企业" if is_little_giant else "科技和创新型中小企业"
+        if parsed_pre is None:
+            gates["prerequisite_title"] = {"pass": False, "detail": f"无法解析值：{data.get('has_prerequisite_title')!r}"}
+            errors.append(f"前置梯度称号字段 has_prerequisite_title 值无效：{data.get('has_prerequisite_title')!r}")
+        else:
+            gates["prerequisite_title"] = {"pass": parsed_pre}
+            if not parsed_pre:
+                errors.append(f"未取得前置梯度称号（{need}），不满足申报条件")
 
-    mb_ratio = _finite_float(data.get("main_business_ratio_pct"))
-    if mb_ratio is None and data.get("main_business_revenue") is not None and rev_latest and rev_latest > 0:
+    raw_mb = data.get("main_business_ratio_pct")
+    mb_ratio = _finite_float(raw_mb)
+    if raw_mb not in (None, "") and mb_ratio is None:
+        gates["main_business_ratio"] = {"pass": False, "detail": f"主营占比非有效数字：{raw_mb!r}"}
+        errors.append(f"main_business_ratio_pct 非有效数字：{raw_mb!r}")
+    elif mb_ratio is None and data.get("main_business_revenue") is not None and rev_latest and rev_latest > 0:
         mb_rev = _finite_float(data.get("main_business_revenue"))
         if mb_rev is not None:
             mb_ratio = mb_rev / rev_latest * 100.0
     mb_floor = 90.0 if is_little_giant else 80.0
     if mb_ratio is not None:
-        ok_mb = mb_ratio >= mb_floor
-        gates["main_business_ratio"] = {"pass": ok_mb, "ratio_pct": round(mb_ratio, 4), "min_pct": mb_floor}
-        if not ok_mb:
-            errors.append(f"主营业务收入占比 {mb_ratio:.2f}% 低于2026版2号文 {int(mb_floor)}% 红线")
+        if mb_ratio < 0.0 or mb_ratio > 100.0:
+            gates["main_business_ratio"] = {"pass": False, "ratio_pct": round(mb_ratio, 4), "min_pct": mb_floor}
+            errors.append(f"主营业务收入占比 {mb_ratio:.2f}% 超出 0%—100% 合理范围，请核对审计口径")
+        else:
+            ok_mb = mb_ratio >= mb_floor
+            gates["main_business_ratio"] = {"pass": ok_mb, "ratio_pct": round(mb_ratio, 4), "min_pct": mb_floor}
+            if not ok_mb:
+                errors.append(f"主营业务收入占比 {mb_ratio:.2f}% 低于2026版2号文 {int(mb_floor)}% 红线")
 
-    niche_years = _finite_float(data.get("niche_years"))
-    if niche_years is not None:
-        ok_ny = niche_years >= 3.0
-        gates["niche_years"] = {"pass": ok_ny, "years": niche_years, "min_years": 3}
-        if not ok_ny:
-            errors.append(f"从事特定细分市场仅 {niche_years:g} 年，不满3年红线")
+    raw_ny = data.get("niche_years")
+    if raw_ny not in (None, ""):
+        niche_years = _finite_float(raw_ny)
+        if niche_years is None or niche_years < 0:
+            gates["niche_years"] = {"pass": False, "detail": f"细分市场年限非有效数字：{raw_ny!r}"}
+            errors.append(f"niche_years 非有效数字：{raw_ny!r}")
+        else:
+            ok_ny = niche_years >= 3.0
+            gates["niche_years"] = {"pass": ok_ny, "years": niche_years, "min_years": 3}
+            if not ok_ny:
+                errors.append(f"从事特定细分市场仅 {niche_years:g} 年，不满3年红线")
 
     if is_little_giant and (data.get("market_share_pct") is not None or data.get("domestic_rank") is not None):
         ms_pct = _finite_float(data.get("market_share_pct"))
@@ -751,17 +793,28 @@ def main() -> int:
                 out["status"] = "backend_error"
                 out["errors"].append(f"本地政策检索后端不可用：{rag_res['error']}")
             else:
-                invalid_statuses = {"expired", "repealed", "superseded", "invalid", "historical_reference", "废止", "失效"}
+                invalid_statuses = {
+                    "expired", "repealed", "superseded", "invalid", "historical_reference",
+                    "废止", "已废止", "失效", "过期", "历史参考", "停用",
+                }
                 valid_hits = []
                 dropped_region = 0
                 dropped_invalid = 0
+                dropped_no_source = 0
                 target_scopes = set(region_scope["scopes"]) if region_scope else set()
                 target_prov = region_scope.get("province", "") if region_scope else ""
                 target_city = region_scope.get("city", "") if region_scope else ""
                 for item in rag_res.get("results", []):
                     vstat = str(item.get("validity_status") or "").strip().lower()
-                    if vstat in invalid_statuses:
+                    if vstat in invalid_statuses or any(tok in vstat for tok in ("废止", "失效", "历史参考", "superseded", "expired")):
                         dropped_invalid += 1
+                        continue
+                    has_source = any(
+                        str(item.get(k) or "").strip()
+                        for k in ("source", "source_url", "url", "doc_no", "file_path", "path", "title")
+                    )
+                    if not has_source:
+                        dropped_no_source += 1
                         continue
                     if region_scope:
                         item_region_text = f"{item.get('region') or ''} {item.get('title') or ''}"

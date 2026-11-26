@@ -443,13 +443,17 @@ def _fallback_for_placeholder(token: str, context: str, fixture: dict[str, Any])
     hint = token.strip("［］")
     combined = context + hint
     primary_source = primary_source_name(fixture)
+    if any(word in hint for word in ("企业全称", "企业名称", "申报企业")) or (hint == "填写" and "企业" in context):
+        return str(fixture["enterprise"])
+    if any(word in hint for word in ("评估结论", "申报结论", "总体结论")):
+        return str(fixture["conclusion"])
     if hint == "填写并注明来源":
         return "同行数据未取得，来源待补充"
     if hint in ("政府公示同类企业", "行业代表产品"):
         return "可比对象待检索核验"
     if any(word in combined for word in ("申报年度", "完成年度")):
         return str(fixture["suggested_year"])
-    if any(word in combined for word in ("产品", "申报对象")):
+    if any(word in combined for word in ("产品", "申报对象", "核心对象")):
         return str(fixture["project_object"])
     if any(word in combined for word in ("文件、页码", "文件或台账", "证据", "来源")):
         return primary_source
