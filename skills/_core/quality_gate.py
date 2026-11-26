@@ -155,7 +155,7 @@ def audit_formal_text(
             decl_co = COMPANY_PREFIX_STRIP_RE.sub("", m_decl.group(1).strip())
             norm_decl = re.sub(r"[\s（）()]+", "", decl_co)
             declarant_spans.append((m_decl.start(1), m_decl.end(1)))
-            if len(decl_co) >= 6 and norm_decl != exp_clean and not norm_decl.endswith(exp_clean):
+            if len(decl_co) >= 6 and norm_decl not in allow_clean:
                 foreign_block.add(decl_co)
 
         # Pass 2: Remaining entity mentions evaluated strictly by immediate local role prefix/suffix (e.g., "购自乙方有限公司")
@@ -249,8 +249,27 @@ def _extract_metric_bindings(text: str) -> dict[str, Counter[str]]:
     return bindings
 
 
+YEAR_METRIC_BIND_RE = re.compile(
+    r"(20\d{2})\s*年[^。；\n]{0,20}?"
+    r"(研发费用?|研发投入|设备费用?|材料费用?|营业收入|主营业务收入|营收|净利润|利润总额|资产总额|负债总额|净资产|高新收入|科技人员)\s*(?:为|达|达到|约|共|共计|合计|[:：=])?\s*"
+    r"((?:(?:[+\-−－±≤≥<>]|负)\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:万元|亿元|千元|元|%|‰|人|名)?)"
+)
+
+
+def _extract_year_metric_bindings(text: str) -> dict[tuple[str, str], Counter[str]]:
+    bindings: dict[tuple[str, str], Counter[str]] = {}
+    for m in YEAR_METRIC_BIND_RE.finditer(text or ""):
+        year = m.group(1)
+        label = m.group(2).rstrip("用")
+        if label == "研发投入":
+            label = "研发费"
+        val = _normalize_num_token(m.group(3))
+        bindings.setdefault((year, label), Counter())[val] += 1
+    return bindings
+
+
 def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: int = 0) -> dict[str, Any]:
-    """Strict humanizer rewrite audit: preserves signs (incl. Chinese 负), units, multiplicity, and metric-to-value bindings."""
+    """Strict humanizer rewrite audit: preserves signs (incl. Chinese 负), units, multiplicity, and metric/year-to-value bindings."""
     errors: list[dict[str, Any]] = []
     src_nums = _extract_num_tokens(source_text)
     new_nums = _extract_num_tokens(rewritten_text)
@@ -270,6 +289,16 @@ def audit_rewrite_fidelity(source_text: str, rewritten_text: str, *, max_chars: 
             swapped.append(f"{label}: 原{list(src_bind[label].elements())} -> 改{list(new_bind[label].elements())}")
     if swapped:
         errors.append({"rule": "metric_value_swap", "issue": f"润色篡改或对调了指标对应数值：{swapped[:6]}"})
+
+    # Detect cross-year swaps (e.g., swapping 2024 and 2025 R&D expense amounts)
+    src_ybind = _extract_year_metric_bindings(source_text)
+    new_ybind = _extract_year_metric_bindings(rewritten_text)
+    year_swapped = []
+    for key in sorted(set(src_ybind) & set(new_ybind)):
+        if src_ybind[key] != new_ybind[key]:
+            year_swapped.append(f"{key[0]}年{key[1]}: 原{list(src_ybind[key].elements())} -> 改{list(new_ybind[key].elements())}")
+    if year_swapped:
+        errors.append({"rule": "year_value_swap", "issue": f"润色跨年对调了指标对应数值：{year_swapped[:6]}"})
 
     # Check fabricated superlative claims not present in source
     added_claims = [c for c in FORBIDDEN_UNGROUNDED_CLAIMS if c in rewritten_text and c not in source_text]

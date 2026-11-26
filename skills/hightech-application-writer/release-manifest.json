@@ -23,7 +23,7 @@
     "references/summary-table-contract.md": "67c0ca84a1e9c40924f576957ee42c61626719999a03f79a7ca71aa708f64e50",
     "references/v1.3.1-release-plan.md": "cdc2f79628813ae6d22a341fdb305560d6e6e9ae8f4d5fb67d3d7e07eefed3a7",
     "references/writing-rules.md": "7871727936e421bba367d496403e9c6b5af2ccf4ccabebb30cbe7f2136c1b6c2",
-    "scripts/audit_application_docx.py": "01b4007c85a20b898305f61c3cab1ee32574d2f6cb46c203bd108c4249440ede",
+    "scripts/audit_application_docx.py": "61e72bec9e1166c845bdd1b4282bf6ce18dbd5245ec93a6ca1851deeb23135aa",
     "scripts/document_format_detection.py": "4c56893a113198c9429e236fa62a91cfd6c50fa481dbc57430f8203b33c981d5",
     "scripts/expand_rd_ps_tables.py": "42bd6def95e2ed1a7a431eaba465b24d78c292fd9f4dc2fe595c695c2b30975f",
     "scripts/expense_values.py": "b0138eaacd77db5ed1213e318ec50241a725c904ae02dcc2ed021f0e196c1e05",
@@ -34,7 +34,11 @@
     "scripts/plan_hightech_inputs.py": "10b375a07180f0ee858a498b8c8d7457f9c017e35a6026baa4cc7a6bc731fb46",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
     "scripts/rd_ps_codes.py": "b2dee2de1477e569bb80c8c8aa021a6303348b289ac546a0e21af0664e1705a2",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_audit_application_docx.py": "c72e77acc1d1ba9e48490b9af1255e7d0b1b32857d7c5bc56959abd567ecd6b6",
+    "tests/test_delivery_envelope.py": "49c58040785e51e5c004d5a5cca83ce447981390b19c8991a3b2ee1766c71abc",
+    "tests/test_expand_rd_ps_tables.py": "28551c04cca719cb3094dcfec250059ebba05a14bb214346c8a6785edb205496",
+    "tests/test_import_batch.py": "cf95f19e7a7433485f97c1e040ee5614003a7b06ca1b4d9a642665f5201efbea"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

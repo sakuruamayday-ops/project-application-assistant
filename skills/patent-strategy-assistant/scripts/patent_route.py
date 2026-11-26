@@ -32,7 +32,7 @@ PREEXAM_CENTER_POOL = [
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--intent", required=True, choices=ROUTES)
-    p.add_argument("--jurisdiction")
+    p.add_argument("--jurisdiction", default="中国")
     p.add_argument("--cutoff", default=date.today().isoformat())
     p.add_argument("--source", action="append", default=[])
     p.add_argument("--confidentiality", default="内部")
@@ -40,10 +40,15 @@ def main():
     p.add_argument("--out")
     a = p.parse_args()
     missing = []
-    if not a.jurisdiction:
+    if not str(a.jurisdiction or "").strip():
         missing.append("jurisdiction")
     if not a.cutoff:
         missing.append("cutoff_date")
+    else:
+        try:
+            date.fromisoformat(str(a.cutoff)[:10])
+        except ValueError:
+            missing.append(f"invalid_cutoff_date:{a.cutoff}")
     if not a.source:
         missing.append("evidence_sources")
     skill, phases = ROUTES[a.intent]

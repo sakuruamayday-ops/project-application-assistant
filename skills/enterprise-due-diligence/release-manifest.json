@@ -80,7 +80,8 @@
     "scripts/render_standard_pdf.py": "2a2c40c0eaec85079d4de1c23abf9d42466410d3ec682c37bc027e06f1a4b556",
     "scripts/score_public_evidence.py": "bc6f2c1657cb38b42c2f49912e3443258798d952a836a06d589b9204d7d9a2f5",
     "scripts/validate_report_pdf.py": "58c71a5c60b2a0adc3cd2715c8eee7fe44deea0471a1fb4869b2da356919c41a",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_standard_system_fonts.py": "bae29fc64afc14e88d502eb28661381e5441b91cb3208cfe87881729aa51d220"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

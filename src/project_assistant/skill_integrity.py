@@ -209,6 +209,9 @@ def verify_skill_directory(
     declared = manifest.get("files")
     if not isinstance(declared, dict) or not declared:
         raise RuntimeError(f"{label}发布清单没有文件哈希")
+    mutable_paths = [
+        str(value) for value in manifest.get("mutable_paths", [])
+    ]
     errors: list[str] = []
     for relative, expected in declared.items():
         path = skill_dir / str(relative)
@@ -219,6 +222,11 @@ def verify_skill_directory(
     for relative in manifest.get("required_paths", []):
         if not (skill_dir / str(relative)).exists():
             errors.append(f"缺少必需路径：{relative}")
+    actual_tree = tree_hashes(skill_dir, mutable_paths=mutable_paths)
+    allowed_names = set(declared.keys()) | SIGNATURE_FILES
+    unexpected_files = sorted(rel for rel in actual_tree if rel not in allowed_names)
+    if unexpected_files:
+        errors.append("发现未登记的清单外文件：" + "、".join(unexpected_files[:10]))
     if errors:
         raise RuntimeError(f"{label}完整性校验失败：" + "；".join(errors))
 
@@ -232,6 +240,14 @@ def verify_skill_directory(
         raise RuntimeError(f"{label}签名材料不完整：" + "、".join(missing))
     if require_signature or present:
         metadata = load_json(signature_paths["release-signature.json"])
+        resolved_fp = expected_public_fingerprint
+        if not resolved_fp and (skill_dir.parent / "suite-manifest.json").is_file():
+            try:
+                resolved_fp = trusted_publisher_fingerprint(skill_dir.parent)
+            except Exception:
+                resolved_fp = None
+        if not resolved_fp and require_signature:
+            raise RuntimeError(f"{label}缺少独立信任锚 expected_public_fingerprint，拒绝仅凭包内元数据自证验签")
         signature_result = verify_detached_signature(
             payload=manifest_path,
             signature=signature_paths["release-manifest.json.sig"],
@@ -242,11 +258,7 @@ def verify_skill_directory(
             ),
             evidence_dir=evidence_dir,
             label=label,
-            expected_fingerprint=(
-                expected_public_fingerprint
-                or str(metadata.get("public_key_fingerprint") or "")
-                or None
-            ),
+            expected_fingerprint=resolved_fp,
         )
         metadata_fingerprint = str(
             metadata.get("public_key_fingerprint") or ""
@@ -257,9 +269,6 @@ def verify_skill_directory(
             != metadata_fingerprint
         ):
             raise RuntimeError(f"{label}签名元数据的公钥指纹不一致")
-    mutable_paths = [
-        str(value) for value in manifest.get("mutable_paths", [])
-    ]
     return {
         "status": "pass",
         "skill": skill_name,
@@ -267,7 +276,7 @@ def verify_skill_directory(
         "checked_files": len(declared),
         "mutable_paths": mutable_paths,
         "signature": signature_result,
-        "tree_hashes": tree_hashes(skill_dir, mutable_paths=mutable_paths),
+        "tree_hashes": actual_tree,
         "declared_hashes": {
             str(relative): str(expected)
             for relative, expected in declared.items()

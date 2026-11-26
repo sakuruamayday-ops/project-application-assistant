@@ -58,13 +58,15 @@
     "scripts/normalize_patent_records.py": "ab6cfbc37b2e9f33fd59a6ddd2ccdb780719b4223d0c3bc3fcd6bd9d0ce97b60",
     "scripts/patent_case_manifest.py": "6102b29d528faa6870af6252da22c2432240ccf2587331ba7e35adb263f0e50e",
     "scripts/patent_index.py": "505b8d030dd83906b2977c19cab1080591f5e6ff01628954f9d4c01934bc6a9e",
-    "scripts/patent_route.py": "94d6d97ef2a99b9106891688abd90fa2cab7f31ff4b2f7ce7a88ef239c83b733",
+    "scripts/patent_route.py": "0dea88517647b9f82d32676d6c42dfdbf7b6e5a38a4dcdaf23acb6344ac91e9d",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
     "scripts/preexam_evidence.py": "a6366242f9996387dc2c016851758e10e2dd1f8460d80a9006cd34fb80e76b0b",
     "scripts/recommend_preexam_center.py": "40145789072c8a93b285385ff533e5fb3ec9828a3ce303878fd3023e0c2568ce",
     "scripts/render_docx.py": "7684ce104c82f848c2b115c279702c48b8d073b821b3e8bc80947fcd62388943",
     "scripts/safe_temp.py": "b2451d4d5462ac8d85e70027bb757fdcd7284adf42e41b3ed530b91c7f38bda4",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_async_search_checkpoint.py": "907a21b383ce169b77516859a6aa97361b4ca7ef02b995a4962129ca3940d4f7",
+    "tests/test_cnipa_epub_search.py": "297bf9b22d8a97ddfe888d07966895eb81b31b21f45041479d34e4824e6852a1"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

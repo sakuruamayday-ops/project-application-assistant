@@ -25,7 +25,7 @@ from project_assistant.skill_integrity import (  # noqa: E402
 
 DEFAULT_SIGNING_KEY = Path.home() / ".codex" / "skill-signing" / "jiaotang-skill-release-ed25519"
 DEFAULT_PUBLIC_KEY = DEFAULT_SIGNING_KEY.with_suffix(".pub")
-IGNORED_PARTS = {"__pycache__", ".git", "tests"}
+IGNORED_PARTS = {"__pycache__", ".git"}
 IGNORED_NAMES = {".DS_Store"}
 
 

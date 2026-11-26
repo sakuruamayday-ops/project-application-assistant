@@ -27,14 +27,15 @@
     "references/tax-calculation-and-freshness-protocol.md": "a4ddf5c8774f07dda5a7cd60c0527a143b97328d711ed1f4461a35c451b0ba48",
     "scripts/brand_gold_pdf.py": "ece7b8a5a7588ecfe700a261f96279563cfba62ef1b074f613b38b3356802781",
     "scripts/calculate_metrics.py": "5bb174563170a73853e84e76ce261780e02e616e55a25cecf3c9c65d7ea7ffae",
-    "scripts/create_docx_from_text.py": "5fb807b49cb769cfdae7b26c3fd853c25b0ea239e74359c14e3f573cb6904996",
+    "scripts/create_docx_from_text.py": "01fe6b8799c6aabe4ca7256b1baf3aadb640acc43bfa22c9aa62d88880fc9116",
     "scripts/generate_report_html.py": "7456c7e9fc52d804309b69bcf99d50b6bad33eabd1296994ec0c621e0d1a2cb1",
     "scripts/grounded_evidence.py": "ec3b0bab660018b65fdbd445a0d82103c2e160c40572b0384e0be96613f27e91",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
     "scripts/render_pdf_stdout.js": "cf5d50f6ad79301a9385475f4a48d66253c2f6463749abc822eebc5943c6b1f2",
     "scripts/validate_report.py": "c5f0c8e5b585077deaf0d24eb7420405183d99c27a67941dff0f81258f29cce4",
-    "scripts/verify_e2e.py": "41292d104fdd6281643d9f813728add7a38083e6ad06b377c93d3aa2add3b219",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_e2e.py": "c859c9b83186ed6ed5ea0a94ce4ceddae411c8b47345aaf937ba95b322d0ad1a",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_calculate_metrics.py": "8b64288f76f1e9667c467ab2c906bd23a5887cdb30edd6ea589f32fbd1887feb"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

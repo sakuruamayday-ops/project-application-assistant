@@ -24,7 +24,7 @@ def run_checked(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 
 def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
-    tax_root = skills_root / "manufacturing-tax-risk-analysis"
+    tax_root = skills_root / "manufacturing-tax-risk"
 
     required = [
         tax_root / "scripts" / "generate_report_html.py",

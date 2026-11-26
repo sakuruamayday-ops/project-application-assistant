@@ -145,9 +145,18 @@ def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[s
                     errors.append("ai_meta.lockedProduct.unpatentedProcessTags必须为数组")
             tiers = ai_meta.get("patentTierReport")
             if isinstance(tiers, dict):
+                btype = (locked.get("businessType", "ambiguous") if isinstance(locked, dict) else "ambiguous")
                 for key in ("direct_support", "production_support", "weak_or_unrelated"):
                     if key in tiers and not isinstance(tiers[key], list):
                         errors.append(f"ai_meta.patentTierReport.{key}必须为数组")
+                for idx, item in enumerate(tiers.get("direct_support") or []):
+                    if isinstance(item, dict):
+                        st = str(item.get("legal_status") or item.get("status") or "").lower()
+                        if st and any(b in st for b in ("审中", "实质审查", "失效", "终止", "驳回", "pending", "invalid")) and "授权" not in st:
+                            errors.append(f"ai_meta.patentTierReport.direct_support[{idx}]状态为「{st}」，不得列为有效直挂核心专利")
+                        role_txt = str(item.get("role") or item.get("usage") or "").lower()
+                        if btype == "product_or_material_maker" and any(k in role_txt for k in ("production_support", "自用工装", "自用设备", "生产设备")):
+                            errors.append(f"ai_meta.patentTierReport.direct_support[{idx}]为非设备制造企业自用生产工装/设备，应归入production_support")
                 if not tiers.get("direct_support"):
                     warnings.append("direct_support有效核心专利为空，已触发兜底策略并须在Q2列出发明专利补强建议")
             estimates = ai_meta.get("estimatedMetrics", [])

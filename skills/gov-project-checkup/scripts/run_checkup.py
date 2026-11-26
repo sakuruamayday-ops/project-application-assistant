@@ -51,12 +51,16 @@ def _eval_patents(
     require_dominant_link: bool = False,
     require_transfer_holding_1y: bool = False,
     stat_cutoff: date | None = None,
+    business_type: str = "",
 ) -> tuple[list[dict[str, Any]], list[str], list[str], list[str]]:
     errors: list[str] = []
     pending_certs: list[str] = []
     warnings: list[str] = []
     seen_keys: set[str] = set()
     valid: list[dict[str, Any]] = []
+    is_equipment_maker = business_type.strip().lower() in {
+        "equipment_or_mold_maker", "equipment", "mold", "装备制造", "设备制造", "模具制造",
+    }
     for idx, p in enumerate(patents):
         if not isinstance(p, dict):
             errors.append(f"patents[{idx}] 必须为对象")
@@ -75,9 +79,22 @@ def _eval_patents(
             if r_num is None or r_num > 3:
                 errors.append(f"patents[{idx}]({raw_no or '未编号'}) 权利人排名({rank})未进入前三，不得计入")
                 continue
-        if require_dominant_link and p.get("linked_to_dominant_product") is False:
-            errors.append(f"patents[{idx}]({raw_no or '未编号'}) 未关联主导产品，不得计入")
-            continue
+        if require_dominant_link:
+            if p.get("linked_to_dominant_product") is False:
+                errors.append(f"patents[{idx}]({raw_no or '未编号'}) 未关联主导产品，不得计入")
+                continue
+            role_text = " ".join(
+                str(p.get(k) or "") for k in ("role", "support_tier", "usage", "category")
+            ).lower()
+            is_self_use_tooling = any(
+                k in role_text
+                for k in ("production_support", "weak_or_unrelated", "自用工装", "自用设备", "生产工装", "自用模具", "制造辅助", "内部生产设备")
+            )
+            if is_self_use_tooling and not is_equipment_maker:
+                warnings.append(
+                    f"patents[{idx}]({raw_no or '未编号'}) 标为自用工装/生产工艺支撑，非设备制造企业不计入主导产品直挂有效I类知产"
+                )
+                continue
         if stat_cutoff is not None:
             gdate_str = str(p.get("grant_date") or "").strip()
             if gdate_str:
@@ -285,6 +302,24 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: b
     if isinstance(rev_series, list) and len(rev_series) == 3:
         gates["revenue_growth"] = fact_ledger.calc_growth_metrics(rev_series[0], rev_series[1], rev_series[2])
 
+    # Additional High-Tech statutory hard gates when explicitly provided (field, innovation score >70, no major accident)
+    if "in_supported_field" in data and data.get("in_supported_field") is not None:
+        ok_field = bool(data.get("in_supported_field"))
+        gates["supported_field"] = {"pass": ok_field}
+        if not ok_field:
+            errors.append("主要产品（服务）发挥核心支持作用的技术不属于《国家重点支持的高新技术领域》规定范围")
+    if "innovation_score" in data and data.get("innovation_score") not in (None, ""):
+        inn_score = _finite_float(data.get("innovation_score"))
+        ok_inn = inn_score is not None and inn_score > 70.0
+        gates["innovation_score"] = {"pass": ok_inn, "score": inn_score, "min_score_exclusive": 70.0}
+        if not ok_inn:
+            errors.append(f"企业创新能力评价得分({inn_score})未达到高于70分合格要求")
+    if "major_safety_quality_env_accident" in data and data.get("major_safety_quality_env_accident") is not None:
+        has_acc = bool(data.get("major_safety_quality_env_accident"))
+        gates["no_major_accident"] = {"pass": not has_acc}
+        if has_acc:
+            errors.append("申请认定前一年内发生重大安全、重大质量事故或严重环境违法行为（一票否决）")
+
     strict_ok = len(errors) == 0 and len(missing_inputs) == 0
     if errors:
         status = "fail"
@@ -462,11 +497,25 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
 
     # 4. I-Class IP: policy-fixed threshold (cannot be bypassed by caller input without verified statutory exemption)
     policy_min_i_class = 4 if is_little_giant else 1
-    exemption_ok = bool(data.get("ip_exemption_reason")) and bool(data.get("ip_exemption_evidence"))
+    exempt_reason = str(data.get("ip_exemption_reason") or "").strip()
+    exempt_evidence = str(data.get("ip_exemption_evidence") or "").strip()
+    valid_exempt_keywords = (
+        ("国家级", "科技奖", "科技进步奖", "技术发明奖", "自然科学奖")
+        if is_little_giant
+        else ("国家级", "省部级", "省级", "科技奖", "研发机构", "企业研究院", "重点实验室", "技术中心", "工程研究中心")
+    )
+    exemption_ok = bool(exempt_reason) and bool(exempt_evidence) and any(k in exempt_reason for k in valid_exempt_keywords)
+    if (exempt_reason or exempt_evidence) and not exemption_ok:
+        errors.append("ip_exemption_reason 须写明法定免除事由（如国家级/省部级科技奖排名前三或省级以上研发机构）并附证明材料，不得用任意文本触发豁免")
     effective_min_ip = 0 if exemption_ok else policy_min_i_class
+    business_type = str(
+        data.get("business_type")
+        or (data.get("lockedProduct") or {}).get("businessType")
+        or ""
+    ).strip()
     patents = data.get("patents")
     if exemption_ok:
-        gates["i_class_ip"] = {"pass": True, "exempted": True, "reason": data.get("ip_exemption_reason"), "min_required": policy_min_i_class}
+        gates["i_class_ip"] = {"pass": True, "exempted": True, "reason": exempt_reason, "min_required": policy_min_i_class}
     elif not isinstance(patents, list) or not patents:
         gates["i_class_ip"] = {"pass": None if not strict else False, "valid_i_class_count": 0, "min_required": policy_min_i_class}
         missing_inputs.append(f"patents（自主研发I类知识产权≥{policy_min_i_class}项核验）")
@@ -486,6 +535,7 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
             require_dominant_link=True,
             require_transfer_holding_1y=True,
             stat_cutoff=stat_cutoff,
+            business_type=business_type,
         )
         warnings.extend(pending_certs)
         warnings.extend(patent_warnings)
@@ -518,7 +568,7 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
         if i_class_valid < effective_min_ip and (strict or not pending_certs):
             errors.append(f"去重有效自主研发I类知识产权仅 {i_class_valid} 项，低于2026版2号文 {policy_min_i_class} 项硬门槛")
 
-    # 5. Platform quality score (optional if not provided; 60 for Little Giant, 50 for Provincial SME)
+    # 5. Platform quality score & explicit prerequisite / specialization / market-position hard gates
     qscore = _finite_float(data.get("quality_score"))
     score_floor = 60.0 if is_little_giant else 50.0
     if qscore is not None:
@@ -526,6 +576,40 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
         gates["quality_score"] = {"pass": ok_qs, "score": qscore, "min_score": score_floor}
         if not ok_qs:
             errors.append(f"发展质量评价得分 {qscore} 低于2026版2号文 {int(score_floor)} 分合格线")
+
+    if "has_prerequisite_title" in data and data.get("has_prerequisite_title") is not None:
+        ok_pre = bool(data.get("has_prerequisite_title"))
+        gates["prerequisite_title"] = {"pass": ok_pre}
+        if not ok_pre:
+            need = "省级专精特新中小企业" if is_little_giant else "科技和创新型中小企业"
+            errors.append(f"未取得前置梯度称号（{need}），不满足申报条件")
+
+    mb_ratio = _finite_float(data.get("main_business_ratio_pct"))
+    if mb_ratio is None and data.get("main_business_revenue") is not None and rev_latest and rev_latest > 0:
+        mb_rev = _finite_float(data.get("main_business_revenue"))
+        if mb_rev is not None:
+            mb_ratio = mb_rev / rev_latest * 100.0
+    mb_floor = 90.0 if is_little_giant else 80.0
+    if mb_ratio is not None:
+        ok_mb = mb_ratio >= mb_floor
+        gates["main_business_ratio"] = {"pass": ok_mb, "ratio_pct": round(mb_ratio, 4), "min_pct": mb_floor}
+        if not ok_mb:
+            errors.append(f"主营业务收入占比 {mb_ratio:.2f}% 低于2026版2号文 {int(mb_floor)}% 红线")
+
+    niche_years = _finite_float(data.get("niche_years"))
+    if niche_years is not None:
+        ok_ny = niche_years >= 3.0
+        gates["niche_years"] = {"pass": ok_ny, "years": niche_years, "min_years": 3}
+        if not ok_ny:
+            errors.append(f"从事特定细分市场仅 {niche_years:g} 年，不满3年红线")
+
+    if is_little_giant and (data.get("market_share_pct") is not None or data.get("domestic_rank") is not None):
+        ms_pct = _finite_float(data.get("market_share_pct"))
+        d_rank = _finite_float(data.get("domestic_rank"))
+        ok_ms = (ms_pct is not None and ms_pct >= 10.0) or (d_rank is not None and 1.0 <= d_rank <= 3.0)
+        gates["market_position"] = {"pass": ok_ms, "market_share_pct": ms_pct, "domestic_rank": d_rank}
+        if not ok_ms:
+            errors.append(f"细分市场占有率({ms_pct}%)低于10%且国内排名({d_rank})未进入前三，不满足小巨人市场地位门槛")
 
     strict_ok = len(errors) == 0 and len(missing_inputs) == 0
     if errors:

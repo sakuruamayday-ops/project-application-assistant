@@ -18,6 +18,28 @@ from pathlib import Path
 from typing import Any
 
 
+def _has_enterprise_table(db_path: Path) -> bool:
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            row = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='enterprise' LIMIT 1").fetchone()
+            return row is not None
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return False
+
+
+def _pick_preferred_db(candidates: list[Path]) -> Path | None:
+    valid = [p for p in candidates if p.is_file() and p.stat().st_size > 0]
+    if not valid:
+        return candidates[0] if candidates else None
+    ent_dbs = [p for p in valid if _has_enterprise_table(p)]
+    pool = ent_dbs or valid
+    pool.sort(key=lambda p: (p.stat().st_size, p.stat().st_mtime), reverse=True)
+    return pool[0]
+
+
 def _discover_default_db() -> Path:
     explicit_db = os.environ.get("LOCAL_KB_DB_PATH", "").strip()
     if explicit_db:
@@ -26,12 +48,14 @@ def _discover_default_db() -> Path:
     if explicit_root:
         root = Path(explicit_root).expanduser()
         found = sorted((root / "企业数据库" / "data").glob("*.db"))
-        if found:
-            return found[0]
+        picked = _pick_preferred_db(found)
+        if picked:
+            return picked
         return root / "企业数据库" / "data" / "enterprise.db"
     discovered = sorted(Path.home().glob("*/企业数据库/data/*.db"))
-    if discovered:
-        return discovered[0]
+    picked = _pick_preferred_db(discovered)
+    if picked:
+        return picked
     return Path.home() / "LocalKB" / "企业数据库" / "data" / "enterprise.db"
 
 

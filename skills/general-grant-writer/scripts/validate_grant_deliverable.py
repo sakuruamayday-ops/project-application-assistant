@@ -54,11 +54,15 @@ def _finite_float(val: Any) -> float | None:
 
 
 def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[str]:
-    """浙经信高新〔2025〕169号: exact official tiers & unrounded precision for 省重点企业研究院 / 省企业研究院 / 高企研发中心."""
+    """浙经信高新〔2025〕169号: 浙江省级现行仅开放两档（省重点企业研究院 / 省企业研究院），省级高企研发中心已并轨取消。"""
     errs: list[str] = []
     if not isinstance(data, dict) or not data:
         return ["输入数据为空，缺少169号文省级企业研究院核验字段"]
     tier = str(data.get("tier") or "provincial_institute").strip()
+    if tier in {"rd_center", "provincial_rd_center", "高企研发中心", "省级高企研发中心"}:
+        return ["浙江省级高企研发中心申报通道已并轨取消；省级现行仅开放 provincial_key_institute（省重点企业研究院）与 provincial_institute（省企业研究院）两档（原中心仅作为既有基础资质，市县级研发中心按当地当期政策单走）"]
+    if tier not in {"provincial_key_institute", "provincial_institute"}:
+        return [f"未知省级研究院档位：{tier}（仅支持 provincial_key_institute / provincial_institute）"]
     is_agri = bool(data.get("is_agriculture"))
     is_mountain = bool(data.get("is_mountain_island_county"))
     rd_rev = _finite_float(data.get("latest_revenue"))
@@ -77,9 +81,8 @@ def validate_institute(data: dict[str, Any], as_of: date | None = None) -> list[
     thresholds = {
         "provincial_key_institute": {"rd_staff": 50, "equip": 1000, "venue": 1000},
         "provincial_institute": {"rd_staff": 30, "equip": 500, "venue": 500},
-        "rd_center": {"rd_exp": 200, "rd_ratio": 3.0, "rd_staff": 15, "equip": 200, "venue": 200},
     }
-    th = thresholds.get(tier, thresholds["provincial_institute"])
+    th = thresholds[tier]
     if rd_rev is not None and rd_exp is not None:
         if rd_rev <= 0 or rd_exp < 0:
             errs.append(f"[{tier}] 营业收入({rd_rev})须大于0且研发费用({rd_exp})不得为负")
@@ -158,10 +161,20 @@ def validate_three_first(data: dict[str, Any], as_of: date | None = None) -> lis
         if not str(ev.get("locator") or "").strip():
             errs.append(f"evidences[{idx}]（{ev.get('name', '未命名')}）缺少可追溯页码/文件定位 locator（所有结论下均强制核验）")
 
-    d_design = _parse_date(data.get("design_start_date"))
-    d_proto = _parse_date(data.get("prototype_date"))
-    d_test = _parse_date(data.get("test_report_date"))
-    d_sale = _parse_date(data.get("first_sale_date"))
+    parsed_dates: dict[str, date | None] = {}
+    for df in ("design_start_date", "prototype_date", "test_report_date", "first_sale_date"):
+        raw_d = str(data.get(df) or "").strip()
+        if raw_d:
+            pd = _parse_date(raw_d)
+            if pd is None:
+                errs.append(f"{df} 日期格式无效（须为 YYYY-MM-DD）：{raw_d}")
+            parsed_dates[df] = pd
+        else:
+            parsed_dates[df] = None
+    d_design = parsed_dates["design_start_date"]
+    d_proto = parsed_dates["prototype_date"]
+    d_test = parsed_dates["test_report_date"]
+    d_sale = parsed_dates["first_sale_date"]
     if d_design and d_proto and d_proto < d_design:
         errs.append(f"时间线倒挂：样机完成日({d_proto})早于研发立项/设计日({d_design})")
     if d_proto and d_test and d_test < d_proto:

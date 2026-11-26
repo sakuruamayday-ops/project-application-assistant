@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -283,9 +284,74 @@ def _pack_zip(skill_dir: Path, zip_path: Path) -> None:
             archive.writestr(info, data)
 
 
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sign_bundle_index(staging_dir: Path, results: list[dict[str, Any]], version: str) -> None:
+    """Write release-bundles-index.json with per-ZIP SHA-256 & git commit, and Ed25519-sign when signing key is present."""
+    git_rev = ""
+    try:
+        git_rev = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True, check=True
+        ).stdout.strip()
+    except Exception:
+        pass
+    entries = []
+    for r in results:
+        zpath = staging_dir / "zips" / Path(r["zip"]).name
+        entries.append(
+            {
+                "skillName": r["skillName"],
+                "displayName": r["displayName"],
+                "tier": r["tier"],
+                "zip_file": f"zips/{zpath.name}",
+                "zip_sha256": _sha256_file(zpath) if zpath.is_file() else "",
+                "file_count": r["file_count"],
+                "zip_size_kb": r["zip_size_kb"],
+            }
+        )
+    index_payload = {
+        "schema_version": "workbuddy-release-bundles-index/v1",
+        "version": version,
+        "git_commit": git_rev,
+        "bundle_count": len(entries),
+        "bundles": entries,
+    }
+    index_path = staging_dir / "release-bundles-index.json"
+    index_path.write_text(json.dumps(index_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    signing_key = Path.home() / ".codex" / "skill-signing" / "jiaotang-skill-release-ed25519"
+    pub_key = signing_key.with_suffix(".pub")
+    ssh_keygen = shutil.which("ssh-keygen")
+    if signing_key.is_file() and pub_key.is_file() and ssh_keygen:
+        subprocess.run(
+            [ssh_keygen, "-Y", "sign", "-f", str(signing_key), "-n", "workbuddy-bundles-index", str(index_path)],
+            check=True,
+            capture_output=True,
+        )
+        shutil.copy2(pub_key, staging_dir / "publisher-ed25519.pub")
+
+
 def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     version = str(manifest.get("version", "2.0.0"))
+    bundles = manifest.get("bundles")
+    if not isinstance(bundles, list) or len(bundles) == 0:
+        err_payload = {
+            "status": "fail",
+            "version": version,
+            "built_count": 0,
+            "tier_counts": {},
+            "bundles": [],
+            "errors": ["打包清单 bundles 为空，拒绝执行换包以保护现有发布产物"],
+        }
+        print(json.dumps(err_payload, ensure_ascii=False, indent=2), file=sys.stderr)
+        raise SystemExit(2)
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     staging_dir = output_dir.parent / f".{output_dir.name}.staging-{os.getpid()}-{int(time.time() * 1000)}"
     staging_dir.mkdir(parents=True, exist_ok=False)
@@ -293,7 +359,7 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
     results = []
     all_errors: list[str] = []
     try:
-        for bundle in manifest["bundles"]:
+        for bundle in bundles:
             src_dir = REPO_ROOT / bundle["sourceSkill"]
             if not src_dir.is_dir():
                 raise FileNotFoundError(f"源技能目录不存在：{src_dir}")
@@ -377,11 +443,13 @@ def build_all(manifest_path: Path, output_dir: Path, *, strict: bool = True) -> 
             "bundles": results,
             "errors": all_errors,
         }
-        if strict and all_errors:
+        if all_errors:
             print(json.dumps(summary, ensure_ascii=False, indent=2), file=sys.stderr)
             raise SystemExit(2)
 
-        # Atomic-style staged swap: preserve previous output_dir until all 10 bundles pass verification
+        _sign_bundle_index(staging_dir, results, version)
+
+        # Atomic-style staged swap: preserve previous output_dir until all bundles pass verification and index signing
         backup_dir = output_dir.parent / f".{output_dir.name}.prev-{os.getpid()}"
         if backup_dir.exists():
             shutil.rmtree(backup_dir)

@@ -35,12 +35,12 @@ RD_YEAR_FIELDS = ("第一年", "第二年", "第三年")
 EXPENSE_SUBTOTAL = "研究开发费用（内、外部）小计"
 PS_INCOME = "上年度销售收入"
 RD_TECH_PATTERN = re.compile(
-    r"^[12]、.+技术：.+(?:(?:拟定|实测)(?:技术)?指标为|设计(?:控制)?目标(?:为|控制在)|目标控制范围为|控制目标为|实测(?:结果)?为).*\d"
+    r"^[12]、.+技术[：:].*\d"
 )
 UNIT_OR_BOUNDARY = re.compile(
     r"(%|％|秒|分钟|小时|天|毫米|厘米|微米|纳米|千米|米|赫兹|分贝|摄氏度|℃|°C|兆帕|千帕|帕|MPa|kPa|GPa|Pa|"
-    r"mm|cm|μm|um|nm|km|kg|mg|mL|Hz|kHz|MHz|dB|mV|kV|mA|kW|MW|rpm|r/min|RH|目|g/m²|cc/m²|"
-    r"伏|安|瓦|帧|次|个|类|项|套|点|条|±|≤|≥|不低于|不高于|不大于|不小于|不超过|不少于)"
+    r"mm|cm|μm|um|nm|km|kg|mg|mL|ms|μs|us|Hz|kHz|MHz|dB|mV|kV|mA|kW|MW|rpm|r/min|RH|目|g/m²|cc/m²|N/15mm|N·m|"
+    r"伏|安|瓦|帧|次|个|类|项|套|点|条|±|≤|≥|以内|以上|以下|不低于|不高于|不大于|不小于|不超过|不少于)"
 )
 INNOVATION_SECTION_ORDER = (
     "知识产权对企业竞争力的作用",
@@ -928,12 +928,28 @@ def main():
     if effective_strict and len(document.tables) == 0:
         required_issues.append({"section": "整体结构", "issue": "文档不包含任何申请书表格，无法通过严格验收"})
     if args.require_complete_form:
-        if not rd_core_innovation:
+        all_rd_ids = [rid for rid, _, _ in rd_tables(document)]
+        if not all_rd_ids:
             required_issues.append({"section": "研究开发活动", "issue": "整本终审未识别到任何已编号的 RD 研发活动表"})
+        elif len(all_rd_ids) < 15:
+            required_issues.append({
+                "section": "研究开发活动",
+                "issue": f"整本终审仅识别到 {len(all_rd_ids)} 个 RD 研发活动表，低于近三年 15 个以上（每年 5 个以上）的高企成稿目标要求",
+            })
         if not ps_quality:
             required_issues.append({"section": "高新技术产品", "issue": "整本终审未识别到任何已编号的 PS 高新技术产品表"})
         if not innovation_detail or len(innovation_detail) < 4:
             required_issues.append({"section": "企业创新能力", "issue": f"整本终审企业创新能力四栏不完整（当前识别 {len(innovation_detail)}/4 栏）"})
+        has_transform_table = any(
+            "成果转化" in normalized(" ".join(xml_cell_text(c) for r in tbl.rows[:3] for c in physical_cells(r)))
+            for tbl in document.tables
+        )
+        transform_codes = sorted(set(re.findall(r"(?:CG|ZH|KJCG)\s*0*\d+", body_text, re.I)))
+        if not has_transform_table and len(transform_codes) < 15:
+            required_issues.append({
+                "section": "科技成果转化",
+                "issue": "整本终审未识别到科技成果转化汇总表且未见年均 5 项以上（近三年 15 项以上）成果转化编号记录",
+            })
 
     for name, issues in (
         ("required_field", required_issues), ("format", format_issues), ("rd_expense", expense_issues),

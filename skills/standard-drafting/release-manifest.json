@@ -21,7 +21,8 @@
     "scripts/audit_standard_draft.py": "080b38e39d7d67b8995b4c5767379c6c09e39d4eeefb85fb4964efa5d9f5ddd8",
     "scripts/initialize_enterprise_standard.py": "bfe58ac83fb6199bd03eee45f6bd6d0bea1853df1629410fcdcb37fcd701af86",
     "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_audit_standard_draft.py": "2b2df2e2e9d1ae2eac086a52a28270456eb9b09092896e983de2a563cb9f7352"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -26,6 +27,11 @@ try:
     import fcntl
 except ImportError:  # pragma: no cover - Windows fallback
     fcntl = None  # type: ignore[assignment]
+
+try:
+    import msvcrt  # type: ignore[import-not-found]
+except ImportError:  # pragma: no cover - POSIX fallback
+    msvcrt = None  # type: ignore[assignment]
 
 SCHEMA_VERSION = "workbuddy-facts-blackboard/v1"
 VALID_ORIGINS = {"enterprise_source", "ai_design_target", "public_registry", "mcp_verified", "local_kb_verified"}
@@ -137,6 +143,13 @@ def validate_patent_item(
     ref_date = as_of or date.today()
     pno = re.sub(r"\s+", "", str(item.get("patent_no") or item.get("no") or "")).upper()
     declared_type = str(item.get("type") or "")
+    legal_status = str(item.get("legal_status") or item.get("status") or "").strip().lower()
+    if legal_status and any(
+        bad in legal_status
+        for bad in ("审中", "实质审查", "公开", "受理", "失效", "终止", "驳回", "撤回", "放弃", "无效", "pending", "published", "invalid", "expired", "rejected")
+    ) and not any(ok in legal_status for ok in ("授权", "有效", "granted", "valid")):
+        issues.append(f"专利 {pno or '未编号'} 当前法律状态为「{item.get('legal_status') or item.get('status')}」，未处于有效授权状态，不得计入有效知识产权")
+        return issues
     # Chinese application/ZL number format: (ZL|CN)? YYYY T NNNNNNN(.X)
     m = re.search(r"(?:ZL|CN)?((?:19|20)\d{2})(\d)\d{7}(?:\.[\dX])?", pno)
     if not m:
@@ -361,21 +374,72 @@ def _assert_inside_workspace(workspace: Path, target: Path) -> None:
 
 
 @contextmanager
-def blackboard_lock(workspace: Path, company_name: str, credit_code: str = ""):
-    """Exclusive per-subject advisory file lock protecting read-modify-write cycles against concurrent clobber."""
+def blackboard_lock(workspace: Path, company_name: str, credit_code: str = "", *, timeout_sec: float = 15.0):
+    """Cross-platform exclusive per-subject file lock protecting read-modify-write cycles against concurrent clobber."""
     target = blackboard_path(workspace, company_name, credit_code)
     _assert_inside_workspace(workspace, target)
     target.parent.mkdir(parents=True, exist_ok=True)
     lock_path = target.with_name(target.name + ".lock")
     _assert_inside_workspace(workspace, lock_path)
-    with lock_path.open("a+", encoding="utf-8") as fh:
-        if fcntl is not None:
+    if fcntl is not None:
+        with lock_path.open("a+", encoding="utf-8") as fh:
             fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
-        try:
-            yield target
-        finally:
-            if fcntl is not None:
+            try:
+                yield target
+            finally:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+        return
+    if msvcrt is not None:  # pragma: no cover - Windows native locking
+        with lock_path.open("a+b") as fh:
+            fh.seek(0)
+            if fh.tell() == 0 and lock_path.stat().st_size == 0:
+                fh.write(b"0")
+                fh.flush()
+            deadline = time.monotonic() + timeout_sec
+            while True:
+                try:
+                    fh.seek(0)
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"等待主体黑板锁超时：{lock_path.name}")
+                    time.sleep(0.02)
+            try:
+                yield target
+            finally:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+        return
+    # Portable O_CREAT|O_EXCL atomic lockfile fallback (used when neither fcntl nor msvcrt is available)
+    excl_lock = target.with_name(target.name + ".excl.lock")
+    _assert_inside_workspace(workspace, excl_lock)
+    deadline = time.monotonic() + timeout_sec
+    fd: int | None = None
+    while True:
+        try:
+            fd = os.open(str(excl_lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.write(fd, f"{os.getpid()}\n".encode("ascii"))
+            os.close(fd)
+            fd = None
+            break
+        except FileExistsError:
+            try:
+                if time.time() - excl_lock.stat().st_mtime > max(timeout_sec * 2, 30.0):
+                    excl_lock.unlink(missing_ok=True)
+                    continue
+            except OSError:
+                pass
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"等待主体黑板互斥锁超时：{excl_lock.name}")
+            time.sleep(0.02)
+    try:
+        yield target
+    finally:
+        try:
+            excl_lock.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def load_blackboard(workspace: Path, company_name: str, credit_code: str = "", *, strict: bool = False) -> tuple[dict[str, Any] | None, list[str]]:

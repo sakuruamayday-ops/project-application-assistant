@@ -15,6 +15,7 @@ from .skill_integrity import (
     load_json,
     sha256_file,
     tree_hashes,
+    trusted_publisher_fingerprint,
     verify_skill_directory,
 )
 
@@ -315,12 +316,18 @@ def install_skills(
         if not isinstance(skill_state, dict):
             skill_state = {}
 
+        trusted_fp = (
+            trusted_publisher_fingerprint(source)
+            if signed_skills and (source / "suite-manifest.json").is_file()
+            else None
+        )
         for entry in signed_skills:
             verify_skill_directory(
                 entry["source"],
                 evidence_dir=execution_root / "source-signatures",
                 label=f"source-{entry['name']}",
                 require_signature=True,
+                expected_public_fingerprint=trusted_fp,
             )
 
         selected: list[dict[str, Any]] = []
@@ -391,6 +398,7 @@ def install_skills(
                     evidence_dir=execution_root / "staged-signatures",
                     label=f"staged-{entry['name']}",
                     require_signature=True,
+                    expected_public_fingerprint=trusted_fp,
                 )
         transaction_status = "staged-and-verified"
 
@@ -437,6 +445,7 @@ def install_skills(
                     evidence_dir=execution_root / "installed-signatures",
                     label=f"installed-{entry['name']}",
                     require_signature=True,
+                    expected_public_fingerprint=trusted_fp,
                 )
                 frozen[str(entry["name"])] = freeze_signed_skill(target)
             baseline = (

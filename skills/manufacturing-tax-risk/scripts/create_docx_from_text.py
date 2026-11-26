@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
-import runpy
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -406,8 +406,20 @@ def build_document(content: str, output: Path, *, html_input: bool = False) -> d
     table_count = len(reopened.tables)
     if paragraph_count == 0 and table_count == 0:
         raise ValueError("生成的 DOCX 不包含可解析正文或表格")
-    with output.open("xb") as stream:
-        stream.write(generated.getbuffer())
+    if output.exists():
+        raise FileExistsError(f"拒绝覆盖已有文件：{output}")
+    tmp_output = output.with_name(f".{output.name}.tmp-{os.getpid()}")
+    try:
+        with tmp_output.open("wb") as stream:
+            stream.write(generated.getbuffer())
+            stream.flush()
+            os.fsync(stream.fileno())
+        if output.exists():
+            raise FileExistsError(f"拒绝覆盖已有文件：{output}")
+        os.replace(tmp_output, output)
+    except Exception:
+        tmp_output.unlink(missing_ok=True)
+        raise
     return {
         "schema_version": SCHEMA_VERSION,
         "status": "passed",

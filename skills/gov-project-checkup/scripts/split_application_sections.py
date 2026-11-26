@@ -44,10 +44,10 @@ SECTION_LABELS = {
 
 # Narrative boxes: (key, start anchor, end anchors, char limit, must be anonymous)
 NARRATIVE_BOXES: list[tuple[str, str, list[str], int, bool]] = [
-    ("market_share_note", r"细分市场占有率情况介绍|占有率情况说明|占有率情况介绍", [r"主导产品出口额", r"企业自有品牌", r"六\s*、\s*创\s*新"], 1000, False),
-    ("research_results", r"研究领域已获得成果及应用情况", [r"相关指标", r"研发费用总额"], 300, False),
-    ("gap_filling_note", r"说明[（(]是否在细分领域实现关键技术首创等情况", [r"主导产品是否为国内外知名大企业", r"行业领军企业"], 300, True),
-    ("summary_intro", r"请勿另附页[）)]?", [r"真实性声明", r"十\s*、\s*初核推荐"], 2000, True),
+    ("market_share_note", r"(?:细分市场占有率情况介绍|占有率情况说明|占有率情况介绍)(?:[（(][^）)\n]{0,30}[）)])?\s*[:：]?", [r"主导产品出口额", r"企业自有品牌", r"六\s*、\s*创\s*新"], 1000, False),
+    ("research_results", r"研究领域已获得成果及应用情况(?:[（(][^）)\n]{0,30}[）)])?\s*[:：]?", [r"相关指标", r"研发费用总额"], 300, False),
+    ("gap_filling_note", r"说明[（(]是否在细分领域实现关键技术首创等情况[^）)\n]*[）)]?\s*[:：]?", [r"主导产品是否为国内外知名大企业", r"行业领军企业"], 300, True),
+    ("summary_intro", r"请\s*勿\s*另\s*附\s*页[）)]?\s*[:：]?", [r"真实性声明", r"十\s*、\s*初核推荐"], 2000, True),
 ]
 
 
@@ -85,29 +85,55 @@ def _clean(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", text)
 
 
-def detect_base_year(text: str) -> dict[str, Any]:
-    """Y = rightmost (latest) full year appearing in the economic table header region."""
-    region = text
-    m = re.search(SECTIONS[1][1], text)
-    if m:
-        region = text[m.start(): m.start() + 3000]
-    years = [int(y) for y in re.findall(r"(20[1-3]\d)\s*年", region)]
+def _is_toc_line(text: str, pos: int) -> bool:
+    line_end = text.find("\n", pos)
+    line = text[pos:] if line_end == -1 else text[pos:line_end]
+    return bool(re.search(r"(?:\.{3,}|…{2,}|—{3,})\s*\d+\s*$", line.strip()))
+
+
+def detect_base_year(text: str, sections: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Y = rightmost (latest) full year appearing strictly inside the economic table header region."""
+    region = ""
+    detected_from = "none"
+    if sections and not sections.get("economic_benefits", {}).get("missing"):
+        region = sections["economic_benefits"].get("text", "")
+        detected_from = "economic_table"
+    else:
+        m = re.search(SECTIONS[1][1], text)
+        if m:
+            m_next = re.search(SECTIONS[2][1], text[m.end():])
+            end_pos = (m.end() + m_next.start()) if m_next else (m.start() + 1500)
+            region = text[m.start(): end_pos]
+            detected_from = "economic_table"
+        else:
+            region = text[:4000]
+            detected_from = "full_text"
+    # Prefer consecutive 3-year table header sequence (e.g. 2023年 2024年 2025年) over isolated prose dates
+    header_match = re.search(r"(20[1-3]\d)\s*年[^\n]{0,20}(20[1-3]\d)\s*年[^\n]{0,20}(20[1-3]\d)\s*年", region)
+    if header_match:
+        yrs = sorted({int(header_match.group(i)) for i in (1, 2, 3)})
+        if len(yrs) == 3 and yrs[2] - yrs[0] == 2:
+            y = yrs[2]
+            return {"Y": y, "Y-1": y - 1, "Y-2": y - 2, "detected_from": detected_from}
+    years = [int(y) for y in re.findall(r"(20[1-3]\d)\s*年", region[:1200])]
     if not years:
         return {"Y": None, "Y-1": None, "Y-2": None, "detected_from": "none"}
     y = max(years)
-    return {"Y": y, "Y-1": y - 1, "Y-2": y - 2, "detected_from": "economic_table" if m else "full_text"}
+    return {"Y": y, "Y-1": y - 1, "Y-2": y - 2, "detected_from": detected_from}
 
 
 def split_sections(text: str) -> dict[str, dict[str, Any]]:
     hits: list[tuple[int, str]] = []
     for key, pattern in SECTIONS:
-        found = None
-        for mm in re.finditer(pattern, text):
-            found = mm  # keep last real heading occurrence after cover/notes
-            if key != "summary_intro":
-                break
-        if found:
-            hits.append((found.start(), key))
+        candidates = [mm for mm in re.finditer(pattern, text) if not _is_toc_line(text, mm.start())]
+        if not candidates:
+            candidates = list(re.finditer(pattern, text))
+        if candidates:
+            # Prefer last non-TOC heading for summary_intro; for numbered chapters pick first real body occurrence after TOC
+            chosen = candidates[-1] if key == "summary_intro" else candidates[0]
+            if len(candidates) > 1 and chosen.start() < 300 and key != "basic_info":
+                chosen = candidates[-1]
+            hits.append((chosen.start(), key))
     hits.sort()
     out: dict[str, dict[str, Any]] = {}
     for idx, (pos, key) in enumerate(hits):
@@ -160,13 +186,22 @@ def extract_boxes(text: str, company: str = "", aliases: list[str] | None = None
 
 def run(path: Path, company: str = "", aliases: list[str] | None = None) -> dict[str, Any]:
     text = _clean(_read_text(path))
+    total_chars = len(re.sub(r"\s+", "", text))
     sections = split_sections(text)
+    missing = [SECTION_LABELS[k] for k, v in sections.items() if v.get("missing")]
+    parse_warnings: list[str] = []
+    if total_chars == 0:
+        parse_warnings.append("未能提取到有效文本（可能为空文件、纯图片扫描件或转换失败），请先执行 OCR 后重试")
+    elif len(missing) == len(SECTIONS):
+        parse_warnings.append("未识别到小巨人标准十大章节标题，请核对申请书类别或表式版本")
     return {
+        "ok": len(parse_warnings) == 0,
         "file": str(path),
-        "total_chars": len(re.sub(r"\s+", "", text)),
-        "base_year": detect_base_year(text),
+        "total_chars": total_chars,
+        "parse_warnings": parse_warnings,
+        "base_year": detect_base_year(text, sections),
         "sections": sections,
-        "missing_sections": [SECTION_LABELS[k] for k, v in sections.items() if v.get("missing")],
+        "missing_sections": missing,
         "narrative_boxes": extract_boxes(text, company, aliases),
     }
 

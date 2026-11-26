@@ -60,6 +60,8 @@ def _pair_score(query: str, target: str, idf: dict[str, float] | None = None) ->
     if nq == nt:
         return 100.0
     if nq in nt:
+        if len(nq) <= 3 and all(g in GENERIC_BIGRAMS for g in ngrams(nq)):
+            return 14.0
         return 85.0 + min(12.0, len(nq) / max(len(nt), 1) * 12.0)
     if nt in nq and len(nt) >= 3:
         # Guard against short generic leaf terms like "主装备" dominating specific queries
