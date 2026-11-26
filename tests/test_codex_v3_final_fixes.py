@@ -42,14 +42,23 @@ def test_hightech_and_sme_explicit_hard_gates_block_false_pass() -> None:
         "major_safety_quality_env_accident": True,
     }
     res_ht = run_checkup.check_hightech(ht_bad, strict=True)
-    assert res_ht["status"] == "fail" and len(res_ht["errors"]) >= 3
+    # Objective gates (field + major accident) block; subjective innovation_score is NOT scored as an error
+    assert res_ht["status"] == "fail" and len(res_ht["errors"]) == 2
+    assert any("不测分" in w for w in res_ht["warnings"])
 
     own_4 = [{"type": "发明", "patent_no": f"ZL20211012345{i}.7"} for i in range(4)]
-    sme_bad = {
+    sme_score_only = {
         "target_tier": "little_giant",
         "balance_sheet": {"total_assets": 10000, "total_liabilities": 6000, "total_equity": 4000},
         "latest_revenue": 9000, "annual_revenues": [7000, 8000, 9000],
         "rd_expenses_2y": [600, 600], "patents": own_4,
+        "quality_score": 40,
+    }
+    res_sme_score = run_checkup.check_sme(sme_score_only, strict=True)
+    assert res_sme_score["status"] == "pass" and any("不测分" in w for w in res_sme_score["warnings"])
+
+    sme_bad = {
+        **sme_score_only,
         "main_business_ratio_pct": 10.0, "niche_years": 1, "has_prerequisite_title": False,
     }
     res_sme = run_checkup.check_sme(sme_bad, strict=True)

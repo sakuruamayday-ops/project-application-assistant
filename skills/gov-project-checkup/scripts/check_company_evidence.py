@@ -129,14 +129,5 @@ def assess_company(profile, policy):
             elif revenue < older_revenue * Decimal("1.05") ** 2:
                 add("营收复合增长", "低于适用的两年增长要求", "按同口径营业收入复算两年增长")
 
-    platform = profile.get("platform_evaluation")
-    platform = platform if isinstance(platform, dict) else {}
-    recorded = number(platform.get("value"))
-    allowed_years = (year - 1, year) if review else (year,)
-    if (recorded is None or recorded > 100 or platform.get("year") not in allowed_years
-            or platform.get("enterprise_id") != profile["enterprise_id"]
-            or platform.get("status") != "verified-platform-score" or not present(platform.get("locator"))):
-        add("主管平台发展质量评价", "缺同主体、适用年度的正式回执", "从主管平台取得并核对正式记录")
-    elif recorded < policy["quality_score_threshold"]:
-        add("主管平台发展质量评价", "正式结果低于管理办法门槛", "依据回执核对可改善的实际条件后重新评价")
+    # Subjective / platform scores are not scored or blocked (strengthen-only, no pass guarantee)
     return result("needs-evidence" if items else "checked")

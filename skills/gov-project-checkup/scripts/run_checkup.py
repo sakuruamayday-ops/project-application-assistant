@@ -302,18 +302,14 @@ def check_hightech(data: dict[str, Any], as_of: date | None = None, *, strict: b
     if isinstance(rev_series, list) and len(rev_series) == 3:
         gates["revenue_growth"] = fact_ledger.calc_growth_metrics(rev_series[0], rev_series[1], rev_series[2])
 
-    # Additional High-Tech statutory hard gates when explicitly provided (field, innovation score >70, no major accident)
+    # Additional High-Tech objective statutory hard gates when explicitly provided (NO subjective scoring!)
     if "in_supported_field" in data and data.get("in_supported_field") is not None:
         ok_field = bool(data.get("in_supported_field"))
         gates["supported_field"] = {"pass": ok_field}
         if not ok_field:
             errors.append("主要产品（服务）发挥核心支持作用的技术不属于《国家重点支持的高新技术领域》规定范围")
     if "innovation_score" in data and data.get("innovation_score") not in (None, ""):
-        inn_score = _finite_float(data.get("innovation_score"))
-        ok_inn = inn_score is not None and inn_score > 70.0
-        gates["innovation_score"] = {"pass": ok_inn, "score": inn_score, "min_score_exclusive": 70.0}
-        if not ok_inn:
-            errors.append(f"企业创新能力评价得分({inn_score})未达到高于70分合格要求")
+        warnings.append("高企创新能力评价为主观专家评审项，本工具不测分、不保通过，仅围绕知识产权、成果转化、组织管理与成长性提供补强建议")
     if "major_safety_quality_env_accident" in data and data.get("major_safety_quality_env_accident") is not None:
         has_acc = bool(data.get("major_safety_quality_env_accident"))
         gates["no_major_accident"] = {"pass": not has_acc}
@@ -568,14 +564,9 @@ def check_sme(data: dict[str, Any], as_of: date | None = None, *, strict: bool =
         if i_class_valid < effective_min_ip and (strict or not pending_certs):
             errors.append(f"去重有效自主研发I类知识产权仅 {i_class_valid} 项，低于2026版2号文 {policy_min_i_class} 项硬门槛")
 
-    # 5. Platform quality score & explicit prerequisite / specialization / market-position hard gates
-    qscore = _finite_float(data.get("quality_score"))
-    score_floor = 60.0 if is_little_giant else 50.0
-    if qscore is not None:
-        ok_qs = qscore >= score_floor
-        gates["quality_score"] = {"pass": ok_qs, "score": qscore, "min_score": score_floor}
-        if not ok_qs:
-            errors.append(f"发展质量评价得分 {qscore} 低于2026版2号文 {int(score_floor)} 分合格线")
+    # 5. Subjective scores are NOT scored/blocked (only provide strengthening advice; check objective prerequisites/ratios)
+    if data.get("quality_score") not in (None, ""):
+        warnings.append("发展质量评价分属于主管平台/评审体系，本工具不测分、不保通过，仅围绕客观硬门槛与短板提供补强建议")
 
     if "has_prerequisite_title" in data and data.get("has_prerequisite_title") is not None:
         ok_pre = bool(data.get("has_prerequisite_title"))

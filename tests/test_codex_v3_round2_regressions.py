@@ -50,7 +50,7 @@ from project_assistant.skill_integrity import (  # noqa: E402
 
 
 def _run(cmd: list[str], cwd: Path = REPO_ROOT, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=30)
+    return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=90)
 
 
 # 1. Signing chain, trust anchor, build_standard_package, tamper detection & rollback

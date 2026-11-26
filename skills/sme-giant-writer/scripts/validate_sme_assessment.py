@@ -75,41 +75,13 @@ def validate(document: dict, *, strict: bool = False) -> tuple[list[str], list[s
     if any(key in evaluation for key in ("professionalization", "refinement", "specialization", "innovation_ability")):
         errors.append("evaluation不得使用历史四维评分体系")
     quality_score = evaluation.get("quality_score")
-    if not isinstance(quality_score, dict):
-        errors.append("evaluation缺少quality_score对象")
-    else:
-        score_status = quality_score.get("status")
-        score_value = quality_score.get("value")
-        if score_status not in QUALITY_SCORE_STATES:
-            errors.append("quality_score.status无效")
-        if score_status == "verified-platform-score":
-            if (
-                isinstance(score_value, bool)
-                or not isinstance(score_value, (int, float))
-                or not 0 <= float(score_value) <= 100
-                or not quality_score.get("source")
-            ):
-                errors.append("平台质量分必须为0至100且含可验证来源")
-        elif score_value is not None:
-            errors.append("平台质量分待评价时value必须为null")
-    project_level = str(context.get("project_level") or "")
-    is_provincial_sme = (
-        any(tok in project_level for tok in ("专精特新中小企业", "省级专精特新", "省专", "specialized-sme", "provincial_sme"))
-        and "小巨人" not in project_level
-        and "little_giant" not in project_level.lower()
-    )
-    score_floor = 50.0 if is_provincial_sme else 60.0
-    if (
-        document.get("overall_conclusion") == "eligible"
-        and isinstance(quality_score, dict)
-        and (
-            quality_score.get("status") != "verified-platform-score"
-            or not isinstance(quality_score.get("value"), (int, float))
-            or isinstance(quality_score.get("value"), bool)
-            or float(quality_score["value"]) < score_floor
-        )
-    ):
-        errors.append(f"平台质量分未核验或低于{int(score_floor)}分合格线时总体结论不得为eligible")
+    if quality_score is not None:
+        if not isinstance(quality_score, dict):
+            errors.append("evaluation.quality_score如填写则必须为对象")
+        else:
+            score_status = quality_score.get("status")
+            if score_status and score_status not in QUALITY_SCORE_STATES:
+                errors.append("quality_score.status无效")
     # Enforce non-empty, explicitly passing hard_gates when overall_conclusion == eligible (reject {}, null, fail)
     hg = document.get("hard_gates")
     if document.get("overall_conclusion") == "eligible":

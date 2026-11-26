@@ -29,7 +29,7 @@
     "references/project-view-adapters.json": "2cb44e7d4f6afd99ba0b1faeb70e0be8d6cb3ea0f8219efb46b7cba1725d740c",
     "references/technology-advancement-feasibility-rubric.md": "087b52da7e05b85b78c76ec7a74d8d5d859b69b588badb93c5a4543478c70483",
     "scripts/technical_product_revenue_matrix.py": "5d51b901aba7dc4ef297ca8dd741904c598c9c1eec0c166fa2623387ca55988c",
-    "scripts/validate_sme_assessment.py": "6ac798c19560f4b1dd28ba20bc823f2645e7371e8772020ff10f183b2f1602cc"
+    "scripts/validate_sme_assessment.py": "d24a4ddb19550dc80fbf39c190ae7bbab982cd03eb1ead91df9500eb7a3c9e57"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",
