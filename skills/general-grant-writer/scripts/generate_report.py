@@ -59,7 +59,7 @@ def generate_report(input_path: Path, output_path: Path, report_type: str) -> di
         public_root=skill_root.parent,
         project_id=project_id if query != project_id else None,
     )
-    return {**result, "schema_version": "gongchuang-project-report-operation/v1"}
+    return {**result, "schema_version": "project-report-operation/v1"}
 
 
 def main() -> int:
@@ -71,7 +71,7 @@ def main() -> int:
     try:
         result = generate_report(args.input, args.output, args.report_type)
     except (ValueError, FileNotFoundError, FileExistsError) as error:
-        print(json.dumps({"schema_version": "gongchuang-project-report-operation/v1",
+        print(json.dumps({"schema_version": "project-report-operation/v1",
                           "status": "fail", "errors": [str(error)],
                           **({"input_rejection": error.input_rejection} if isinstance(error, ReportInputError) else {})}, ensure_ascii=False))
         return 2

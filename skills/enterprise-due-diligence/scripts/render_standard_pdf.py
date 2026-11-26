@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the owner-approved unwatermarked white-background standard analysis report."""
+"""Render the clean white-background standard analysis report PDF."""
 
 import argparse
 import sys
@@ -50,7 +50,7 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     document.save(args.out, garbage=4, deflate=True)
     document.close()
-    print(f"WROTE {args.out.resolve()} author={AUTHOR} watermark=disabled-by-owner-profile")
+    print(f"WROTE {args.out.resolve()} pages={len(fitz.open(args.out))}")
 
 
 if __name__ == "__main__":

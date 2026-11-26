@@ -29,7 +29,7 @@ def normalize_source(raw):
 def probe(url, timeout):
     if not url:
         return {"reachable": False, "http_status": None, "final_url": None, "error": "unusable_source_string"}
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 gongchuang-rule-audit/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 patent-rule-audit/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=ssl.create_default_context()) as r:
             body = r.read(2_000_000)

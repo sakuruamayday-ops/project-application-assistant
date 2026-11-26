@@ -142,7 +142,7 @@ def materialize(
         raise FileExistsError(f"拒绝覆盖现有文件:{target}")
     shutil.copy2(selection["template_path"], target)
     receipt = {
-        "schema": "gongchuang-project-report-template-selection/v1",
+        "schema": "project-report-template-selection/v1",
         **selection,
         "output_path": str(target),
         "editable": True,

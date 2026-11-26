@@ -34,8 +34,8 @@ python3 scripts/portable_skill_runtime.py remember \
 
 个人配置独立于官方技能包，存放在安装目录之外：
 
-- macOS：`~/Library/Application Support/GongchuangResearchInstituteSkills/<skill-name>/`
-- Windows：`%APPDATA%\GongchuangResearchInstituteSkills\<skill-name>\`
-- Linux：`$XDG_CONFIG_HOME/gongchuang-research-institute-skills/<skill-name>/`
+- macOS：`~/Library/Application Support/ProjectAssistantSkills/<skill-name>/`
+- Windows：`%APPDATA%\ProjectAssistantSkills\<skill-name>\`
+- Linux：`$XDG_CONFIG_HOME/project-application-assistant-skills/<skill-name>/`
 
-`GONGCHUANG_SKILL_DATA_DIR` 可指定托管目录。升级保留用户资料、外置偏好和凭据，配置变化按原机制备份。安装包、技能核心和个人数据分别保存，签名清单与发布者公钥用于核对安装真实性。
+`PROJECT_SKILL_DATA_DIR` 可指定托管目录。升级保留用户资料、外置偏好和凭据，配置变化按原机制备份。安装包、技能核心和个人数据分别保存，签名清单与发布者公钥用于核对安装真实性。

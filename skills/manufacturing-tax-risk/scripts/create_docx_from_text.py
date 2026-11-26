@@ -63,7 +63,7 @@ def _apply_report_fonts(document: Document) -> None:
             settings.remove(option)
 
 
-SCHEMA_VERSION = "gongchuang-docx-generation-operation/v1"
+SCHEMA_VERSION = "docx-generation-operation/v1"
 TABLE_DIVIDER = re.compile(r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$")
 HEADING = re.compile(r"^(#{1,4})\s+(.+)$")
 NUMBERED_HEADING = re.compile(
@@ -319,7 +319,7 @@ def add_html_body(document: Document, content: str) -> None:
             return
         tag = node.tag.lower()
         classes = set(node.get("class", "").split())
-        if classes & {"gongchuang-document-header", "gongchuang-cover-signature"}:
+        if classes & {"document-header-ignore", "cover-signature-ignore"}:
             return
         if tag == "footer" and "page-footer" in classes:
             page_furniture(text(node), "footer")

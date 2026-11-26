@@ -11,7 +11,7 @@
 ## 云端调用
 
 - 直接使用原生知识工具，按实际状态处理具体缺项。
-- 原生知识能力受限时，复用用户已配置并授权的直接 API；从安全环境变量读取 `GONGCHUANG_KB_ENDPOINT`、`GONGCHUANG_KB_TOKEN`，以 `GET /v1/me` 核验连接，再用 `POST /v1/search`。
+- 原生知识能力受限时，复用用户已配置并授权的直接 API；从安全环境变量读取 `KB_API_ENDPOINT`、`KB_API_TOKEN`，以 `GET /v1/me` 核验连接，再用 `POST /v1/search`。
 - Token 由安全配置和本地鉴权机制管理，输出使用脱敏结果。
 - 未命中如实写“当前检索层未命中”，继续查适用官方来源。
 

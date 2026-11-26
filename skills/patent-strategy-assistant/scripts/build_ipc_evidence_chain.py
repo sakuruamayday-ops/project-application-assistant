@@ -24,7 +24,7 @@ LOCAL_CHECKER_EXTRACTOR = (
 )
 RUNTIME_CHECKER_EXTRACTOR = (
     Path.home()
-    / ".gemini/config/plugins/gongchuang-v3-10/skills/patent-docx-reviewer/scripts/patent_extractor.py"
+    / ".codex/skills/patent-docx-reviewer/scripts/patent_extractor.py"
 )
 CHECKER_EXTRACTOR = next(
     (p for p in (BUNDLED_EXTRACTOR, LOCAL_CHECKER_EXTRACTOR, RUNTIME_CHECKER_EXTRACTOR) if p.is_file()),

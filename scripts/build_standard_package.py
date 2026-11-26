@@ -63,15 +63,6 @@ PORTABLE_REPORT_REQUIRED = [
     "skills/manufacturing-tax-risk/scripts/render_pdf_stdout.js",
     "skills/manufacturing-tax-risk/scripts/verify_e2e.py",
     "skills/manufacturing-tax-risk/package.json",
-    "skills/_runtime/gongchuang-branding/runtime-manifest.json",
-    "skills/_runtime/gongchuang-branding/requirements.txt",
-    "skills/_runtime/gongchuang-branding/references/brand_config.json",
-    "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
-    "skills/_runtime/gongchuang-branding/scripts/delivery_gate.py",
-    "skills/_runtime/gongchuang-branding/scripts/html_branding.py",
-    "skills/_runtime/gongchuang-branding/scripts/office_watermark.py",
-    "skills/_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
-    "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
 ]
 
 REQUIRED = [
@@ -224,7 +215,7 @@ def main() -> None:
     if args.status not in {"release-candidate", "stable"}:
         raise SystemExit("status只允许release-candidate或stable")
 
-    output = args.output or args.root / "dist" / f"gongchuang-research-institute-skills-{release['tag']}.zip"
+    output = args.output or args.root / "dist" / f"project-application-assistant-skills-{release['tag']}.zip"
     staging_output = output.with_name(f".{output.name}.staging")
     source_meta = validate_release_source(args.root, verify_signatures=True)
 
@@ -246,7 +237,7 @@ def main() -> None:
         for relative_path in PORTABLE_REPORT_REQUIRED
     }
     manifest = {
-        "name": "共创研究院企业全生命周期助手",
+        "name": "政府项目与知识产权全生命周期助手",
         "version": version,
         "release_tag": release["tag"],
         "status": args.status,
@@ -258,9 +249,9 @@ def main() -> None:
         "includes": {
             "v3_core_10_skills": True,
             "unified_core_engine": True,
-            "embedded_ed25519_signatures": True,
+            "embedded_ed25519_signatures": False,
             "manufacturing_tax_17_page_generator": True,
-            "unified_branding_runtime": True,
+            "unified_branding_runtime": False,
             "portable_path_gate": True,
         },
     }

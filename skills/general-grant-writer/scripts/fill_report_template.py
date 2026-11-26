@@ -238,7 +238,7 @@ def _public_source_reference(material: dict[str, Any]) -> dict[str, str | None]:
         or material.get("source")
         or ""
     ).strip()
-    if source_type in {"knowledge-base", "knowledge_base", "gongchuang-knowledge"} or raw == "知识库":
+    if source_type in {"knowledge-base", "knowledge_base", "local-knowledge"} or raw == "知识库":
         return {"label": "来源知识库", "url": None}
     if raw.startswith(("https://", "http://")):
         return {"label": raw, "url": raw}
@@ -1086,7 +1086,7 @@ def _write_completed_report(template_path, output_path, validated, report_type, 
     with output_path.open("wb" if output_path == template_path else "xb") as output:
         output.write(output_bytes)
     result = {
-        "schema": "gongchuang-completed-project-report/v1",
+        "schema": "completed-project-report/v1",
         "status": "pass",
         "release_tag": release_tag,
         "project_id": validated["project_id"] if project_id is None else project_id,

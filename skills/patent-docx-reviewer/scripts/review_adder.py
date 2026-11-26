@@ -268,7 +268,7 @@ def add_comments(
         if missing_scope:
             raise ValueError(f"以下审核意见缺少必填字段「保护范围影响」：{missing_scope}")
 
-    with TemporaryDirectory(prefix="gongchuang-comment-") as directory:
+    with TemporaryDirectory(prefix="patent-comment-") as directory:
         root_dir = Path(directory)
         with zipfile.ZipFile(source) as archive:
             archive.extractall(root_dir)

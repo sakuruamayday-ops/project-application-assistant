@@ -269,7 +269,7 @@ def _table(document, headers, rows, project_id=None):
 
 def build_action_document(template_path: Path, fixture):
     sections = prepare_sections(fixture)
-    # Retain the distributed master header, footer and brand watermark.
+    # Retain the distributed master header and footer.
     document = Document(template_path)
     for node in list(document.element.body):
         if node.tag != qn("w:sectPr"):

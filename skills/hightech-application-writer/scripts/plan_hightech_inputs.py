@@ -20,7 +20,7 @@ if str(SHARED_DETECTOR_DIR) not in sys.path:
 
 from document_format_detection import detect_document  # noqa: E402
 
-SCHEMA = "gongchuang-hightech-input-plan/v1"
+SCHEMA = "hightech-input-plan/v1"
 EXTRACTABLE_KINDS = {"docx", "pdf", "xls", "xlsx", "ods", "odt", "rtf", "text"}
 
 

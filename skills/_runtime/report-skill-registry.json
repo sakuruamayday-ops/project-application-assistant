@@ -240,7 +240,7 @@
       "uses_grounded_engine": false
     },
     {
-      "skill": "gongchuang-humanizer-zh",
+      "skill": "application-reviewer",
       "profile": "chat",
       "uses_grounded_engine": false
     },

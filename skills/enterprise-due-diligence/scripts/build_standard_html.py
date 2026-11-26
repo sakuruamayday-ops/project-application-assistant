@@ -291,7 +291,7 @@ def build_standard_html(input_path: Path, output_path: Path) -> dict:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("x", encoding="utf-8") as destination:
         destination.write(output)
-    return {"schema_version": "gongchuang-project-report-operation/v1", "status": "pass",
+    return {"schema_version": "project-report-operation/v1", "status": "pass",
             "output_path": str(output_path), "format": "html"}
 
 
@@ -303,7 +303,7 @@ def main() -> int:
     try:
         result = build_standard_html(args.input, args.output)
     except (ValueError, FileNotFoundError, FileExistsError) as error:
-        print(json.dumps({"schema_version": "gongchuang-project-report-operation/v1", "status": "fail", "errors": [str(error)]}, ensure_ascii=False))
+        print(json.dumps({"schema_version": "project-report-operation/v1", "status": "fail", "errors": [str(error)]}, ensure_ascii=False))
         return 2
     print(json.dumps(result, ensure_ascii=False))
     return 0

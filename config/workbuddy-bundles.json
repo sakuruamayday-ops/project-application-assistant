@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "bundles": [
     {
-      "skillId": "skill_gongchuang_v3_01",
+      "skillId": "skill_gov_v3_01",
       "skillName": "gov-project-checkup",
       "displayName": "政府项目免费体检与智能匹配",
       "tier": "free-checkup",
@@ -64,7 +64,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_02",
+      "skillId": "skill_gov_v3_02",
       "skillName": "application-reviewer",
       "displayName": "申报材料质检、对比与润色审计",
       "tier": "free-checkup",
@@ -114,7 +114,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_03",
+      "skillId": "skill_gov_v3_03",
       "skillName": "hightech-application-writer",
       "displayName": "国家高新技术企业申请书撰写",
       "tier": "paid-delivery",
@@ -159,7 +159,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_04",
+      "skillId": "skill_gov_v3_04",
       "skillName": "sme-giant-writer",
       "displayName": "专精特新小巨人与单项冠军撰写",
       "tier": "paid-delivery",
@@ -202,7 +202,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_05",
+      "skillId": "skill_gov_v3_05",
       "skillName": "general-grant-writer",
       "displayName": "通用政府专项申报与可行性报告",
       "tier": "paid-delivery",
@@ -245,7 +245,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_06",
+      "skillId": "skill_gov_v3_06",
       "skillName": "patent-docx-reviewer",
       "displayName": "中国专利申请文件核稿与批注",
       "tier": "paid-delivery",
@@ -280,7 +280,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_07",
+      "skillId": "skill_gov_v3_07",
       "skillName": "patent-strategy-assistant",
       "displayName": "专利查新、挖掘、布局与双中心预审",
       "tier": "paid-delivery",
@@ -327,7 +327,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_08",
+      "skillId": "skill_gov_v3_08",
       "skillName": "standard-drafting",
       "displayName": "技术标准起草与GB-T1.1严格审查",
       "tier": "paid-delivery",
@@ -370,7 +370,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_09",
+      "skillId": "skill_gov_v3_09",
       "skillName": "enterprise-due-diligence",
       "displayName": "企业全景尽调与新公司法合规核查",
       "tier": "paid-delivery",
@@ -414,7 +414,7 @@
       "linkRewrites": {}
     },
     {
-      "skillId": "skill_gongchuang_v3_10",
+      "skillId": "skill_gov_v3_10",
       "skillName": "manufacturing-tax-risk",
       "displayName": "制造企业财税复算与智慧税务风控",
       "tier": "paid-delivery",
@@ -444,62 +444,6 @@
         {
           "from": "skills/_core/v3-delivery-constitution.md",
           "to": "references/v3-delivery-constitution.md"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
-          "to": "scripts/pdf_two_pass.py"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
-          "to": "scripts/brand_config.py"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/references/brand_config.json",
-          "to": "references/brand_config.json"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-07.png",
-          "to": "assets/brand-gold-07.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-10.png",
-          "to": "assets/brand-gold-10.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-12.png",
-          "to": "assets/brand-gold-12.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-16.png",
-          "to": "assets/brand-gold-16.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
-          "to": "assets/brand-mark.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-07.png",
-          "to": "assets/brand-red-07.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-10.png",
-          "to": "assets/brand-red-10.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-12.png",
-          "to": "assets/brand-red-12.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-16.png",
-          "to": "assets/brand-red-16.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-10.png",
-          "to": "assets/brand-white-10.png"
-        },
-        {
-          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-16.png",
-          "to": "assets/brand-white-16.png"
         }
       ],
       "linkRewrites": {}

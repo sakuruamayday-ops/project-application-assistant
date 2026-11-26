@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PROFILE_SCHEMA_VERSION = 1
-PROFILE_DIR_ENV = "GONGCHUANG_SKILL_DATA_DIR"
+PROFILE_DIR_ENV = "PROJECT_SKILL_DATA_DIR"
 PROTECTED_PHRASES = (
     "跳过签名",
     "跳过验签",
@@ -70,15 +70,15 @@ def default_data_root() -> Path:
     if system == "Windows":
         base = os.environ.get("APPDATA")
         if base:
-            return Path(base) / "GongchuangResearchInstituteSkills"
-        return Path.home() / "AppData" / "Roaming" / "GongchuangResearchInstituteSkills"
+            return Path(base) / "ProjectAssistantSkills"
+        return Path.home() / "AppData" / "Roaming" / "ProjectAssistantSkills"
     if system == "Darwin":
-        return Path.home() / "Library" / "Application Support" / "GongchuangResearchInstituteSkills"
+        return Path.home() / "Library" / "Application Support" / "ProjectAssistantSkills"
     xdg = os.environ.get("XDG_CONFIG_HOME")
     return (
-        Path(xdg).expanduser() / "gongchuang-research-institute-skills"
+        Path(xdg).expanduser() / "project-application-assistant-skills"
         if xdg
-        else Path.home() / ".config" / "gongchuang-research-institute-skills"
+        else Path.home() / ".config" / "project-application-assistant-skills"
     )
 
 

@@ -69,6 +69,6 @@ python3 scripts/validate_report_pdf.py <PDF路径>
 
 财务复算与制造财税风险使用 `manufacturing-tax-risk`；项目资格与多项目规划使用 `gov-project-checkup`；专利专项使用 `patent-strategy-assistant`，专利 Word 文件核稿使用 `patent-docx-reviewer`。网页看板使用当前前端能力与共同底稿，发布按用户指令和宿主权限执行。
 
-外部数据和渲染使用宿主当前能力，缺项时先说明缺口并继续可完成部分。团队知识服务通过安全凭据接口读取 `GONGCHUANG_KB_ENDPOINT`、`GONGCHUANG_KB_TOKEN`，日志与交付物使用脱敏信息。资源相对本技能目录解析，输出写当前任务目录。
+外部数据和渲染使用宿主当前能力，缺项时先说明缺口并继续可完成部分。团队知识服务通过安全凭据接口读取 `KB_API_ENDPOINT`、`KB_API_TOKEN`，日志与交付物使用脱敏信息。资源相对本技能目录解析，输出写当前任务目录。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

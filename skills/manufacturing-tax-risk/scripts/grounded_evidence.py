@@ -1303,12 +1303,12 @@ def validate_source_disclosure(
 
 
 def _default_state_root() -> Path:
-    explicit = os.environ.get("GONGCHUANG_BEHAVIOR_STATE_ROOT", "").strip()
+    explicit = os.environ.get("BEHAVIOR_STATE_ROOT", "").strip()
     if explicit:
         return Path(explicit).expanduser().resolve()
     raise ValueError(
         "无法定位当前轮次行为状态目录；请传入--state-root或设置"
-        "GONGCHUANG_BEHAVIOR_STATE_ROOT"
+        "BEHAVIOR_STATE_ROOT"
     )
 
 

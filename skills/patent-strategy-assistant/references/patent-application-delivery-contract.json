@@ -1,6 +1,6 @@
 {
   "schema_version": "patent-application-delivery-contract/v1",
-  "contract_id": "gongchuang-patent-application-case-v2",
+  "contract_id": "patent-application-case-v2",
   "manifest_schema": "patent-case-manifest/v1",
   "milestones": {
     "draft-ready": {

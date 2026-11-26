@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "product_name": "共创研究院企业全生命周期助手",
-  "product_slug": "gongchuang-research-institute-skills",
+  "product_name": "政府项目与知识产权全生命周期助手",
+  "product_slug": "project-application-assistant-skills",
   "public_brand": {
-    "display_name": "共创研究院",
-    "plugin_name": "gongchuang-research-institute-skills",
-    "marketplace_name": "gongchuang-research-institute"
+    "display_name": "政府项目与知识产权助手",
+    "plugin_name": "project-application-assistant-skills",
+    "marketplace_name": "project-application-assistant"
   },
   "install_mode": "bundle-or-standalone",
   "release": {
@@ -38,7 +38,6 @@
   "shared_paths": [
     "_core",
     "_runtime/enterprise-source-fallback.md",
-    "_runtime/gongchuang-branding",
     "_runtime/grounded-citations",
     "_runtime/policy_original_text.py",
     "_runtime/result_digest.py",
