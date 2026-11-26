@@ -5,7 +5,7 @@ description: 申报材料全维度质检、交叉核对、原生 DOCX/Word 版�
 
 # 申报材料质检、版本对比与润色审计（application-reviewer）
 
-本技能是 V3 架构的免费高频质检工具，负责提交前的四道硬核质检关：
+本技能负责申报材料提交前的四道硬核质检关（若需对已填小巨人/专精申请书做六大章全景深度体检，协同 `gov-project-checkup` 的 `application-material-checkup-guide.md` 闭环执行）：
 
 1. **一致性与反敷衍体检（`check-consistency`）**：支持直接读取 `.docx` / `.md` / `.txt`，硬拦截占位符、防御性兜底语、跨企业串户、疑似编辑批注括号、字数不达标或超限，同时智能豁免合法科学单位与文号括号（如 `cm³/(m²·24h)`、`（修订）`）；可选传入 `.facts/<主体>.facts.json` 自动销项设计控制目标。
 2. **原生 DOCX 版本对比（`diff-versions`）**：直接解析两版 Word OOXML，通过 `SequenceMatcher` 精准识别章节重编号移动、表格行重排及关键数字变化，不再把移动的章节误判为“全删+全增”。

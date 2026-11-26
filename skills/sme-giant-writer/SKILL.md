@@ -1,29 +1,26 @@
 ---
 name: sme-giant-writer
-description: 专精特新中小企业、国家级专精特新“小巨人”、国家/省级制造业单项冠军及质量品牌项目（品字标/浙江制造精品/政府质量奖）全流程策划与撰写。覆盖前期培育方向卡、六大核心问题正文、补短板/填空白/进口替代四项判断、技术-产品-收入主矩阵与 A—D 级市占率底稿。
+description: 专精特新中小企业、国家级专精特新“小巨人”、国家/省级制造业单项冠军及质量品牌项目（品字标/浙江制造精品/政府质量奖）全流程策划与撰写。统一走“前期培育方向卡 → 唯一六问六答技术推演 → 五大申报栏位最终成稿”逻辑链，覆盖主导产品定名、四项独立判断、技术-产品-收入主矩阵与 A—D 级市占率底稿。
 ---
 
 # 专精特新“小巨人”与制造业单项冠军撰写（sme-giant-writer）
 
-本技能合并了旧版 `sme-development-projects`、`industry-positioning` 与 `quality-brand-projects`，专攻专精特新中小企业、国家级“小巨人”、制造业单项冠军（`工信部政法〔2023〕138号`、`浙经信大企〔2025〕179号`）与质量品牌项目的深度策划、矩阵生成与申报书正文撰写。
+本技能覆盖专精特新中小企业、国家级“小巨人”（`工信部企业〔2026〕2号`）、浙江省隐形冠军、制造业单项冠军（`工信部政法〔2023〕138号`、`浙经信大企〔2025〕179号`）及质量品牌项目的全流程技术推演与最终版申报正文撰写。
 
-## 核心工作流
+## 统一逻辑链（方向卡 → 唯一六问六答 → 五大申报栏位成稿）
 
-1. **读取事实黑板与产品双锁**：先从 `.facts/<主体>.facts.json` 读取经 `gov-project-checkup` 核验的企业档案、财务数据与三层专利分级，确认 `rawAnchor` 与 `formalDeclarationName`、`businessType`（防设备商/产品商倒置）。
-2. **生成技术—产品—收入两链汇合主矩阵**：
-   ```bash
-   python3 scripts/technical_product_revenue_matrix.py <master.json> \
-     --adapter small_giant   # 或 provincial_sme / single_champion / zhejiang_manufacturing_excellence
-   ```
-   验证 `performance_contributions` 完整对象结构，禁止内部转移收入，自动生成分项目视图。
-3. **四项独立判断与市占率分级**：
-   - 独立输出「主导产品 / 补短板 / 填空白 / 进口替代」四项判断，进口替代不设国外型号检测报告或客户盖章证明为成立前提。
-   - 严格按 `references/market-share-grading.md`（A—D 级）构建细分市场占有率测算底稿。
-4. **实战模板与多赛道高密度写作**：
-   - **专精特新“小巨人”五大栏位**：按 `references/enterprise-introduction-method.md` 执行主导产品定名（+10 位代码）、细分市场占有率 1000 字三段式、产学研合作 300 字、补短板填空白 300 字双体例（**零企业名/简称**）及企业总体介绍 2000 字（**零企业名/简称**），全篇遵循自然工程因果叙事，杜绝“XX方面，”套话与分号报菜名；
-   - **方向卡转六大核心问题**：按 `references/direction-card-six-questions-guide.md` 逐项撰稿（单题 ≥ 250 字、目标填充至字数上限的 75%—95%），配套 `assets/专精特新小巨人前期培育方向卡模板.docx`；
-   - **隐形冠军 / 单项冠军培育 / 浙江制造精品 / 品字标 / 政府质量奖**：按 `references/hidden-champion-and-quality-brand-templates.md` 标准章节骨架与材料闭环撰写。
-5. **真严格硬门禁验收**：
+1. **读取事实黑板与自主补齐公开事实**：先从 `.facts/<主体>.facts.json` 读取 `gov-project-checkup` 核验的企业档案、荣誉与专利；资料不全时自主联网补齐官网主营、曾用名/实控人关联方、早期技术来源、公开专利与行业大盘，浙江省内政策走本地库/MCP 管控，省外做「当年 + 上年」双年窗口检索。
+2. **走唯一一套六问六答技术推演（纯技术导向、与发票无关）**：
+   - 严格按 `references/direction-card-six-questions-guide.md` 与 `references/direction-card-to-six-questions.md` 依次完成 **Q1（专利归类与主导产品锁）→ Q2（核心技术簇）→ Q3（补短板/填空白/替代因果链四项独立判断）→ Q4（核心技术与成果应用）→ Q5（国际/同行对标与市占率边界）→ Q6（优势短板与培育规划回写方向卡）**，配套 `assets/专精特新小巨人前期培育方向卡模板.docx`。
+   - 需要多项目视图矩阵时执行：
+     ```bash
+     python3 scripts/technical_product_revenue_matrix.py <master.json> \
+       --adapter small_giant   # 或 provincial_sme / single_champion / zhejiang_manufacturing_excellence
+     ```
+3. **一键映射五大申报栏位最终版成稿**：
+   - 将 Q1–Q6 推演结论按 `references/enterprise-introduction-method.md` 直接输出最终版成稿：**主导产品定名与 10 位代码**（Q1）、**1000 字细分市场占有率三段式**（Q5）、**300 字研究成果及应用（含产学研三档分支）**（Q4）、**300 字补短板填空白（严格匿名）**（Q3）、**2000 字企业总体情况简要介绍（三+五八段、严格匿名）**（Q1–Q6 汇总）。
+   - 隐形冠军 / 单项冠军培育 / 浙江制造精品 / 品字标 / 政府质量奖按 `references/hidden-champion-and-quality-brand-templates.md` 骨架撰写。
+4. **交付前确定性核验**：
    ```bash
    python3 scripts/validate_sme_assessment.py <assessment.json> \
      --strict \
@@ -31,4 +28,4 @@ description: 专精特新中小企业、国家级专精特新“小巨人”、�
      --company "<企业全称>" \
      --min-chars 250
    ```
-   `--strict` 模式下，**任何错误或未闭合告警**（如 `direct_support` 为空、缺少 `rawAnchor`、正文不足字数、含占位符/跨企业串户）一律返回退出码 `2`。
+   缺第三方检测报告时按企业体量采用贴合行业均值水平的务实技术指标，财务数字、专利号与专家名严守真实不编造。
