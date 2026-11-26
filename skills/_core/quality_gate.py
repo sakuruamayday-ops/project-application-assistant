@@ -156,7 +156,7 @@ def audit_formal_text(
             norm_co = re.sub(r"[\s（）()]+", "", cleaned)
             if len(cleaned) < 6 or any(norm_co == a or norm_co.endswith(a) for a in allow_clean):
                 continue
-            # Also peel off common leading verbs/role descriptors glued to the regex match (e.g. "设备购自乙方有限公司", "领军企业上海紫江...")
+            # Also peel off common leading verbs/role descriptors glued to the regex match (e.g. "设备购自乙方有限公司", "领军企业某标杆公司...")
             m_glue = re.search(
                 r"(购自|采购自|采购|委托|向|对标|同行业?领军企业|领军企业|标杆企业|龙头企业|同行企业|竞争对手|合作伙伴|客户为?|供应商为?|配套客户|配套|服务于|与|和|及|如)([\u4e00-\u9fffA-Za-z0-9·]{2,20}(?:股份有限公司|有限责任公司|有限公司))$",
                 cleaned,

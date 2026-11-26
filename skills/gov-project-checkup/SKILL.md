@@ -18,7 +18,7 @@ description: 政府项目免费诊断、体检、政策查询与多项目智能�
 
 ```bash
 # 1. 查询企业本地画像、财务冲突与去重认定，并落盘黑板
-python3 scripts/run_checkup.py profile --company "浙江申新新材料包装有限公司" --workspace . --write-blackboard
+python3 scripts/run_checkup.py profile --company "示例精密制造有限公司" --workspace . --write-blackboard
 
 # 2. 高新技术企业 9 大硬条件确定性体检（国科发火〔2016〕32号 & 195号）
 python3 scripts/run_checkup.py hightech --input company_ht.json --strict
