@@ -64,5 +64,7 @@ def test_meta_self_talk_is_blocked() -> None:
     txt = "公司是国内领先的除鳞装备供应商。精确分母待行业协会数据核定后填入。本节用钢铁产量与酸洗替代两类依据来刻画规模。"
     res = quality_gate.audit_formal_text(txt)
     assert any(e["rule"] == "meta_self_talk" for e in res["errors"])
+    formula_talk = quality_gate.audit_formal_text("占有率数值以经审计主导产品收入与同口径市场规模直接除算，不作估算。分母口径与第一段一致。")
+    assert any(e["rule"] == "meta_self_talk" for e in formula_talk["errors"])
     clean = quality_gate.audit_formal_text("公司是国内领先的除鳞装备供应商，已建成数十条产线。")
     assert not any(e["rule"] == "meta_self_talk" for e in clean["errors"])
