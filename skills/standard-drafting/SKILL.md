@@ -31,7 +31,7 @@ description: 按 GB/T 1.1 起草、修订或审查国家标准、行业标准、
 客户端审查接口 `standard-drafting.audit-draft` 使用 `{"draft":"工作区标准草案.md"}`；其他宿主可用：
 
 ```bash
-python3 skills/standard-drafting/scripts/audit_standard_draft.py 标准草案.md
+python3 scripts/audit_standard_draft.py 标准草案.md --strict
 ```
 
 自动结果作为结构、措辞和映射检查，专业意见按实际专家或归口审查记录说明。

@@ -74,18 +74,18 @@
 
 | 项目类型 | 主技能 | 核心评估对象 |
 |---|---|---|
-| 高新技术企业 | `high-tech-enterprise-preassessment` | 研发项目—知识产权—成果转化—高新产品四关联、财务、人员和组织管理 |
-| 专精特新中小企业 | `sme-score-preassessment` | 主导产品、梯度身份、经营研发、质量评价、知识产权和数字化诊断 |
-| 专精特新“小巨人” | `sme-score-preassessment` | 主导产品、细分市场、产业链价值、经营研发、Ⅰ类知识产权和软提升 |
-| 首台套 | `industrialization-projects` | 申报装备、首创性、成熟度、查新检测、首次应用、研发机构和产业化能力 |
-| 首批次新材料 | `industrialization-projects` | 材料目录、性能指标、检测认证、首批应用和产业化能力 |
-| 首版次软件 | `industrialization-projects` | 软件产品、版本成熟度、权属、测试、合同收入和应用案例 |
-| 研发中心 | `technology-innovation-projects` | 研发投入、人员、设备、场地、知识产权、产学研、制度和建设方案评分表 |
-| 制造精品 | `quality-brand-projects` | 产品质量、标准、检测、技术先进性、市场应用、品牌和生产基础 |
-| 单项冠军 | `quality-brand-projects` | 单项产品、长期专注、市场边界与地位、创新、质量和产业链作用 |
-| 绿色工厂 | `green-development-projects` | 基础设施、能源资源、产品、排放、碳、管理体系和绿色绩效 |
-| 数字化项目 | `digitalization-projects` | 设备联网、系统运行、数据集成、业务闭环、绩效和安全 |
-| 科技计划 | `technology-innovation-projects` | 保持原逻辑：技术问题、研究任务、团队、预算、里程碑和验收指标 |
+| 高新技术企业 | `gov-project-checkup` / `hightech-application-writer` | 研发项目—知识产权—成果转化—高新产品四关联、财务、人员和组织管理 |
+| 专精特新中小企业 | `gov-project-checkup` / `sme-giant-writer` | 主导产品、梯度身份、经营研发、质量评价、知识产权和数字化诊断 |
+| 专精特新“小巨人” | `gov-project-checkup` / `sme-giant-writer` | 主导产品、细分市场、产业链价值、经营研发、Ⅰ类知识产权和软提升 |
+| 首台套 | `general-grant-writer` | 申报装备、首创性、成熟度、查新检测、首次应用、研发机构和产业化能力 |
+| 首批次新材料 | `general-grant-writer` | 材料目录、性能指标、检测认证、首批应用和产业化能力 |
+| 首版次软件 | `general-grant-writer` | 软件产品、版本成熟度、权属、测试、合同收入和应用案例 |
+| 研发中心 | `general-grant-writer` | 研发投入、人员、设备、场地、知识产权、产学研、制度和建设方案评分表 |
+| 制造精品 | `sme-giant-writer` | 产品质量、标准、检测、技术先进性、市场应用、品牌和生产基础 |
+| 单项冠军 | `sme-giant-writer` | 单项产品、长期专注、市场边界与地位、创新、质量和产业链作用 |
+| 绿色工厂 | `general-grant-writer` | 基础设施、能源资源、产品、排放、碳、管理体系和绿色绩效 |
+| 数字化项目 | `general-grant-writer` | 设备联网、系统运行、数据集成、业务闭环、绩效和安全 |
+| 科技计划 | `general-grant-writer` | 保持原逻辑：技术问题、研究任务、团队、预算、里程碑和验收指标 |
 
 ## 专项补强接口
 

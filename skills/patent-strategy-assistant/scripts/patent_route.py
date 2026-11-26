@@ -4,18 +4,18 @@ import json
 from datetime import date
 
 ROUTES = {
-    "comprehensive": ("patent-router", ["P1", "P2", "P3"]),
-    "search": ("patent-router", ["P1"]),
-    "patentability": ("patent-router", ["P1"]),
-    "claims": ("patent-router", ["P1"]),
-    "fto": ("patent-router", ["P1"]),
-    "layout": ("patent-router", ["P2"]),
-    "mining": ("patent-router", ["P2"]),
-    "disclosure": ("patent-router", ["P2"]),
-    "ai_patent": ("patent-router", ["TECHNICAL_FEATURE_MAP", "P1", "P2"]),
-    "preexam": ("patent-router", ["P3"]),
-    "review": ("checking-patdocx-cn-single-agent", ["DOCUMENT_REVIEW"]),
-    "project": ("patent-router", ["PROJECT_LINK"]),
+    "comprehensive": ("patent-strategy-assistant", ["P1", "P2", "P3"]),
+    "search": ("patent-strategy-assistant", ["P1"]),
+    "patentability": ("patent-strategy-assistant", ["P1"]),
+    "claims": ("patent-strategy-assistant", ["P1"]),
+    "fto": ("patent-strategy-assistant", ["P1"]),
+    "layout": ("patent-strategy-assistant", ["P2"]),
+    "mining": ("patent-strategy-assistant", ["P2"]),
+    "disclosure": ("patent-strategy-assistant", ["P2"]),
+    "ai_patent": ("patent-strategy-assistant", ["TECHNICAL_FEATURE_MAP", "P1", "P2"]),
+    "preexam": ("patent-strategy-assistant", ["P3"]),
+    "review": ("patent-docx-reviewer", ["DOCUMENT_REVIEW"]),
+    "project": ("patent-strategy-assistant", ["PROJECT_LINK"]),
 }
 
 PREEXAM_CENTER_POOL = [

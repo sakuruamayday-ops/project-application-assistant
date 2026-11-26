@@ -187,8 +187,7 @@
       "attachment_url": "https://zjippc.org.cn/web/files/2024-07-11/e13f0bfc95a843949d649c76dbddb0e0.pdf"
     },
     "杭州市知识产权保护中心": {
-      "release_date": "2024-07-12",
-      "release_date_basis": "微信公众号存档正文声明“2024年7月12日发布”",
+      "release_date": "2024-07-23",
       "attachment_object_date_in_path": "2024-07-22",
       "industries": [
         "数字经济",
@@ -320,14 +319,10 @@
         "H10K",
         "H10N"
       ],
-      "artifact": "hangzhou-ipc-2024-wechat-archive-2026-07-26.pdf",
-      "artifact_sha256": "4b02175669f9de918f5fa3c0e63a58a60ba4c30e134b0c95ca01dcbe0b7ad880",
-      "artifact_status": "primary_user_supplied_wechat_pdf; 14 pages; 123 IPC subclasses visually/OCR checked against canonical index",
-      "source_page": "https://mp.weixin.qq.com/s/6DH_QIiaz9qYcpf_UYRbhw",
-      "source_publication": "信诚知产微信公众号",
-      "source_publication_date": "2026-03-06",
-      "official_corroboration_page": "https://scjg.hangzhou.gov.cn/art/2025/2/20/art_1693481_58926968.html",
-      "official_corroboration_date": "2024-07-23",
+      "artifact": null,
+      "artifact_sha256": null,
+      "artifact_status": "official_url_http_403; canonical_index_rebuilt_from_official_search_index",
+      "source_page": "https://scjg.hangzhou.gov.cn/art/2025/2/20/art_1693481_58926968.html",
       "attachment_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3246/site/attach/0/2407221736322339.pdf",
       "management_artifact": "hangzhou-preexam-management-2025-revised-official.docx",
       "management_artifact_sha256": "bcabe4dab56c42b98be934ffd1e1cb292f7d1359b46e2c6306d046e7808e3469"

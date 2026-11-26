@@ -9,7 +9,7 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "e213c2e2f28d47615ed87aa3ee50bee27687f9e21ccdcafac86c76e0f2ab0ad7",
+    "SKILL.md": "757f7ff335a1944dd6d7c5333ed52230ea33094fef0fd112ece5f0848d0f50fe",
     "references/portable-runtime-protocol.md": "d4004ca3fa57e1e2df725d125302b2d3fb532daef72dbbd527ccdb381cefb355",
     "references/review-method.md": "548cce93bd6a98bbe57a0398731b4901835e8dcf20e708b6d890970e99c27a5e",
     "requirements.txt": "3630fdf3cc2a68aab9d769ec84d74bb7eb83c6c8e4a78061e759ba37e76152b9",

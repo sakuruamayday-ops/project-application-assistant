@@ -34,6 +34,6 @@ description: 检查、核稿、批注或修订中国专利申请 Word 文件，�
 
 意见单与批注逐条沿用核稿流程第3步的保护范围影响标注及权利要求依据。
 
-交付核稿范围、问题与修改建议、批注副本及核验结果：`review.json`、`review.md`、`commented.docx`、`verification.json`。公司级全面审查按请求衔接 `patent-router`，各项结果注明范围；引用政策文号时绑定适用依据和来源。
+交付核稿范围、问题与修改建议、批注副本及核验结果：`review.json`、`review.md`、`commented.docx`、`verification.json`。公司级全面审查按请求衔接 `patent-strategy-assistant`，各项结果注明范围；引用政策文号时绑定适用依据和来源。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

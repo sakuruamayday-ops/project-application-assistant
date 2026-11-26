@@ -53,7 +53,7 @@ description: 企业合作前公开信息全景尽调与法律合规核查工具�
 ## 模式 B 生成
 
 1. 采用模式 B 规范、[report-spec.md](references/report-spec.md) 和 `assets/report-style.css`。
-2. 项目政策与历史案例按需使用 `local-knowledge-retrieval`，原文或官方来源核验结果进入报告。股权及未分配利润服务机会按已知信号、待取资料和服务方向展开，财税结论对应真实资料。
+2. 项目政策与历史案例按需调用 `gov-project-checkup` 与本地知识库检索能力，原文或官方来源核验结果进入报告。股权及未分配利润服务机会按已知信号、待取资料和服务方向展开，财税结论对应真实资料。
 3. 从静态 HTML 生成 PDF 并核对实际版式。
 
 ```bash
@@ -69,6 +69,6 @@ python3 scripts/validate_report_pdf.py <PDF路径>
 
 财务复算与制造财税风险使用 `manufacturing-tax-risk`；项目资格与多项目规划使用 `gov-project-checkup`；专利专项使用 `patent-strategy-assistant`，专利 Word 文件核稿使用 `patent-docx-reviewer`。网页看板使用当前前端能力与共同底稿，发布按用户指令和宿主权限执行。
 
-外部数据和渲染使用宿主当前能力，缺项时参考 `first-run-configuration` 统一配置并继续可完成部分。团队知识服务通过安全凭据接口读取 `GONGCHUANG_KB_ENDPOINT`、`GONGCHUANG_KB_TOKEN`，日志与交付物使用脱敏信息。资源相对本技能目录解析，输出写当前任务目录。
+外部数据和渲染使用宿主当前能力，缺项时先说明缺口并继续可完成部分。团队知识服务通过安全凭据接口读取 `GONGCHUANG_KB_ENDPOINT`、`GONGCHUANG_KB_TOKEN`，日志与交付物使用脱敏信息。资源相对本技能目录解析，输出写当前任务目录。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

@@ -28,7 +28,7 @@
     "references/policies/工信部节〔2024〕13号-绿色工厂梯度培育及管理暂行办法-2024.md": "c2df694284e31c68f3eaf727d50dcecafd26d931538181ea250dd390c3b216c5",
     "references/policies/浙经信高新〔2025〕169号-浙江省重点企业研究院、企业研究院建设与管理办法-2025.md": "7325c3719d70635370eebf2db80e0d03406831a20b821bc1e8563455c5857b8d",
     "references/report-template-registry.json": "ebc4d74ac82634dd42867fbbc8e7fb90521b7ffe4db1f9f5271c11bd84fb36d8",
-    "references/two-report-contract.md": "ca59fd4c2527c1a26410fb429852d6a9c99aec05f6b98846078b0b7c09ca5cbe",
+    "references/two-report-contract.md": "d96ca6cd8b3edd0934b8e4492a3788dff642f36775a53307d9f8be6e60c6efea",
     "scripts/direct_html_report.py": "532ab2af09f7ec7fedf6b0aa44c08597018f9b2b1b78bd7cf655d37dca210361",
     "scripts/fill_report_template.py": "180d239a676c30d861f400bd988b183cfd8c4b9ef830e5ca334308fcb792c866",
     "scripts/generate_report.py": "05b6954366afa0b4bfb2c3386b547dcbb86782323b8bbfc5af3d5c9d29038bd0",

@@ -21,7 +21,7 @@ try:
     from docx.shared import Cm, Pt
 except ImportError as exc:  # pragma: no cover - installation failure is explicit
     raise SystemExit(
-        "缺少python-docx；请先安装skills/patent-router/requirements.txt"
+        "缺少python-docx；请先安装 skills/patent-strategy-assistant/requirements.txt"
     ) from exc
 
 import patent_case_manifest as case_manifest
