@@ -159,7 +159,7 @@ def format_technology(index: int, value: dict, rd_id: str) -> str:
         return f"{index}、{name}：{ensure_sentence(description)}实测技术指标为{ensure_sentence(indicators)}依据：{ensure_sentence(source)}"
     if kind != "proposed":
         return f"{index}、{name}：{ensure_sentence(description)}技术指标（状态待核对：{kind}）为{ensure_sentence(indicators)}"
-    return f"{index}、{name}：{ensure_sentence(description)}设计控制目标为{ensure_sentence(indicators)}"
+    return f"{index}、{name}：{ensure_sentence(description)}{ensure_sentence(indicators)}"
 
 
 def format_item(item: dict, field: str, max_body_chars: int) -> tuple[str, int]:
