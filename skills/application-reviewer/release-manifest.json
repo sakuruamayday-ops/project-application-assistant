@@ -9,10 +9,10 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "e71b32a4beb4680dcc9e0b5fecbbf38400ffc247b60d64079dfe4445b04c870d",
+    "SKILL.md": "09b47c9f1ef5a18a1f9545175782bac8554ffb0694faea1377974ee57761da4d",
     "references/consistency-gates.md": "c54463526e597cbc7ff00790b79cd304a0673c056684943bc0fa693488c5d8a5",
     "references/detector.md": "2aa4812afeac5eed21c87a1663819ea723f3dd2c0a9a9dbc8998f7f03181259c",
-    "references/formal-materials.md": "b995d4b40c09f1c413347249e44655df05305a273b0b624b60813113fd0caf39",
+    "references/formal-materials.md": "bf47ca68b955ca7adbbe445ac1f202e2c4a59adba4a63a2f8a35e7ae8eb562ab",
     "references/patterns.md": "401f00f79e82c6dc04b301582500074aacb11af0f2f351c0f516391f3b6c2ed5",
     "scripts/cross_chapter_fields.py": "3e3bc8f1e9ff15a83d677651fd34ec0de4bf3296b2a3d8c8833bb7d6d3cc29da",
     "scripts/review_application.py": "6c411a4545f0afe89e9724d597c72f8195547f47d9cef05276a3dc741a952c61",

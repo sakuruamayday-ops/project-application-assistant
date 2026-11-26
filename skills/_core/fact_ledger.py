@@ -509,7 +509,7 @@ def main() -> int:
     p_v.add_argument("file", type=Path)
     p_v.add_argument("--check-uscc", action="store_true")
 
-    p_rec = sub.add_parser("reconcile", help="回查正文并自动销项设计控制目标")
+    p_rec = sub.add_parser("reconcile", help="回查正文并自动销项外置待核估算项")
     p_rec.add_argument("--workspace", type=Path, default=Path("."))
     p_rec.add_argument("--company", required=True)
     p_rec.add_argument("--credit-code", default="")

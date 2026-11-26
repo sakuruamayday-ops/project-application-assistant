@@ -22,6 +22,47 @@ from markdown_it import MarkdownIt
 from grounded_evidence import docx_metadata_errors
 
 
+CJK_FONT = "宋体"
+WESTERN_FONT = "Times New Roman"
+
+
+def _apply_report_fonts(document: Document) -> None:
+    """Normalize all run fonts to 宋体/Times New Roman and strip embedded fonts (self-contained)."""
+    from docx.oxml import parse_xml
+    from docx.opc.part import XmlPart
+    from lxml import etree
+
+    for part in document.part.package.parts:
+        name = str(part.partname)
+        if not name.startswith("/word/") or not name.endswith(".xml") or name == "/word/numbering.xml":
+            continue
+        root = part._element if isinstance(part, XmlPart) else parse_xml(part.blob)
+        fonts_in_part = list(root.iter(qn("w:rFonts")))
+        changed = bool(fonts_in_part)
+        for fonts in fonts_in_part:
+            for theme in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+                fonts.attrib.pop(qn(f"w:{theme}"), None)
+            for attribute in ("ascii", "hAnsi", "cs"):
+                fonts.set(qn(f"w:{attribute}"), WESTERN_FONT)
+            fonts.set(qn("w:eastAsia"), CJK_FONT)
+        if name == "/word/fontTable.xml":
+            for relation_id, relation in list(part.rels.items()):
+                if relation.reltype == RELATIONSHIP_TYPE.FONT:
+                    del part.rels[relation_id]
+            for font in root.iter(qn("w:font")):
+                for entry in list(font):
+                    if etree.QName(entry).localname.startswith("embed"):
+                        font.remove(entry)
+                        changed = True
+        if changed and not isinstance(part, XmlPart):
+            part._blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+    settings = document.settings.element
+    for tag in ("embedTrueTypeFonts", "embedSystemFonts", "saveSubsetFonts"):
+        option = settings.find(qn(f"w:{tag}"))
+        if option is not None:
+            settings.remove(option)
+
+
 SCHEMA_VERSION = "gongchuang-docx-generation-operation/v1"
 TABLE_DIVIDER = re.compile(r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$")
 HEADING = re.compile(r"^(#{1,4})\s+(.+)$")
@@ -354,8 +395,7 @@ def build_document(content: str, output: Path, *, html_input: bool = False) -> d
         first_content = False
         index += 1
 
-    font_helper = Path(__file__).resolve().parents[2] / "project-feasibility/scripts/fill_report_template.py"
-    runpy.run_path(str(font_helper))["_apply_report_fonts"](document)
+    _apply_report_fonts(document)
     generated = BytesIO()
     document.save(generated)
     reopened = Document(generated)

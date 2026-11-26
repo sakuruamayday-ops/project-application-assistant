@@ -27,6 +27,12 @@ PLACEHOLDER_RE = re.compile(
     r"【(?:待补充|待核实|请核实|填写|此处填|客户填写)】|"
     r"(?<![A-Za-z])(?:TBD|XXX)(?![A-Za-z])|客户填写|待企业核定|主要技术指标待补充"
 )
+META_TALK_RE = re.compile(
+    r"本(?:节|段|栏)(?:用|以|采用|按|从|将|仅)|"
+    r"(?:需|须)?待[^。；\n]{0,20}(?:核定|确认|提供|补充)后(?:再)?(?:填入|计算|更新|补充|测算)|"
+    r"精确[^。；\n]{0,6}待[^。；\n]{0,4}(?:核|补|定)|"
+    r"以下(?:内容)?(?:为|是)(?:根据|基于)(?:素材|材料|资料)(?:生成|撰写)"
+)
 DEFENSIVE_HEDGE_RE = re.compile(
     r"仅供参考|不构成(?:任何)?(?:法律|专业|申报|投资)建议|请以官方(?:发布|通知)?为准|免责声明|本报告不承担.*责任"
 )
@@ -118,6 +124,10 @@ def audit_formal_text(
     ph = PLACEHOLDER_RE.findall(text or "")
     if ph:
         errors.append({"rule": "placeholder", "issue": f"正文残留未清理占位符/提示词：{ph[:8]}"})
+
+    mt = [m.group(0) for m in META_TALK_RE.finditer(text or "")]
+    if mt:
+        errors.append({"rule": "meta_self_talk", "issue": f"正文混入写作说明或自言自语句（应删除或移到正文外）：{mt[:5]}"})
 
     hd = DEFENSIVE_HEDGE_RE.findall(text or "")
     if hd:

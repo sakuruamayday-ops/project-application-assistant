@@ -51,5 +51,4 @@
 
 ## 政策原文
 
-- [优质中小企业梯度培育管理办法（工信部企业〔2026〕2号）](<../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.md>)
-- [工信部企业〔2026〕2号正文及三项附件 PDF](<../../sme-score-preassessment/references/policies/工信部企业〔2026〕2号-优质中小企业梯度培育管理办法-2026.pdf>)
+- 优质中小企业梯度培育管理办法（工信部企业〔2026〕2号），信源：https://www.miit.gov.cn/zwgk/zcwj/wjfb/tz/art/2026/art_5546b1a622ea4d73bd2ca395b73bd4eb.html

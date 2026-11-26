@@ -19,7 +19,7 @@
 | --- | --- |
 | `provider` | 提供器标识 |
 | `remote_task_id` | 提交成功后立即写入远端任务标识 |
-| `query_sha256` | 按[结果交付契约](../../evidence-ledger/references/result-delivery-contract.md#摘要规范)序列化实际检索式字符串，再计算 UTF-8 SHA-256 |
+| `query_sha256` | 按结果交付摘要规范序列化实际检索式字符串，再计算 UTF-8 SHA-256 |
 | `checkpoint_path` | 持久化结果与续读位置的路径 |
 | `progress` | 已写入检查点的进度计数，提交时为 0 |
 

@@ -9,8 +9,8 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "33ba049957fcfdc0fcd3a03991b0be3fd596448439d32dec043ead27de7ec66d",
-    "references/application-material-checkup-guide.md": "0469e0b5b9e74b810852084b7a902534bf042baaa9f2aa8695b0833c4499f3c4",
+    "SKILL.md": "11e974eda781e846b14e1051eb423ed3509a62733dd2ac1f7cbbfb8cdea3830e",
+    "references/application-material-checkup-guide.md": "a609cac566d5a05eca1f0bcade28a22c048a5efda92eaf2ff48aeb0119473d57",
     "references/canonical-project-index.jsonl": "121bdfa0b277954f2bbd31a54b9a4b19c0d4b7ebb66e7e85eb596bffb79ea575",
     "references/classification-rules.md": "cb7f7d6a522e6767ba5f3e9d41b6cc7b0a8df713ebe3b7a01dc4d17e0263dfae",
     "references/high-frequency-project-rules.jsonl": "d070024d2b4cefad8f438a0957543d57a1b1abd67f71e5910de5e30b86d55fba",
@@ -28,14 +28,16 @@
     "references/policies/浙经信高新〔2025〕169号-浙江省重点企业研究院、企业研究院建设与管理办法-2025.md": "7325c3719d70635370eebf2db80e0d03406831a20b821bc1e8563455c5857b8d",
     "references/project-map.jsonl": "f912bd0ef840a67f31b88cde0288e1c5d5863e28a069a969f078b9ef9c42b909",
     "references/query-aliases.json": "852b6b35a3fae3798c30587a2688e8e0bce41db92afc8f9a81324ca77fb321c4",
-    "references/scoring-evidence-rubric.md": "51142337eb4e08803a04fe8aff5207e1ed6eb562d95657970f49a003e812df94",
+    "references/scoring-evidence-rubric.md": "bea5a1face34437b8e7972ae687ab00f98fb2ebf4e479570e3cd5aa9fd360832",
     "references/sme-policy-baseline-2026.json": "df12a1e2b267e3c144ee996914de81f2d7c09cee3053f850db5c0c46b085f495",
     "scripts/check_company_evidence.py": "79cde14255cc38060d01b80e57622eb94f626e5708e2f936b1f496a2f95ffbe6",
+    "scripts/checkup_self_review.py": "74d693741d0425c27f2115d794b7a82d9d1925419f1b435ba8951b05674c6f11",
     "scripts/compare_scenarios.py": "33a6b364f22cb593935eb6047bb99406f4b787ec2db29a61fd6d888367425117",
     "scripts/filter_project_map.py": "c4b08c0cf779894dcff664d9b82c01b77aa9dfd5e1a6f1383eb7ac8a616e2404",
     "scripts/preflight.py": "062f76228c9d9913e67f2cbea416c79df0144c517795d946631d3d0d2d2ff621",
     "scripts/run_checkup.py": "48123078fe895f41f98d3c406d6e2a22d47fddd01cb508b29099bc2810ba34e0",
-    "scripts/search_catalogs.py": "9e2147288c3678125ae195773bf05a3017dd5b80166a7b8332ebdb29d18cff7b"
+    "scripts/search_catalogs.py": "9e2147288c3678125ae195773bf05a3017dd5b80166a7b8332ebdb29d18cff7b",
+    "scripts/split_application_sections.py": "b7cae7215ead1225fde91de208c9a7fe1e32cade3dce6e6343406cf89bfa0ba4"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",
