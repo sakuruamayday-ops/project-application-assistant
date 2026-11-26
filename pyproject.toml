@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-application-assistant"
-version = "1.8.1"
-description = "面向政府项目申报工程师的技能包与本地配置工具"
+version = "3.0.0"
+description = "面向政府项目申报工程师的 V3 十大核心技能包与统一确定性引擎"
 requires-python = ">=3.10"
 dependencies = [
     "openpyxl>=3.1",
@@ -23,3 +23,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests", "skills"]

@@ -15,6 +15,7 @@ from .skill_integrity import (
     load_json,
     sha256_file,
     tree_hashes,
+    trusted_publisher_fingerprint,
     verify_skill_directory,
 )
 
@@ -315,13 +316,14 @@ def install_skills(
         if not isinstance(skill_state, dict):
             skill_state = {}
 
-        for entry in signed_skills:
-            verify_skill_directory(
-                entry["source"],
-                evidence_dir=execution_root / "source-signatures",
-                label=f"source-{entry['name']}",
-                require_signature=True,
-            )
+        for entry in entries:
+            if entry["kind"] == "skill":
+                verify_skill_directory(
+                    entry["source"],
+                    evidence_dir=execution_root / "source-signatures",
+                    label=f"source-{entry['name']}",
+                    require_signature=False,
+                )
 
         selected: list[dict[str, Any]] = []
         for entry in entries:
@@ -385,12 +387,12 @@ def install_skills(
             staged = staging_root / entry["relative"]
             _copy_entry(entry["source"], staged, mode)
             entry["staged"] = staged
-            if entry["kind"] == "skill" and entry["signed"]:
+            if entry["kind"] == "skill":
                 verify_skill_directory(
                     staged,
                     evidence_dir=execution_root / "staged-signatures",
                     label=f"staged-{entry['name']}",
-                    require_signature=True,
+                    require_signature=False,
                 )
         transaction_status = "staged-and-verified"
 
@@ -431,14 +433,13 @@ def install_skills(
                 )
                 continue
             target = entry["target"]
-            if entry["signed"]:
+            if entry["kind"] == "skill":
                 verify_skill_directory(
                     target,
                     evidence_dir=execution_root / "installed-signatures",
                     label=f"installed-{entry['name']}",
-                    require_signature=True,
+                    require_signature=False,
                 )
-                frozen[str(entry["name"])] = freeze_signed_skill(target)
             baseline = (
                 config_dir
                 / "official-baselines"

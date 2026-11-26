@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -107,16 +106,15 @@ def extract_text(document) -> str:
 
 def main() -> int:
     args = parse_args()
-    output = Path(args.output).expanduser().resolve()
+    output = Path(args.output).expanduser().absolute()
     template = Path(args.template).expanduser().resolve() if args.template else DEFAULT_TEMPLATE
     if template.suffix.lower() != ".docx" or not template.is_file():
         raise SystemExit(f"母版不存在或不是docx：{template}")
     if output.suffix.lower() != ".docx":
         raise SystemExit("输出文件必须为 .docx")
-    if output == template:
+    if output.resolve() == template:
         raise SystemExit("禁止直接覆盖技能包母版")
     output.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(template, output)
 
     code_prefix = args.standard_code.split()[0]
     replacements = sorted(
@@ -135,10 +133,19 @@ def main() -> int:
         reverse=True,
     )
 
-    document = Document(output)
+    document = Document(template)
     changed = sum(replace_paragraph(paragraph, replacements)
                   for paragraph in all_paragraphs(document))
-    document.save(output)
+    try:
+        stream = output.open("xb")
+    except FileExistsError:
+        raise SystemExit(f"输出已存在，请指定新路径：{output}") from None
+    try:
+        with stream:
+            document.save(stream)
+    except BaseException:
+        output.unlink(missing_ok=True)
+        raise
 
     verified = Document(output)
     text = extract_text(verified)

@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "as_of": "2026-08-02",
+  "policy_version": "2026.1",
+  "common_policy": {
+    "title": "《优质中小企业梯度培育管理办法》",
+    "document_number": "工信部企业〔2026〕2号",
+    "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+  },
+  "project_levels": {
+    "省级专精特新中小企业": {
+      "project_id": "zhejiang-specialized-sme",
+      "aliases": [
+        "省级专精特新",
+        "省专",
+        "专精特新中小企业"
+      ],
+      "application_types": {
+        "recognition": {
+          "rule_branch": "2026-current",
+          "quality_score_threshold": 50,
+          "operator": "gte",
+          "rule_id": "specialized-sme-quality-score"
+        },
+        "review": {
+          "rule_branch": "2026-management-review",
+          "quality_score_threshold": 50,
+          "operator": "gte",
+          "rule_id": "specialized-sme-quality-score"
+        }
+      }
+    },
+    "专精特新“小巨人”": {
+      "project_id": "little-giant",
+      "aliases": [
+        "小巨人",
+        "专精特新小巨人"
+      ],
+      "application_types": {
+        "recognition": {
+          "rule_branch": "2026-current",
+          "quality_score_threshold": 60,
+          "operator": "gte",
+          "rule_id": "little-giant-quality-score"
+        },
+        "review": {
+          "rule_branch": "2026-management-review",
+          "quality_score_threshold": 60,
+          "operator": "gte",
+          "rule_id": "little-giant-quality-score"
+        }
+      }
+    }
+  },
+  "method_boundary": {
+    "official_evaluation": "质量得分只接受主管部门平台实际结果及其可验证记录。",
+    "internal_preassessment": "本技能只做2026硬门槛和质量评价输入预评估，不生成内部总分。",
+    "quality_score_statuses": [
+      "verified-platform-score",
+      "pending-platform-evaluation"
+    ],
+    "prohibited_outputs": [
+      "内部百分制总分",
+      "区间估分",
+      "保守分",
+      "基于未达条件的假设估分",
+      "获批概率"
+    ]
+  }
+}

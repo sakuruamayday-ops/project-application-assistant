@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-07-26",
+  "files": {
+    "zhejiang-ipc-2024-07-11-official.pdf": {
+      "sha256": "bd2ee9d3a0371e51b0f1170b4debb7a4fa2613efc049f1f86787df9b0002b071",
+      "status": "official_original"
+    },
+    "hangzhou-preexam-management-2025-revised-official.docx": {
+      "sha256": "bcabe4dab56c42b98be934ffd1e1cb292f7d1359b46e2c6306d046e7808e3469",
+      "status": "official_original"
+    },
+    "dual-center-ipc-index.json": {
+      "sha256": "9bb12148931fa120284e46c43b3f2a7de804fb60437165f21c1acd898197e71d",
+      "status": "canonical_structured_index"
+    },
+    "dual-center-ipc-comparison.csv": {
+      "sha256": "7801fabe595710bedda4624dbea72e61f7de17a7a4872e7451e8450421dff364",
+      "status": "generated_comparison"
+    }
+  },
+  "hangzhou_official_pdf": {
+    "url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3246/site/attach/0/2407221736322339.pdf",
+    "sha256": null,
+    "retrieval_status": "HTTP 403 on 2026-07-26",
+    "follow_up": "恢复下载后归档原件、补 SHA-256，并与 123 项结构化索引逐项比对"
+  }
+}

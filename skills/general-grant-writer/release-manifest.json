@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "skill_name": "general-grant-writer",
+  "release_tag": "V3.0.0",
+  "required_paths": [
+    "SKILL.md"
+  ],
+  "mutable_paths": [
+    "local-overrides"
+  ],
+  "files": {
+    "SKILL.md": "214105e7d8392ad053d1064854a580c326bc55ef4fc7e4a42752c54e21ce4317",
+    "assets/fonts/NotoSansSC-Variable.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+    "assets/fonts/OFL-NotoSansSC.txt": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+    "assets/templates/generic-feasibility-master.docx": "507317e32149775dc6d4b7f5687ab79c8d09a76db4bffc3019a501101364cfb5",
+    "assets/templates/generic-feasibility-master.html": "8cf3a99e83b68e3dcafd89def01463ba45c484843e47bd3f46064ae5d59c556d",
+    "assets/templates/generic-preassessment-master.docx": "00ddd201f7753749717d2903d7cf6130bed19166bc4362f0ba7c83e936ebca6d",
+    "assets/templates/generic-preassessment-master.html": "54a1519aaeda705f86043df9d1cc13e664f67c79512a46a3401da8f5a78c219b",
+    "references/evidence-state-model.md": "edbc84186575e8cafc3a8e9131a3d84e6e3ce55e067affb0c81f7050f215163e",
+    "references/feasibility-decision-model.md": "4dacbbd88c0d2ab0a56c4887c3003f7cc0d923259b3a14d3aa23c464e6fdb200",
+    "references/playbooks/01-institute-and-tech-innovation.md": "d2009318a09193918523d34948fb3a89cc1f7e963d980c5b60e2387ddf072417",
+    "references/playbooks/02-three-first-and-industrialization.md": "6a2e561523ce74f9d2244f94a7d8db319c031233894887fc90ee8363963ba595",
+    "references/playbooks/03-investment-subsidy-and-tech-renovation.md": "211f54b729cdd4652798bd2b52a3dd1faecdd8d10563f42343293ecb817a3eca",
+    "references/playbooks/04-digitalization-and-smart-factory.md": "e7eaba0836b76644a1c07397da49f28a41c7de8c14ef021e70d01eae528d9a76",
+    "references/playbooks/05-green-factory-and-carbon.md": "1db2b8b5e50923cc0cc67f25ac2198a1e712fd7bf1f2a0a76a8d6d1deacac628",
+    "references/playbooks/06-agriculture-and-rural.md": "88b483e84fe6c973504d0d71e432cd261f6a5191876bdeac601c4bf3b7f9179a",
+    "references/playbooks/07-talent-and-startup.md": "625932582a584a0665f63aeca92f53f80acec982d662d048733f4e88799d1139",
+    "references/playbooks/08-trade-and-open-economy.md": "1256e05ecfda8968a8dcb7054bed29d8fd9b7ba9737bd8bb9b815733d209d244",
+    "references/playbooks/09-ip-projects.md": "04e3e7349f5f37fc0ee3680af917631c8cba4528c407515c935d4753a5239a40",
+    "references/playbooks/10-general-feasibility-and-writing.md": "d401121ef679151da00a82d67e2566d0ab395fbf901f461739cad10aa6c2671d",
+    "references/policies/hangzhou-talent-and-ai-voucher-snapshot-2026-08-06.md": "a437831457a7180a151f7cb060917fdc656eb055fce8f9ec6b63af8b5b23ae7e",
+    "references/policies/工信部节〔2024〕13号-绿色工厂梯度培育及管理暂行办法-2024.md": "c2df694284e31c68f3eaf727d50dcecafd26d931538181ea250dd390c3b216c5",
+    "references/policies/浙经信高新〔2025〕169号-浙江省重点企业研究院、企业研究院建设与管理办法-2025.md": "7325c3719d70635370eebf2db80e0d03406831a20b821bc1e8563455c5857b8d",
+    "references/report-template-registry.json": "b62928a8a13b64eac2f36679a15fcaa170a4d9c715edac577c7ea38d5c80ca5f",
+    "references/two-report-contract.md": "d96ca6cd8b3edd0934b8e4492a3788dff642f36775a53307d9f8be6e60c6efea",
+    "scripts/direct_html_report.py": "532ab2af09f7ec7fedf6b0aa44c08597018f9b2b1b78bd7cf655d37dca210361",
+    "scripts/fill_report_template.py": "180d239a676c30d861f400bd988b183cfd8c4b9ef830e5ca334308fcb792c866",
+    "scripts/generate_report.py": "05b6954366afa0b4bfb2c3386b547dcbb86782323b8bbfc5af3d5c9d29038bd0",
+    "scripts/report_html.py": "e193275f30f07cc93860761b0db219fd634a41e0e315ceb4926f701f4bfd2fe4",
+    "scripts/select_report_template.py": "1ddb5fb2a5c534468c4c802eddd7b3a16980ebb775d0793bcb98ccb3fe6e00db",
+    "scripts/sme_action_report.py": "1f53102023ee0df359b7131b74f4e31564d8b74ff2f29e1946b55733056ef38c",
+    "scripts/validate_grant_deliverable.py": "efb8d68d242748c030ee1c62c9aafb831b505c9af86406ad72d7e2944f67b88a"
+  },
+  "integrity_excludes": [
+    "publisher-ed25519.pub",
+    "release-manifest.json",
+    "release-manifest.json.sig",
+    "release-signature.json"
+  ]
+}

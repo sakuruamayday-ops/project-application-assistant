@@ -1,0 +1,508 @@
+{
+  "schema_version": "workbuddy-bundles/v1",
+  "version": "3.0.0",
+  "bundles": [
+    {
+      "skillId": "skill_gongchuang_v3_01",
+      "skillName": "gov-project-checkup",
+      "displayName": "政府项目免费体检与智能匹配",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/gov-project-checkup",
+      "descriptionZh": "政府项目免费诊断、体检、政策查询与多项目智能匹配入口。覆盖企业画像、财务三表/资产负债表/研发费率与知产/专利有效期核验、省市区县政策检索与效力核验、高企/专精特新/小巨人预评估、多项目匹配规划、可比同行对标及产业链与“工业六基”目录匹配；优先直连本地知识库（无需 MCP），输出确定性复算并写入主体隔离事实黑板。",
+      "descriptionEn": "Run local-KB enterprise profiling, financial/IP verification, policy validity checks, high-tech/SME preassessment, peer benchmarking, and industrial catalog matching.",
+      "examplesZh": [
+        "帮我给这家制造业企业做一次免费政府项目体检，看看今年能报高企还是小巨人。",
+        "查一下宁波鄞州区2026年有效的专精特新和研发机构政策，并拉一份可比同行名单。",
+        "核对一下企业近三年研发费用率、资产负债表和专利有效期，写入主体黑板。",
+        "查一下企业资产负债表平不平、专利有没有过期，顺便匹配下工业六基目录。"
+      ],
+      "examplesEn": [
+        "Run a government grant checkup for this manufacturer and rank High-Tech vs. Little Giant eligibility.",
+        "Check valid 2026 SME and R&D center policies for Yinzhou, Ningbo and list comparable peers.",
+        "Verify 3-year R&D ratio, balance sheet identity, and patent validity, then save to the facts blackboard."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc",
+        "references/policies/*.pdf",
+        "references/policies/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/kb_local.py",
+          "to": "scripts/_core/kb_local.py"
+        },
+        {
+          "from": "skills/_core/timeline_cache.py",
+          "to": "scripts/_core/timeline_cache.py"
+        },
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/doc_io.py",
+          "to": "scripts/_core/doc_io.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_02",
+      "skillName": "application-reviewer",
+      "displayName": "申报材料质检、对比与润色审计",
+      "tier": "free-checkup",
+      "sourceSkill": "skills/application-reviewer",
+      "descriptionZh": "申报材料全维度质检、交叉核对、原生 DOCX/Word 版本对比、证据台账算术复算与中文自然化去 AI 味润色审计工具。适用于检查两版申请书改了哪里、核对前后数字/名称/时间线一致性、复算占比公式、排查串户/占位符/免责套话，及去 AI 味改写防丢指标。",
+      "descriptionEn": "Audit application consistency, natively diff DOCX versions with moved sections/rows, verify evidence-ledger arithmetic, and enforce numeric fidelity on prose rewrites.",
+      "examplesZh": [
+        "帮我检查这份高企申报书有没有占位符、跨企业串户或免责兜底套话。",
+        "把修改前后的两版申报书 Word 做一次原生版本对比，标出移动的章节和改过的数字。",
+        "复算这份证据台账里的全部占比公式，并检查润色后的正文有没有丢掉 ppm 或 MPa 指标。"
+      ],
+      "examplesEn": [
+        "Audit this application DOCX for placeholders, cross-company contamination, or defensive hedging.",
+        "Compare the old and revised DOCX applications and highlight moved sections, reordered rows, and changed figures.",
+        "Recompute every formula in this evidence ledger and verify that rewriting preserved all ppm/MPa metrics."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "assets/*.docx",
+        "assets/*.xlsx",
+        "assets/*.doc"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/doc_io.py",
+          "to": "scripts/_core/doc_io.py"
+        },
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_03",
+      "skillName": "hightech-application-writer",
+      "displayName": "国家高新技术企业申请书撰写",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/hightech-application-writer",
+      "descriptionZh": "国家高新技术企业认定申请书撰写与严格审计工具。覆盖高企空白母版扩缩表（RD/PS 表）、RD 目的及组织实施方式/核心技术及创新点/阶段性成果撰写、PS 高新产品三栏、企业创新能力四栏、OOXML 精准回填与严格字数/密度/勾稽审计。",
+      "descriptionEn": "Draft, expand, populate, and strictly audit National High-Tech Enterprise application DOCX forms (RD, PS, and innovation sections).",
+      "examplesZh": [
+        "按企业审计报告和专利清单，把高企申请书空白母版扩成 6 个 RD 表和 2 个 PS 表并回填完整正文。",
+        "逐项撰写 RD 目的及组织实施方式、核心技术及创新点、PS 竞争优势与企业创新能力四栏，并通过严格审计。"
+      ],
+      "examplesEn": [
+        "Expand the High-Tech application DOCX master into 6 RD and 2 PS tables and populate full prose from verified evidence.",
+        "Draft dense RD purpose/implementation, core innovations, PS advantages, and innovation sections passing strict audit."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        },
+        {
+          "from": "skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py",
+          "to": "scripts/validate_docx_text_only.py"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_04",
+      "skillName": "sme-giant-writer",
+      "displayName": "专精特新小巨人与单项冠军撰写",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/sme-giant-writer",
+      "descriptionZh": "专精特新中小企业、国家级专精特新“小巨人”、国家/省级制造业单项冠军及质量品牌项目（品字标/浙江制造精品/政府质量奖）全流程策划与撰写。覆盖前期培育方向卡、六大核心问题正文、补短板/填空白/进口替代四项判断、技术-产品-收入主矩阵与 A—D 级市占率底稿。",
+      "descriptionEn": "Deliver SME/Little Giant/Manufacturing Single Champion direction cards, 6-question narratives, tech-product-revenue matrices, and A-D market-share workpapers.",
+      "examplesZh": [
+        "为这家制造企业编制 2026 版小巨人前期培育方向卡和六大核心问题高密度申请正文。",
+        "生成面向浙江省制造业单项冠军（single_champion）的技术—产品—收入两链汇合主矩阵。",
+        "帮我策划浙江制造“品字标”、浙江制造精品或国家级制造业单项冠军及小巨人六问申报材料。"
+      ],
+      "examplesEn": [
+        "Build a 2026 Little Giant direction card and full six-question narrative for this manufacturer.",
+        "Generate a single_champion technology-product-revenue master matrix and A-D market-share workpaper."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "references/policies/*.pdf"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_05",
+      "skillName": "general-grant-writer",
+      "displayName": "通用政府专项申报与可行性报告",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/general-grant-writer",
+      "descriptionZh": "通用政府专项申报书与可行性研究报告撰写引擎。覆盖10大专项赛道：省级重点企业研究院/企业研究院（169号文）、科技计划（尖兵/领雁）与科技进步奖、首台套装备/首批次新材料/首版次软件/省工业新产品、技改/大规模设备更新/固投补助与质保金核算、数字化车间/智能工厂/未来工厂/5G工厂、绿色工厂/绿色供应链/节能降碳、农业龙头/现代农业、海外高层次/领军人才/博士后/杭州算力券与创业资助、外贸稳拓调优/跨境电商/海外仓/境外展会补贴、知识产权示范强企/专利导航及通用立项可行性报告。",
+      "descriptionEn": "Draft and strictly validate 10 specialized government grant tracks (R&D institutes, three-first, tech renovation, smart/green factories, agriculture, talent, trade, IP, and feasibility reports).",
+      "examplesZh": [
+        "按 169 号文核验省级企业研究院申报条件并撰写完整建设方案与可行性报告。",
+        "核对这套技改设备更新台账（含 5% 质保金）的适格投资额，并生成绿色工厂绩效自评价。",
+        "帮我评估杭州算力券和领军人才申报条件，或者写一份省重点企业研究院（169号文）/尖兵领雁/5G工厂/海外仓申报材料。"
+      ],
+      "examplesEn": [
+        "Validate Provincial Enterprise Research Institute eligibility (Doc #169) and draft the feasibility report.",
+        "Reconcile eligible fixed-asset renovation investments (with 5% retention) and validate green factory KPIs."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**",
+        "references/policies/*.pdf"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_06",
+      "skillName": "patent-docx-reviewer",
+      "displayName": "中国专利申请文件核稿与批注",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/patent-docx-reviewer",
+      "descriptionZh": "检查、核稿、批注或修订中国专利申请 Word 文件，核对摘要、权利要求保护范围、说明书、附图、引用关系、术语统一、公开充分性和 OOXML 完整性，生成带“保护范围影响”评估的可定位意见与精准批注副本。",
+      "descriptionEn": "Review Chinese patent application DOCX files for claim scope, references, terminology, and sufficiency, producing precision OOXML-annotated copies.",
+      "examplesZh": [
+        "核稿这份发明专利申请文件 Word，输出逐条保护范围影响意见并写入精准批注副本。"
+      ],
+      "examplesEn": [
+        "Review this Chinese invention patent DOCX and generate an annotated copy with scope-impact findings."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_07",
+      "skillName": "patent-strategy-assistant",
+      "displayName": "专利查新、挖掘、布局与双中心预审",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/patent-strategy-assistant",
+      "descriptionZh": "公司级专利综合战略助手，处理专利查新检索、现有技术对比、专利挖掘交底、AI/软件算法发明、权利要求特征树与 FTO 自由实施尽调、专利布局、浙江/杭州双保护中心专利预审通道推荐及政府项目专利关联。",
+      "descriptionEn": "Comprehensive enterprise patent strategy assistant covering novelty search, mining, AI inventions, cross-category claim graphs, FTO, and Zhejiang/Hangzhou pre-exam routing.",
+      "examplesZh": [
+        "帮我分析这份通信加密专利的权利要求特征树与 H04L 分类号，并推荐浙江还是杭州预审中心。"
+      ],
+      "examplesEn": [
+        "Analyze this encryption patent's claim graph and H04L IPC classification and recommend Zhejiang vs. Hangzhou pre-exam center."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        },
+        {
+          "from": "skills/_runtime/result_digest.py",
+          "to": "scripts/result_digest.py"
+        },
+        {
+          "from": "skills/_runtime/policy_original_text.py",
+          "to": "scripts/policy_original_text.py"
+        },
+        {
+          "from": "skills/patent-docx-reviewer/scripts/patent_extractor.py",
+          "to": "scripts/patent_extractor.py"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_08",
+      "skillName": "standard-drafting",
+      "displayName": "技术标准起草与GB-T1.1严格审查",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/standard-drafting",
+      "descriptionZh": "按 GB/T 1.1 起草、修订或审查国家标准、行业标准、地方标准、团体标准（含浙江制造团标）和企业标准，完成结构条款、规范性引用交叉核验、试验方法完整性检查、编制说明与意见处理。",
+      "descriptionEn": "Draft GB/T 1.1 national, industry, group, and enterprise standards with strict normative-citation, test-method, and placeholder auditing.",
+      "examplesZh": [
+        "帮我起草一份高阻隔复合膜企业标准草案和编制说明，并运行 GB/T 1.1 严格门禁检查。"
+      ],
+      "examplesEn": [
+        "Draft an enterprise standard and compilation note for high-barrier film and run strict GB/T 1.1 checks."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/quality_gate.py",
+          "to": "scripts/_core/quality_gate.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        },
+        {
+          "from": "skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py",
+          "to": "scripts/validate_docx_text_only.py"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_09",
+      "skillName": "enterprise-due-diligence",
+      "displayName": "企业全景尽调与新公司法合规核查",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/enterprise-due-diligence",
+      "descriptionZh": "企业合作前公开信息全景尽调与法律合规核查工具。覆盖工商股权、关联企业、司法风险、同行与项目规划（交付 A 标准版/B 深度版/C 双版本 PDF/Word），内置 GB 32100 18 位信用代码硬校验与新《公司法》2027-06-30/2032-06-30 认缴实缴过渡期测算。",
+      "descriptionEn": "Pre-cooperation enterprise due diligence and legal compliance check with GB 32100 USCC validation, 2024 Company Law paid-in calculator, and A/B/C reports.",
+      "examplesZh": [
+        "对这家拟合作制造企业做一份 A 版全景尽调报告，同时核验其认缴出资是否触发 2027-06-30 新公司法整改红线。",
+        "帮我测算这家2018年成立的企业按新公司法2027-06-30过渡期要不要调整认缴出资期限，并做合作前全景尽调。"
+      ],
+      "examplesEn": [
+        "Produce a Standard Panorama Due Diligence report and verify whether subscribed capital triggers the 2027-06-30 Company Law deadline."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/kb_local.py",
+          "to": "scripts/_core/kb_local.py"
+        },
+        {
+          "from": "skills/_core/timeline_cache.py",
+          "to": "scripts/_core/timeline_cache.py"
+        },
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        }
+      ],
+      "linkRewrites": {}
+    },
+    {
+      "skillId": "skill_gongchuang_v3_10",
+      "skillName": "manufacturing-tax-risk",
+      "displayName": "制造企业财税复算与智慧税务风控",
+      "tier": "paid-delivery",
+      "sourceSkill": "skills/manufacturing-tax-risk",
+      "descriptionZh": "制造企业财务复算与智慧税务风控体检工具。基于财务三表复算现金流与财务健康、筛查智慧税务及账票税款货一致性，支持高研发初创期费率>100%无崩溃预警与跨企业串户硬拦截，交付深度风控整改报告。",
+      "descriptionEn": "Recompute manufacturing 3-statement financials, screen smart-tax risks with strict cross-company isolation and >100% R&D tolerance, and deliver deep risk reports.",
+      "examplesZh": [
+        "复算这家制造企业近三年财务三表和现金流健康指标，筛查智慧税务风险并输出深度整改报告。"
+      ],
+      "examplesEn": [
+        "Recompute 3-year manufacturing financial statements, screen smart-tax risks, and deliver a deep remediation report."
+      ],
+      "excludeGlobs": [
+        "references/portable-runtime-protocol.md",
+        "scripts/portable_skill_runtime.py",
+        "scripts/verify_skill_installation.py",
+        "release-manifest*",
+        "release-signature*",
+        "publisher-ed25519.pub",
+        "tests/**"
+      ],
+      "vendorFiles": [
+        {
+          "from": "skills/_core/fact_ledger.py",
+          "to": "scripts/_core/fact_ledger.py"
+        },
+        {
+          "from": "skills/_core/v3-delivery-constitution.md",
+          "to": "references/v3-delivery-constitution.md"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
+          "to": "scripts/pdf_two_pass.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
+          "to": "scripts/brand_config.py"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/references/brand_config.json",
+          "to": "references/brand_config.json"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-07.png",
+          "to": "assets/brand-gold-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-10.png",
+          "to": "assets/brand-gold-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-12.png",
+          "to": "assets/brand-gold-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-gold-16.png",
+          "to": "assets/brand-gold-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
+          "to": "assets/brand-mark.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-07.png",
+          "to": "assets/brand-red-07.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-10.png",
+          "to": "assets/brand-red-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-12.png",
+          "to": "assets/brand-red-12.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-red-16.png",
+          "to": "assets/brand-red-16.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-10.png",
+          "to": "assets/brand-white-10.png"
+        },
+        {
+          "from": "skills/_runtime/gongchuang-branding/assets/brand-white-16.png",
+          "to": "assets/brand-white-16.png"
+        }
+      ],
+      "linkRewrites": {}
+    }
+  ]
+}

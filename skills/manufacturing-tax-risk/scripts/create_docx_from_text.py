@@ -1,0 +1,450 @@
+#!/usr/bin/env python3
+"""Create one native DOCX from chat-validated plain or Markdown text."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+from datetime import datetime, timezone
+from io import BytesIO
+from pathlib import Path
+
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+from docx.opc.constants import RELATIONSHIP_TYPE
+from docx.shared import Cm, Pt, RGBColor
+from markdown_it import MarkdownIt
+
+from grounded_evidence import docx_metadata_errors
+
+
+CJK_FONT = "宋体"
+WESTERN_FONT = "Times New Roman"
+
+
+def _apply_report_fonts(document: Document) -> None:
+    """Normalize all run fonts to 宋体/Times New Roman and strip embedded fonts (self-contained)."""
+    from docx.oxml import parse_xml
+    from docx.opc.part import XmlPart
+    from lxml import etree
+
+    for part in document.part.package.parts:
+        name = str(part.partname)
+        if not name.startswith("/word/") or not name.endswith(".xml") or name == "/word/numbering.xml":
+            continue
+        root = part._element if isinstance(part, XmlPart) else parse_xml(part.blob)
+        fonts_in_part = list(root.iter(qn("w:rFonts")))
+        changed = bool(fonts_in_part)
+        for fonts in fonts_in_part:
+            for theme in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+                fonts.attrib.pop(qn(f"w:{theme}"), None)
+            for attribute in ("ascii", "hAnsi", "cs"):
+                fonts.set(qn(f"w:{attribute}"), WESTERN_FONT)
+            fonts.set(qn("w:eastAsia"), CJK_FONT)
+        if name == "/word/fontTable.xml":
+            for relation_id, relation in list(part.rels.items()):
+                if relation.reltype == RELATIONSHIP_TYPE.FONT:
+                    del part.rels[relation_id]
+            for font in root.iter(qn("w:font")):
+                for entry in list(font):
+                    if etree.QName(entry).localname.startswith("embed"):
+                        font.remove(entry)
+                        changed = True
+        if changed and not isinstance(part, XmlPart):
+            part._blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+    settings = document.settings.element
+    for tag in ("embedTrueTypeFonts", "embedSystemFonts", "saveSubsetFonts"):
+        option = settings.find(qn(f"w:{tag}"))
+        if option is not None:
+            settings.remove(option)
+
+
+SCHEMA_VERSION = "gongchuang-docx-generation-operation/v1"
+TABLE_DIVIDER = re.compile(r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$")
+HEADING = re.compile(r"^(#{1,4})\s+(.+)$")
+NUMBERED_HEADING = re.compile(
+    r"^(?:第[一二三四五六七八九十百]+[章节篇部分]|[一二三四五六七八九十]+[、.]|\d+(?:\.\d+)*[、.])\s*(.+)$"
+)
+LIST_ITEM = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)、]\s*)(.+)$")
+INLINE_MARKDOWN = MarkdownIt("commonmark")
+STRONG_LABEL = re.compile(r"\*\*([^*\n`\\]+[：:])\*\*")
+
+
+def strong_label(state, silent: bool) -> bool:
+    """Accept colon-ended labels without a space before the following CJK text."""
+    match = STRONG_LABEL.match(state.src, state.pos, state.posMax)
+    if match is None:
+        return False
+    if not silent:
+        state.push("strong_open", "strong", 1).markup = "**"
+        state.push("text", "", 0).content = match.group(1)
+        state.push("strong_close", "strong", -1).markup = "**"
+    state.pos = match.end()
+    return True
+
+
+# Use the parser's rule chain so code spans and escapes keep their native behavior.
+INLINE_MARKDOWN.inline.ruler.before("emphasis", "strong_label", strong_label)
+
+
+def set_run_font(run, *, size: float, bold: bool = False) -> None:
+    run.font.name = "Arial"
+    run._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+    run.font.size = Pt(size)
+    run.bold = bold
+
+
+def add_inline(paragraph, text: str, *, size: float, bold: bool = False) -> None:
+    """Render Markdown emphasis while retaining literal code and link targets."""
+    strong = 0
+    emphasis = 0
+    link = None
+    for token in INLINE_MARKDOWN.parseInline(text)[0].children or []:
+        if token.type == "strong_open":
+            strong += 1
+        elif token.type == "strong_close":
+            strong -= 1
+        elif token.type == "em_open":
+            emphasis += 1
+        elif token.type == "em_close":
+            emphasis -= 1
+        elif token.type == "link_open":
+            target = token.attrGet("href") or ""
+            link = OxmlElement('w:hyperlink')
+            link.set(qn('r:id'), paragraph.part.relate_to(target, RELATIONSHIP_TYPE.HYPERLINK, is_external=True))
+            paragraph._p.append(link)
+        elif token.type == "link_close":
+            link = None
+        elif token.type in {"text", "code_inline", "html_inline", "image"}:
+            run = paragraph.add_run(token.content)
+            set_run_font(run, size=size, bold=bold or strong > 0)
+            run.italic = emphasis > 0
+            if link is not None:
+                link.append(run._r)
+        elif token.type in {"softbreak", "hardbreak"}:
+            paragraph.add_run().add_break()
+
+
+def configure_document(document: Document) -> None:
+    section = document.sections[0]
+    section.page_width = Cm(21)
+    section.page_height = Cm(29.7)
+    # 兜底生成器面对的通常是三页以内的清单或短报告。这里固定为紧凑但仍
+    # 可读的 A4 版式，避免正文内容合格却因默认 Word 留白和段距多出一页。
+    section.top_margin = Cm(2.0)
+    section.bottom_margin = Cm(2.0)
+    section.left_margin = Cm(2.2)
+    section.right_margin = Cm(2.2)
+    normal = document.styles["Normal"]
+    normal.font.name = "Arial"
+    normal._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+    normal.font.size = Pt(10.5)
+    normal.paragraph_format.space_before = Pt(0)
+    normal.paragraph_format.space_after = Pt(3)
+    normal.paragraph_format.line_spacing = 1.25
+
+    for style_name, size in (("Title", 16), ("Heading 1", 15), ("Heading 2", 12.5), ("Heading 3", 11.5)):
+        style = document.styles[style_name]
+        style.font.name = "Arial"
+        style._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+        style.font.size = Pt(size)
+        style.paragraph_format.space_before = Pt(6)
+        style.paragraph_format.space_after = Pt(3)
+        style.paragraph_format.line_spacing = 1.0
+        style.paragraph_format.keep_with_next = True
+
+
+def table_cells(line: str) -> list[str]:
+    value = line.strip()
+    if value.startswith("|"):
+        value = value[1:]
+    if value.endswith("|"):
+        value = value[:-1]
+    return [cell.strip() for cell in value.split("|")]
+
+
+def add_table(document: Document, lines: list[str]) -> None:
+    rows = [table_cells(line) for line in lines if not TABLE_DIVIDER.match(line)]
+    add_table_rows(document, rows)
+
+
+def add_table_rows(document: Document, rows: list[list[str]], *, markdown: bool = True) -> None:
+    if not rows:
+        return
+    width = max(len(row) for row in rows)
+    body_items = [item for item in document.element.body if item.tag != qn("w:sectPr")]
+    if body_items and body_items[-1].tag == qn("w:tbl"):
+        # Word joins adjacent tables, which can carry the previous table's repeated header.
+        separator = document.add_paragraph()
+        separator.paragraph_format.space_before = Pt(0)
+        separator.paragraph_format.space_after = Pt(0)
+        separator.paragraph_format.line_spacing = Pt(1)
+        separator.paragraph_format.keep_with_next = True
+    table = document.add_table(rows=len(rows), cols=width)
+    table.style = "Table Grid"
+    table.autofit = False
+    section = document.sections[-1]
+    available_width = section.page_width - section.left_margin - section.right_margin
+    ordinal = width > 1 and rows[0][0] in {"序号", "编号"}
+    first_width = Cm(1.0) if ordinal else available_width / width
+    remaining_width = (available_width - first_width) / (width - 1) if width > 1 else first_width
+    for column_index, column in enumerate(table.columns):
+        column.width = int(first_width if column_index == 0 else remaining_width)
+        for cell in column.cells:
+            cell.width = column.width
+    for row_index, row in enumerate(rows):
+        properties = table.rows[row_index]._tr.get_or_add_trPr()
+        properties.append(OxmlElement("w:cantSplit"))
+        if row_index == 0:
+            properties.append(OxmlElement("w:tblHeader"))
+        for column_index in range(width):
+            paragraph = table.cell(row_index, column_index).paragraphs[0]
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            paragraph.paragraph_format.line_spacing = 1.0
+            if not markdown and row_index == 0:
+                paragraph.paragraph_format.keep_with_next = True
+            value = row[column_index] if column_index < len(row) else ""
+            if markdown:
+                add_inline(paragraph, value, size=9.5, bold=row_index == 0)
+            else:
+                set_run_font(paragraph.add_run(value), size=9.5, bold=row_index == 0)
+
+
+def add_paragraph(document: Document, line: str, *, first_content: bool) -> None:
+    heading = HEADING.match(line)
+    if heading:
+        level = min(len(heading.group(1)), 3)
+        paragraph = document.add_heading(level=level)
+        if level == 1:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        add_inline(paragraph, heading.group(2).strip(), size={1: 15, 2: 12.5, 3: 11.5}[level], bold=True)
+        return
+
+    numbered = NUMBERED_HEADING.match(line)
+    ordered_list = re.match(r"^\s*(\d+[.)、])\s+(.+)$", line)
+    decimal_clause = re.match(r"^\s*\d+(?:\.\d+)+\s+", line)
+    if first_content or (numbered and not ordered_list and not decimal_clause):
+        paragraph = document.add_paragraph()
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if first_content else WD_ALIGN_PARAGRAPH.LEFT
+        paragraph.paragraph_format.space_before = Pt(6)
+        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.line_spacing = 1.0
+        paragraph.paragraph_format.keep_with_next = True
+        add_inline(paragraph, line.strip(), size=16 if first_content else 12.5, bold=True)
+        return
+
+    listed = None if decimal_clause else LIST_ITEM.match(line)
+    paragraph = document.add_paragraph()
+    paragraph.paragraph_format.line_spacing = 1.25
+    paragraph.paragraph_format.space_after = Pt(3)
+    if listed:
+        paragraph.paragraph_format.left_indent = Cm(0.74)
+        text = listed.group(1).strip()
+        prefix = f"{ordered_list.group(1)} " if ordered_list else "• "
+    else:
+        paragraph.paragraph_format.first_line_indent = Cm(0.74)
+        text = line.strip()
+        prefix = ""
+    add_inline(paragraph, prefix + text, size=10.5)
+
+
+def add_html_body(document: Document, content: str) -> None:
+    """Copy an existing HTML report's body text and tables without rewriting them."""
+    from lxml import html
+
+    root = html.document_fromstring(content, parser=html.HTMLParser(no_network=True))
+    body = root.find("body")
+    if body is None:
+        raise ValueError("HTML 正文不存在")
+    ignored = {"script", "style", "img", "noscript", "template"}
+    blocks = {
+        "body", "section", "div", "article", "header", "footer", "aside",
+        "p", "ul", "ol", "li", "blockquote", "dl", "dt", "dd", "table",
+        "h1", "h2", "h3", "h4", "h5", "h6",
+    }
+
+    def text(node) -> str:
+        if not isinstance(node.tag, str) or node.tag.lower() in ignored:
+            return ""
+        value = node.text or ""
+        for child in node:
+            value += "\n" if child.tag == "br" else text(child)
+            value += child.tail or ""
+        return value
+
+    def paragraph(value: str, level: int = 0, *, keep_next: bool = False) -> None:
+        value = value.strip()
+        if not value:
+            return
+        item = document.add_heading(level=min(level, 3)) if level else document.add_paragraph()
+        item.paragraph_format.space_after = Pt(3)
+        item.paragraph_format.line_spacing = 1.0 if level else 1.25
+        item.paragraph_format.keep_with_next = bool(level) or keep_next
+        item.paragraph_format.keep_together = True
+        run = item.add_run(value)
+        set_run_font(run, size={1: 15, 2: 12.5}.get(level, 11.5) if level else 10.5, bold=bool(level))
+        if level:
+            run.font.color.rgb = RGBColor(0x3C, 0x2A, 0x1F)
+
+    def page_furniture(value: str, kind: str) -> None:
+        value = value.strip()
+        if not value:
+            return
+        section = document.sections[0]
+        if kind == "cover-signature":
+            section.different_first_page_header_footer = True
+            container = section.first_page_footer
+        else:
+            container = section.header if kind == "header" else section.footer
+        if any(item.text == value for item in container.paragraphs):
+            return
+        item = next((item for item in container.paragraphs if not item.text), None)
+        if item is None:
+            item = container.add_paragraph()
+        item.style = "Header" if kind == "header" else "Footer"
+        item.alignment = WD_ALIGN_PARAGRAPH.RIGHT if kind == "header" else WD_ALIGN_PARAGRAPH.CENTER
+        item.paragraph_format.space_before = Pt(0)
+        item.paragraph_format.space_after = Pt(0)
+        run = item.add_run(value)
+        set_run_font(run, size=9)
+        run.font.color.rgb = RGBColor(0x8A, 0x6A, 0x2F)
+
+    def append(node) -> None:
+        if not isinstance(node.tag, str) or node.tag.lower() in ignored:
+            return
+        tag = node.tag.lower()
+        classes = set(node.get("class", "").split())
+        if classes & {"gongchuang-document-header", "gongchuang-cover-signature"}:
+            return
+        if tag == "footer" and "page-footer" in classes:
+            page_furniture(text(node), "footer")
+            return
+        if tag == "header" and "page-header" in classes:
+            paragraph(" ".join(value.strip() for value in node.itertext() if value.strip()), 1)
+            return
+        if tag == "table":
+            rows = [
+                [text(cell).strip() for cell in row if cell.tag in {"th", "td"}]
+                for row in node.xpath("./tr | ./thead/tr | ./tbody/tr | ./tfoot/tr")
+            ]
+            add_table_rows(document, rows, markdown=False)
+            return
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            paragraph(text(node), int(tag[1]))
+            return
+        pending = node.text or ""
+        for child in node:
+            if isinstance(child.tag, str) and child.tag.lower() in blocks:
+                paragraph(pending, keep_next=bool(classes & {"card-top", "risk-level", "eyebrow"}))
+                pending = ""
+                append(child)
+            else:
+                pending += "\n" if child.tag == "br" else text(child)
+            pending += child.tail or ""
+        paragraph(pending, keep_next=bool(classes & {"card-top", "risk-level", "eyebrow"}))
+
+    append(body)
+
+
+def build_document(content: str, output: Path, *, html_input: bool = False) -> dict[str, object]:
+    output = output.resolve()
+    if output.exists():
+        raise FileExistsError(
+            f"输出文件已存在，拒绝覆盖：{output}。原文件未修改。"
+            "请保留原文件，为修订稿指定尚不存在的新路径；"
+            "只有生成成功后才能校验新文件，不得用旧文件代替本次修订稿。"
+        )
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    document = Document()
+    configure_document(document)
+    properties = document.core_properties
+    properties.author = "文档编制组"
+    properties.last_modified_by = properties.author
+    properties.subject = ""
+    properties.comments = ""
+    timestamp = datetime.now(timezone.utc).replace(microsecond=0)
+    properties.created = timestamp
+    properties.modified = timestamp
+
+    if html_input:
+        add_html_body(document, content)
+    lines = [] if html_input else content.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    index = 0
+    first_content = True
+    while index < len(lines):
+        line = lines[index].strip()
+        if not line:
+            index += 1
+            continue
+        if "|" in line and index + 1 < len(lines) and TABLE_DIVIDER.match(lines[index + 1]):
+            table_lines = [line, lines[index + 1]]
+            index += 2
+            while index < len(lines) and "|" in lines[index] and lines[index].strip():
+                table_lines.append(lines[index])
+                index += 1
+            add_table(document, table_lines)
+            first_content = False
+            continue
+        add_paragraph(document, line, first_content=first_content)
+        first_content = False
+        index += 1
+
+    _apply_report_fonts(document)
+    generated = BytesIO()
+    document.save(generated)
+    reopened = Document(generated)
+    metadata_errors = docx_metadata_errors(reopened.core_properties._element)
+    if metadata_errors:
+        raise ValueError("DOCX 元数据自检失败：" + "；".join(metadata_errors))
+    paragraph_count = len(reopened.paragraphs)
+    table_count = len(reopened.tables)
+    if paragraph_count == 0 and table_count == 0:
+        raise ValueError("生成的 DOCX 不包含可解析正文或表格")
+    if output.exists():
+        raise FileExistsError(f"拒绝覆盖已有文件：{output}")
+    tmp_output = output.with_name(f".{output.name}.tmp-{os.getpid()}")
+    try:
+        with tmp_output.open("wb") as stream:
+            stream.write(generated.getbuffer())
+            stream.flush()
+            os.fsync(stream.fileno())
+        if output.exists():
+            raise FileExistsError(f"拒绝覆盖已有文件：{output}")
+        os.replace(tmp_output, output)
+    except Exception:
+        tmp_output.unlink(missing_ok=True)
+        raise
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "passed",
+        "artifact": str(output),
+        "format": "docx",
+        "characters": len(content),
+        "paragraphs": paragraph_count,
+        "tables": table_count,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("content")
+    parser.add_argument("output", type=Path)
+    parser.add_argument("--input-file", action="store_true", help="Read content from a UTF-8 Markdown, text or HTML report")
+    args = parser.parse_args()
+    content = args.content
+    if args.input_file:
+        source = Path(content)
+        content = source.read_text(encoding="utf-8-sig")
+    html_input = args.input_file and source.suffix.lower() == ".html"
+    print(json.dumps(build_document(content, args.output, html_input=html_input), ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,51 +1,28 @@
 {
   "schema_version": 2,
   "skill_name": "standard-drafting",
-  "release_tag": "V1.8.1",
+  "release_tag": "V3.0.0",
   "required_paths": [
-    "SKILL.md",
-    "assets/compilation-note-template.md",
-    "assets/gbt-1-1-enterprise-standard-template-preview.png",
-    "assets/gbt-1-1-enterprise-standard-template.docx",
-    "assets/standard-draft-template.md",
-    "publisher-ed25519.pub",
-    "references/gbt-1-1-drafting-rules.md",
-    "references/portable-runtime-protocol.md",
-    "references/standard-type-structures.md",
-    "release-manifest.json.sig",
-    "release-signature.json",
-    "scripts/audit_enterprise_standard_docx.py",
-    "scripts/audit_standard_draft.py",
-    "scripts/initialize_enterprise_standard.py",
-    "scripts/portable_skill_runtime.py",
-    "scripts/verify_skill_installation.py"
+    "SKILL.md"
   ],
   "mutable_paths": [
     "local-overrides"
   ],
-  "portable_runtime": {
-    "profile_schema_version": 1,
-    "profile_storage": "external-user-config",
-    "prepare_command": "python3 scripts/portable_skill_runtime.py prepare"
-  },
-  "runtime_requirements": {
-    "python_modules": [],
-    "executables": []
-  },
   "files": {
-    "SKILL.md": "964f3b5f50995d2a40312e384529d06bc10638f3c15c77de746026dfcb4637de",
+    "SKILL.md": "b127f2fde0c5db8f21ebc5ecc58af3e826d4d26733db988182a217b64c50b668",
     "assets/compilation-note-template.md": "30e1752d3016f8dd1452ed3c04bef689f1cf7b620caada5a7522dbd474a0e414",
     "assets/gbt-1-1-enterprise-standard-template-preview.png": "7e61b457b47ed35c304f51326ec431682af6a34c1ee36b525c3c999bd86c693b",
     "assets/gbt-1-1-enterprise-standard-template.docx": "5f1cccea6a2171e77081b14bb4e3439b3b3ceace302562fffce1755f75b418bf",
     "assets/standard-draft-template.md": "e53994ff0d1bc8608e95a21e5b2f3866eeeb3d7c6af41684989859b53804c94d",
     "references/gbt-1-1-drafting-rules.md": "85509458d7cd212382c78d3454372b435602774f94d5329ed6559d32d8605205",
-    "references/portable-runtime-protocol.md": "d992d488b0591b0f21fb93c53c9b5218297526c2d6babab0346457f607f2c32c",
+    "references/portable-runtime-protocol.md": "d4004ca3fa57e1e2df725d125302b2d3fb532daef72dbbd527ccdb381cefb355",
     "references/standard-type-structures.md": "8b3716ce22905bd043a360102a39fab3e874212734db8993660cc54b5e5b9704",
     "scripts/audit_enterprise_standard_docx.py": "1205c7535a090c89ab84116740f1522f3892212967b301ac76f0c145c680e713",
-    "scripts/audit_standard_draft.py": "5a734afc0f462e800fc39bdab20dd4fa13fae0671dcb585e9636c03362025609",
-    "scripts/initialize_enterprise_standard.py": "7fe6c34d5a9933f943e78cb0bcb85bf48cf8084e25a24edbe713d7fc66925920",
-    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/audit_standard_draft.py": "080b38e39d7d67b8995b4c5767379c6c09e39d4eeefb85fb4964efa5d9f5ddd8",
+    "scripts/initialize_enterprise_standard.py": "bfe58ac83fb6199bd03eee45f6bd6d0bea1853df1629410fcdcb37fcd701af86",
+    "scripts/portable_skill_runtime.py": "aa05f21be71bbbf940806528c59a881cc2ae7ac1fab5c85ba315ed828e33de37",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_audit_standard_draft.py": "2b2df2e2e9d1ae2eac086a52a28270456eb9b09092896e983de2a563cb9f7352"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",
