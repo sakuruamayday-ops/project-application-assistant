@@ -9,7 +9,7 @@
     "local-overrides"
   ],
   "files": {
-    "SKILL.md": "67581540818fd93dae64246d53398145a26d8afa06132b38feffde6984e9329b",
+    "SKILL.md": "4f9ff2598a11a1cc2cf48fb7fcea523cd2adefa678045f391d70542e93671f26",
     "references/canonical-project-index.jsonl": "121bdfa0b277954f2bbd31a54b9a4b19c0d4b7ebb66e7e85eb596bffb79ea575",
     "references/classification-rules.md": "cb7f7d6a522e6767ba5f3e9d41b6cc7b0a8df713ebe3b7a01dc4d17e0263dfae",
     "references/high-frequency-project-rules.jsonl": "d070024d2b4cefad8f438a0957543d57a1b1abd67f71e5910de5e30b86d55fba",
@@ -34,7 +34,7 @@
     "scripts/filter_project_map.py": "c4b08c0cf779894dcff664d9b82c01b77aa9dfd5e1a6f1383eb7ac8a616e2404",
     "scripts/preflight.py": "062f76228c9d9913e67f2cbea416c79df0144c517795d946631d3d0d2d2ff621",
     "scripts/run_checkup.py": "48123078fe895f41f98d3c406d6e2a22d47fddd01cb508b29099bc2810ba34e0",
-    "scripts/search_catalogs.py": "e7a1b45e400c8e2552d9f91c2378acf363b43840f62b0b71820120070dabeea3"
+    "scripts/search_catalogs.py": "9e2147288c3678125ae195773bf05a3017dd5b80166a7b8332ebdb29d18cff7b"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",
