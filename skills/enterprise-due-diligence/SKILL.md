@@ -77,6 +77,6 @@ python3 scripts/validate_report_pdf.py <PDF路径>
 
 财务复算与制造财税风险使用 `manufacturing-tax-risk`；项目资格与多项目规划使用 `gov-project-checkup`；专利专项使用 `patent-strategy-assistant`，专利 Word 文件核稿使用 `patent-docx-reviewer`。网页看板使用当前前端能力与共同底稿，发布按用户指令和宿主权限执行。
 
-外部数据和渲染使用宿主当前能力，缺项时先说明缺口并继续可完成部分。团队知识服务通过安全凭据接口读取 `KB_API_ENDPOINT`、`KB_API_TOKEN`，日志与交付物使用脱敏信息。资源相对本技能目录解析，输出写当前任务目录。
+外部数据和渲染使用宿主当前能力，缺项时先说明缺口并继续可完成部分。知识库与历史名单采用**三级自动联动**（零强制依赖）：① 若宿主已连接知识库 MCP，优先调用 `enterprise_identity_lineage_lookup`、`authoritative_list_search`、`public_list_search`、`recognition_search`、`policy_search`、`knowledge_search` + `knowledge_document` 取数；② 未连 MCP 但本机有企业库时，自动走本地只读库；③ 两者均无时，直接用用户资料、宿主企查查/天眼查与联网检索独立完成。若用户另行配置了直连 API，仅从安全环境变量读取 `KB_API_ENDPOINT`、`KB_API_TOKEN`，日志与交付物保持脱敏。资源相对本技能目录解析，输出写当前任务目录。
 
 报告表达采用[报告写作规则](../_runtime/report-writing.md)。

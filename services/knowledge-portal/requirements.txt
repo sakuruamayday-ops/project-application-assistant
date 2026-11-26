@@ -1,4 +1,0 @@
-# Compatibility entry point. Dependency upgrades belong in requirements.in;
-# runtime installation is always delegated to the fully transitive hash lock.
---require-hashes
--r requirements.lock

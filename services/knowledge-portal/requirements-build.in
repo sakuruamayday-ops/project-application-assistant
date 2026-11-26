@@ -1,6 +1,0 @@
-# Pinned build backend used only while converting hash-locked source
-# distributions into deployment wheels. These packages are not installed in
-# the production application environment.
-pip==26.2.2
-setuptools==84.2.1
-wheel==0.48.0

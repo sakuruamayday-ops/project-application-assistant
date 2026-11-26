@@ -2,11 +2,10 @@
 
 ## 检索顺序
 
-1. 使用本轮工具目录及可调用连接，配置报告作历史参考。
-2. 通过 `local-knowledge-retrieval` 按本版顺序查询法规底库，回读关键原文。
-3. 对关键命中读取完整文档和来源路径。
-4. 第一来源无结果时按主流程查询下一级，复用本轮已取得的项目文件。
-5. 云端和本地均不足时再查官方互联网来源。
+1. **优先已连接知识库 MCP**：若宿主已连接知识库 MCP，优先调用 `policy_search`、`knowledge_search` 检索法规与政策，关键条目务必调用 `knowledge_document` 回读完整原文；核验企业身份与历史认定调用 `enterprise_identity_lineage_lookup`、`authoritative_list_search`、`public_list_search`、`recognition_search`。
+2. **本机只读库兜底**：未连 MCP 但本机存在本地法规/企业库时，通过 `scripts/check_company_law.py search-law` 或本地库脚本直接查询。
+3. **直连 API 或公开官方来源**：上述均不可用时，若用户自行配置了安全环境变量 `KB_API_ENDPOINT`、`KB_API_TOKEN`，可按 `GET /v1/me` 与 `POST /v1/search` 调用；零配置单机环境下直接查制定机关官方公开来源。
+4. 关键命中须核对完整原文与来源路径，未命中如实写“当前检索层未命中”并继续可完成部分。
 
 ## 云端调用
 

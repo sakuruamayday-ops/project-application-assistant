@@ -11,7 +11,7 @@ description: 政府项目全周期体检、材料深度诊断、政策查询与�
 
 查询企业画像、历史认定名单、可比同行与现行政策时，严格按以下三级顺序自动择优取数，逐级顺延、绝不因缺某一层数据源卡死：
 
-1. **第一顺位（内部团队 / 已连接服务器知识库 MCP）**：检测到当前软件已连接服务器知识库 MCP 时，直接调用服务器 MCP 查企业画像、历史名单、可比同行与政策原文，拿回结果后再运行包内脚本完成确定性复算与事实黑板落盘。
+1. **第一顺位（内部团队 / 已连接服务器知识库 MCP）**：检测到当前软件已连接服务器知识库 MCP 时，优先直接调用服务器真实 MCP 工具（`knowledge_service_status`、`enterprise_identity_lineage_lookup`、`authoritative_list_search`、`public_list_search`、`recognition_search`、`policy_search`、`project_catalog_match`、`knowledge_search` + `knowledge_document`、`knowledge_case_pack`、`three_first_analysis`，完整对照见 `references/mcp-and-data-routing.md`），拿回结果后再运行包内脚本完成确定性复算与事实黑板落盘。
 2. **第二顺位（本机离线直连数据库）**：未连接服务器 MCP 但本机存在本地企业/政策数据库时，自动通过 `scripts/run_checkup.py` 直连本机库秒查。
 3. **第三顺位（纯外部单机用户）**：服务器 MCP 与本机库均不可用时，自动基于用户上传的申报材料/财报附件，配合联网检索补齐官网主营、曾用名/关联方、公开专利与当期政策（省外/无本地政策库时按「当年 + 上年」双年窗口检索），照常跑完复算与体检闭环。
 

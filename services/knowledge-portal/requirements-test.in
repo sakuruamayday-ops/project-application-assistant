@@ -1,9 +1,0 @@
-# Direct test dependencies. The generated requirements-test.lock includes the
-# complete production graph plus this explicitly pinned test toolchain.
--r requirements.in
-
-pytest==9.1.1
-httpx==0.28.1
-
-# Word export regression exercises the skill parser.
-markdown-it-py==4.2.0
