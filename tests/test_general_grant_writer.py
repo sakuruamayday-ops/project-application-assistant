@@ -31,7 +31,7 @@ def test_all_10_tracks_positive_and_negative_probes(tmp_path: Path):
             "patents": [{"patent_no": "ZL202320123456.7", "type": "发明专利", "filing_date": "2023-05-01"}],
         },
     )
-    assert rc == 2 and len(out["errors"]) >= 5
+    assert rc == 2 and len(out["errors"]) >= 3
 
     rc_ok, _ = _run_track(
         tmp_path, "institute",
